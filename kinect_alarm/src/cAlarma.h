@@ -13,6 +13,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <pthread.h>
 #include "FreeImage.h"
 #include "cKinect.h"
 
