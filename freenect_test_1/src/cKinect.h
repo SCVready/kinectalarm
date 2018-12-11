@@ -24,22 +24,14 @@
 #define VIDEO_WIDTH		640 //1280
 #define VIDEO_HEIGHT	480 //1024
 
-
-// Enums
-enum content_type{
-	none,
-	depth,
-	video};
-
 class cKinect {
 
 private:
 	// Variables
 	freenect_context* kinect_ctx;
 	freenect_device* kinect_dev;
-	pthread_t process_event_thead;
+	pthread_t process_event_thread;
 
-	enum content_type streaming_type;
 	bool is_kinect_initialize;
 
 	uint16_t buffer_depth[DEPTH_WIDTH*DEPTH_HEIGHT];
@@ -52,8 +44,7 @@ private:
 	static void video_cb(freenect_device* dev, void* data, uint32_t timestamp);
 	static void depth_cb(freenect_device* dev, void* data, uint32_t timestamp);
 
-
-
+	volatile bool running;
 
 
 public:
@@ -68,8 +59,6 @@ public:
 	static pthread_cond_t depth_ready;
 	static pthread_cond_t video_ready;
 
-	static volatile bool running;
-
 	// Functions
 	cKinect();
 	virtual ~cKinect();
@@ -77,7 +66,7 @@ public:
 	bool init();
 	bool deinit();
 
-	int start();
+	int run();
 	int stop();
 
 	int get_depth_frame(uint16_t *depth_frame);

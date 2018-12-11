@@ -21,11 +21,11 @@ public:
 	cAlarma();
 	virtual ~cAlarma();
 
-	int init(); // class kinect // init kinect // numdetecciones //
-	int deinit(); // destroy kinect class // deinit kinect
+	int init();
+	int deinit();
 
-	int run(); // run kinect // logica alarma
-	int stop(); // stop kinect
+	int run();
+	int stop();
 
 	bool save_depth_frame_to_bmp(uint16_t* depth_frame,char *filename);
 	bool save_video_frame_to_bmp(uint16_t* video_frame,char *filename);
@@ -34,6 +34,9 @@ public:
 	void set_capture_video_image(int num);
 	uint32_t compare_depth_frame_to_reference_depth_image();
 	bool init_num_detection();
+
+	static void *detection_thread_helper(void *context);
+	void *detection(void);
 
 	uint16_t* video_frames[NUM_DETECTIONS_FRAMES];
 	uint16_t num_detections;
@@ -44,6 +47,9 @@ public:
 private:
 
 	class cKinect kinect;
+	volatile bool running;
+
+	pthread_t detection_thread;
 
 };
 

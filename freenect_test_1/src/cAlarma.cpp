@@ -22,12 +22,12 @@
 
 cAlarma::cAlarma()
 {
-	// TODO Auto-generated constructor stub
-
-	num_detections = 0;
-	reff_depth_frame = NULL;
-	depth_frame = NULL;
-	diff_depth_frame = NULL;
+	num_detections 		= 0;
+	reff_depth_frame	= NULL;
+	depth_frame			= NULL;
+	diff_depth_frame	= NULL;
+	running				= true;
+	detection_thread	= 0;
 }
 
 cAlarma::~cAlarma()
@@ -53,7 +53,7 @@ int cAlarma::init()
 	}
 
 	// Create base dir
-	create_dir(LOCAL_PATH);
+	create_dir((char *)LOCAL_PATH);
 
 	if(init_num_detection())
 	{
@@ -72,84 +72,23 @@ int cAlarma::init()
 }
 int cAlarma::deinit()
 {
-	// TODO
+	kinect.deinit();
 	return 0;
 }
 
 int cAlarma::run()
 {
-	kinect.start();
-	while(num_detections < MAX_NUM_DETECTIONS && kinect.running)
-	{
-		kinect.change_led_color(LED_YELLOW);
-		// Get Reference frame
-		if(kinect.get_depth_frame(reff_depth_frame))
-		{
-			printf("Fallo al capturar un frame de depth");
-			kinect.deinit();
-			return -1;
-		}
-		printf("Reference depth frame get\n");
-		// Deteccion
-		int diff_cont = 0;
-		do
-		{
-			// get depth image to compare
-			if(kinect.get_depth_frame(depth_frame))
-			{
-				printf("Fallo al capturar un frame de depth");
-				kinect.deinit();
-				return -1;
-			}
-			diff_cont = compare_depth_frame_to_reference_depth_image();
-		}while(diff_cont < DETECTION_THRESHOLD && kinect.running);
-
-
-		if(kinect.running)
-		{
-			kinect.change_led_color(LED_RED);
-			printf("Intrusion happen\n");
-
-			for(int i = 0; i < NUM_DETECTIONS_FRAMES; i++)
-			{
-				if(kinect.get_video_frame(video_frames[i]))
-				{
-					printf("Fallo al capturar un frame de video");
-					kinect.deinit();
-					return -1;
-				}
-				printf("Video frame captured\n");
-				if(i != (NUM_DETECTIONS_FRAMES-1))
-					usleep(200000);
-			}
-
-			char temp[PATH_MAX];
-			sprintf(temp,"%s/%d",LOCAL_PATH,num_detections);
-			create_dir(temp);
-
-
-			if(save_depth_frame_to_bmp(reff_depth_frame,"ref_depth.bmp"))
-				printf("Error al guardar el archivo\n");
-			if(save_depth_frame_to_bmp(diff_depth_frame,"diff.bmp"))
-				printf("Error al guardar el archivo\n");
-
-			for(int i = 0; i < NUM_DETECTIONS_FRAMES; i++)
-			{
-				sprintf(temp,"capture_%d.bmp",i);
-				if(save_video_frame_to_bmp(video_frames[i],temp))
-					printf("Error al guardar el archivo\n");
-			}
-
-			num_detections++;
-		}
-	}
+	running = true;
+	kinect.run();
+	pthread_create(&detection_thread, 0, detection_thread_helper, this);
 	return 0;
 }
 
 int cAlarma::stop()
 {
+	running = false;
 	kinect.change_led_color(LED_GREEN);
-	kinect.deinit();
+	kinect.stop();
 	return 0;
 }
 
@@ -216,4 +155,78 @@ bool cAlarma::save_video_frame_to_bmp(uint16_t* video_frame,char *filename)
 	if(!FreeImage_Save(FIF_BMP, video_bitmap, filepath, 0))
 		return true;
 	return false;
+}
+void *cAlarma::detection(void)
+{
+	while(num_detections < MAX_NUM_DETECTIONS && running)
+	{
+		kinect.change_led_color(LED_YELLOW);
+		// Get Reference frame
+		if(kinect.get_depth_frame(reff_depth_frame))
+		{
+			printf("Fallo al capturar un frame de depth");
+			kinect.deinit();
+			return NULL;
+		}
+		printf("Reference depth frame get\n");
+		// Deteccion
+		int diff_cont = 0;
+		do
+		{
+			// get depth image to compare
+			if(kinect.get_depth_frame(depth_frame))
+			{
+				printf("Fallo al capturar un frame de depth");
+				kinect.deinit();
+				return NULL;
+			}
+			diff_cont = compare_depth_frame_to_reference_depth_image();
+		}while(diff_cont < DETECTION_THRESHOLD && running);
+
+
+		if(running)
+		{
+			kinect.change_led_color(LED_RED);
+			printf("Intrusion happen\n");
+
+			for(int i = 0; i < NUM_DETECTIONS_FRAMES; i++)
+			{
+				if(kinect.get_video_frame(video_frames[i]))
+				{
+					printf("Fallo al capturar un frame de video");
+					kinect.deinit();
+					return NULL;
+				}
+				printf("Video frame captured\n");
+				if(i != (NUM_DETECTIONS_FRAMES-1))
+					usleep(200000);
+			}
+
+			char temp[PATH_MAX];
+			sprintf(temp,"%s/%d",LOCAL_PATH,num_detections);
+			create_dir(temp);
+
+
+			if(save_depth_frame_to_bmp(reff_depth_frame,(char *)"ref_depth.bmp"))
+				printf("Error al guardar el archivo\n");
+			if(save_depth_frame_to_bmp(diff_depth_frame,(char *)"diff.bmp"))
+				printf("Error al guardar el archivo\n");
+
+			for(int i = 0; i < NUM_DETECTIONS_FRAMES; i++)
+			{
+				sprintf(temp,"capture_%d.bmp",i);
+				if(save_video_frame_to_bmp(video_frames[i],temp))
+					printf("Error al guardar el archivo\n");
+			}
+
+			num_detections++;
+		}
+	}
+	return NULL;
+}
+
+
+void *cAlarma::detection_thread_helper(void *context)
+{
+	return ((cAlarma *)context)->detection();
 }

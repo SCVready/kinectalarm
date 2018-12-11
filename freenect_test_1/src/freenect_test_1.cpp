@@ -15,17 +15,17 @@
 #include "cKinect.h"
 #include "cAlarma.h"
 
-volatile bool cKinect::running;
-
 void signalHandler(int signal)
 {
 	if (signal == SIGINT
 	 || signal == SIGTERM
 	 || signal == SIGQUIT)
 	{
-		cKinect::running = false;
+		/*
+		alarma.running = false;
 		pthread_cond_signal(&cKinect::depth_ready);
 		pthread_cond_signal(&cKinect::video_ready);
+		*/
 	}
 }
 
@@ -39,8 +39,16 @@ int main(int argc, char** argv)
 	class cAlarma alarma;
 
 	alarma.init();
+
 	alarma.run();
+	sleep(10);
 	alarma.stop();
+	sleep(10);
+	alarma.run();
+	sleep(10);
+	alarma.stop();
+
+	alarma.deinit();
 
 
 	return 0;

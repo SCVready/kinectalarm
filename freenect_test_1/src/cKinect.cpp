@@ -32,13 +32,12 @@ cKinect::cKinect()
 {
 	//Members initialization
 	is_kinect_initialize	= false;
-	streaming_type			= none;
 	kinect_ctx				= NULL;
 	kinect_dev				= NULL;
 	done_depth				= false;
 	done_video				= false;
 	running					= true;
-	process_event_thead		= 0;
+	process_event_thread	= 0;
 }
 
 cKinect::~cKinect()
@@ -123,10 +122,6 @@ bool cKinect::init()
 		temp_depth_frame_raw = (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
 		temp_video_frame_raw = (uint16_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint16_t));
 
-
-		freenect_start_video(kinect_dev);
-		freenect_start_depth(kinect_dev);
-
 		// Set kinect init flag to true
 		is_kinect_initialize = true;
 	}
@@ -139,8 +134,6 @@ bool cKinect::deinit()
 	// Stop everything and shutdown.
 	if(kinect_dev)
 	{
-		freenect_stop_depth(kinect_dev);
-		freenect_stop_video(kinect_dev);
 		freenect_close_device(kinect_dev);
 	}
 	if(kinect_ctx)
@@ -149,17 +142,24 @@ bool cKinect::deinit()
 	return false;
 }
 
-int cKinect::start()
+int cKinect::run()
 {
-	// TODO
-	pthread_create(&process_event_thead, 0, kinect_process_events_helper, this);
+	running = true;
+	freenect_start_video(kinect_dev);
+	freenect_start_depth(kinect_dev);
+	pthread_create(&process_event_thread, 0, kinect_process_events_helper, this);
 	return 0;
 }
 
 int cKinect::stop()
 {
 	// TODO
-
+	running = false;
+	if(kinect_dev)
+	{
+		freenect_stop_depth(kinect_dev);
+		freenect_stop_video(kinect_dev);
+	}
 	return 0;
 }
 
@@ -228,7 +228,7 @@ bool cKinect::change_tilt(double tilt_angle)
 
 int create_dir(char* path)
 {
-	if(mkdir(path, 0700) == -1)
+	if(mkdir(path, 0770) == -1)
 	{
 		printf("Failed to create %s\n", path);
 		perror("mkdir");
@@ -259,7 +259,7 @@ void *cKinect::kinect_process_events(void)
 		if(freenect_process_events(kinect_ctx) < 0)
 			pthread_exit(&ret);
 
-	}while(cKinect::running);
+	}while(running);
 	return NULL;
 }
 
