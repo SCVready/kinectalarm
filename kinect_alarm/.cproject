@@ -3,7 +3,9 @@
 	<storageModule moduleId="org.eclipse.cdt.core.settings">
 		<cconfiguration id="cdt.managedbuild.config.gnu.cross.exe.debug.1056131056">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.config.gnu.cross.exe.debug.1056131056" moduleId="org.eclipse.cdt.core.settings" name="Debug">
-				<externalSettings/>
+				<externalSettings>
+					<externalSetting/>
+				</externalSettings>
 				<extensions>
 					<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
 					<extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
@@ -14,7 +16,7 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="rm -rf" description="" id="cdt.managedbuild.config.gnu.cross.exe.debug.1056131056" name="Debug" optionalBuildProperties="" parent="cdt.managedbuild.config.gnu.cross.exe.debug">
+				<configuration artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="rm -rf" description="" id="cdt.managedbuild.config.gnu.cross.exe.debug.1056131056" name="Debug" optionalBuildProperties="org.eclipse.cdt.docker.launcher.containerbuild.property.selectedvolumes=,org.eclipse.cdt.docker.launcher.containerbuild.property.volumes=" parent="cdt.managedbuild.config.gnu.cross.exe.debug">
 					<folderInfo id="cdt.managedbuild.config.gnu.cross.exe.debug.1056131056." name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.cross.exe.debug.522846242" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.exe.debug">
 							<option id="cdt.managedbuild.option.gnu.cross.prefix.831386569" name="Prefix" superClass="cdt.managedbuild.option.gnu.cross.prefix" value="arm-linux-gnueabihf-" valueType="string"/>
@@ -30,20 +32,20 @@
 								<option id="gnu.cpp.compiler.option.optimization.level.1957360318" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
 								<option defaultValue="gnu.cpp.compiler.debugging.level.max" id="gnu.cpp.compiler.option.debugging.level.792818688" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.754942000" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/src/libfreeimage/include}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/src/libfreenect/include}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/src/libudev/include}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/src/libusb/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libfreeimage/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libfreenect/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libusb/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libudev/include}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1097815315" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.1458789051" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.linker.1679077940" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker">
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.paths.1604507763" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/src/libfreeimage/lib}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/src/libfreenect/lib}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/src/libudev/lib}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/src/libusb/lib}&quot;"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.paths.1604507763" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" useByScannerDiscovery="false" valueType="libPaths">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libfreeimage/lib}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libudev/lib}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libfreenect/lib}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libusb/lib}&quot;"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.libs.1365858765" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="pthread"/>
@@ -82,8 +84,26 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<folderInfo id="cdt.managedbuild.config.gnu.cross.exe.debug.1056131056.2039962837" name="/" resourcePath="dep/libfreenect/src">
+						<toolChain id="cdt.managedbuild.toolchain.gnu.cross.exe.debug.1831855881" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.exe.debug" unusedChildren="">
+							<option id="cdt.managedbuild.option.gnu.cross.prefix.831386569.346914696" name="Prefix" superClass="cdt.managedbuild.option.gnu.cross.prefix.831386569"/>
+							<option id="cdt.managedbuild.option.gnu.cross.path.636410714.100268454" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path.636410714"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.c.compiler.1332879935" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler.84425600">
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.447680565" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.392789863" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler.1900242490">
+								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1044900648" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.1834805902" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker.1458789051"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.linker.379454659" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker.1679077940"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.1756322981" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver.1470961716"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.1235787717" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler.693508604">
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1058364533" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
 					<sourceEntries>
-						<entry excluding="src/libfreenect/src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="dep/libfreenect/src|src/libfreenect/src" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -118,20 +138,46 @@
 								<option id="gnu.cpp.compiler.option.optimization.level.2012270825" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
 								<option defaultValue="gnu.cpp.compiler.debugging.level.none" id="gnu.cpp.compiler.option.debugging.level.1946416941" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" valueType="enumerated"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.include.paths.1023229168" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/src/libfreeimage/include}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/src/libfreenect/include}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/src/libudev/include}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/src/libusb/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libfreeimage/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libudev/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libfreenect/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libusb/include}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1790464681" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.146256168" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>
 							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.linker.873119722" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker">
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.paths.330145122" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/src/libfreeimage/lib}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/src/libfreenect/lib}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/src/libudev/lib}&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/src/libusb/lib}&quot;"/>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.paths.330145122" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libfreeimage/lib}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libudev/lib}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libfreenect/lib}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libusb/lib}&quot;"/>
+								</option>
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.libs.1572553715" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="pthread"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="freenect"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="freenect_sync"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="usb-1.0"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="udev"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="freeimage-3.17.0"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="jxrglue"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="jpeg"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="openjp2"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="png16"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="raw"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="tiff"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="webpmux"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="webp"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="IlmImf-2_2"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="Half"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="Iex-2_2"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="z"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="jpegxr"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="lcms2"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="lzma"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="jbig"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="Imath-2_2"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="IlmThread-2_2"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.15078047" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
@@ -144,6 +190,27 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
+					<folderInfo id="cdt.managedbuild.config.gnu.cross.exe.release.116651094.1969648385" name="/" resourcePath="dep/libfreenect/src">
+						<toolChain id="cdt.managedbuild.toolchain.gnu.cross.exe.release.1305678866" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.exe.release" unusedChildren="">
+							<option id="cdt.managedbuild.option.gnu.cross.prefix.1293394253.1164515239" name="Prefix" superClass="cdt.managedbuild.option.gnu.cross.prefix.1293394253"/>
+							<option id="cdt.managedbuild.option.gnu.cross.path.1847318554.341420486" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path.1847318554"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.c.compiler.9401267" name="Cross GCC Compiler" superClass="cdt.managedbuild.tool.gnu.cross.c.compiler.1166570697">
+								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1313270125" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.compiler.632241847" name="Cross G++ Compiler" superClass="cdt.managedbuild.tool.gnu.cross.cpp.compiler.522528272">
+								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1305598647" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
+							</tool>
+							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.732140123" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker.146256168"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.cpp.linker.510263711" name="Cross G++ Linker" superClass="cdt.managedbuild.tool.gnu.cross.cpp.linker.873119722"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.archiver.1023106014" name="Cross GCC Archiver" superClass="cdt.managedbuild.tool.gnu.cross.archiver.1782835274"/>
+							<tool id="cdt.managedbuild.tool.gnu.cross.assembler.967022331" name="Cross GCC Assembler" superClass="cdt.managedbuild.tool.gnu.cross.assembler.237054125">
+								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1333383471" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
+					<sourceEntries>
+						<entry excluding="dep/libfreenect" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+					</sourceEntries>
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
