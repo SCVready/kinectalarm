@@ -1,23 +1,8 @@
-/*
- * cAlarma.cpp
- *
- *  Created on: 18 ago. 2018
- *      Author: asolo
- */
+/**
+  * @file cAlarma.cpp
+  * @author Alejandro Solozabal
+  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
-#include <stdbool.h>
-#include <string.h>
-#include <unistd.h>
-#include <limits.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <dirent.h>
-#include "FreeImage.h"
-
-#include "cKinect.h"
 #include "cAlarma.h"
 
 cAlarma::cAlarma()

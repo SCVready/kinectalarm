@@ -1,21 +1,28 @@
-/*
- * cAlarma.h
- *
- *  Created on: 18 ago. 2018
- *      Author: asolo
- */
-
-#include "cKinect.h"
+/**
+  * @file cAlarma.h
+  * @author Alejandro Solozabal
+  */
 
 #ifndef CALARMA_H_
 #define CALARMA_H_
 
+//// Includes ////
+#include <stdlib.h>
+#include <stdio.h>
+#include <signal.h>
+#include <string.h>
+#include <unistd.h>
+#include <limits.h>
+#include "FreeImage.h"
+#include "cKinect.h"
+
+//// Defines ////
 #define DETECTION_THRESHOLD 2000
 #define DEPTH_CHANGE_TOLERANCE 10
-
 #define MAX_NUM_DETECTIONS 100
 #define NUM_DETECTIONS_FRAMES 5
 
+//// Class ////
 class cAlarma {
 public:
 	cAlarma();
@@ -45,12 +52,10 @@ public:
 	uint16_t* diff_depth_frame;
 
 private:
-
+	//// Variables ////
+	pthread_t detection_thread;
 	class cKinect kinect;
 	volatile bool running;
-
-	pthread_t detection_thread;
-
 };
 
 #endif /* CALARMA_H_ */

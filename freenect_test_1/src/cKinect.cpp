@@ -1,23 +1,9 @@
-/*
- * cKinect.cpp
- *
- *  Created on: 10 ago. 2018
- *      Author: asolo
- */
+/**
+  * @file cKinect.cpp
+  * @author Alejandro Solozabal
+  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
-#include <stdbool.h>
-#include <string.h>
-#include <unistd.h>
-#include <limits.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <dirent.h>
-#include <pthread.h>
 #include "cKinect.h"
-#include "FreeImage.h"
 
 uint16_t* cKinect::temp_depth_frame_raw;
 uint16_t* cKinect::temp_video_frame_raw;
@@ -223,32 +209,6 @@ bool cKinect::change_tilt(double tilt_angle)
 	while((state->tilt_status != TILT_STATUS_STOPPED) && (state->tilt_status != TILT_STATUS_LIMIT));
 
 	return false;
-}
-
-
-int create_dir(char* path)
-{
-	if(mkdir(path, 0770) == -1)
-	{
-		printf("Failed to create %s\n", path);
-		perror("mkdir");
-		return -1;
-	}
-	else
-		printf("Created directory: %s\n", path);
-	return 0;
-}
-
-bool check_dir_exist(char *path)
-{
-	DIR* dir;
-	if((dir = opendir(path)))
-	{
-		closedir(dir);
-		return true;
-	}
-	else
-		return false;
 }
 
 void *cKinect::kinect_process_events(void)
