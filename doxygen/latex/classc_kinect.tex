@@ -1,0 +1,102 @@
+\hypertarget{classc_kinect}{}\section{c\+Kinect Class Reference}
+\label{classc_kinect}\index{c\+Kinect@{c\+Kinect}}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classc_kinect_a379d120a01f59bda211c3b1d88df714a}\label{classc_kinect_a379d120a01f59bda211c3b1d88df714a}} 
+\mbox{\hyperlink{classc_kinect_a379d120a01f59bda211c3b1d88df714a}{c\+Kinect}} ()
+\begin{DoxyCompactList}\small\item\em Constructor. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classc_kinect_a40fcf0437aec686fcaeea2b67db7af45}\label{classc_kinect_a40fcf0437aec686fcaeea2b67db7af45}} 
+virtual \mbox{\hyperlink{classc_kinect_a40fcf0437aec686fcaeea2b67db7af45}{$\sim$c\+Kinect}} ()
+\begin{DoxyCompactList}\small\item\em Destructor. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classc_kinect_acd84d6e2aba6b98beb76cdb36e01f4a6}\label{classc_kinect_acd84d6e2aba6b98beb76cdb36e01f4a6}} 
+bool \mbox{\hyperlink{classc_kinect_acd84d6e2aba6b98beb76cdb36e01f4a6}{init}} ()
+\begin{DoxyCompactList}\small\item\em Initializer. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classc_kinect_aa718243c8ad9409ce249b61fd92b98fd}\label{classc_kinect_aa718243c8ad9409ce249b61fd92b98fd}} 
+bool \mbox{\hyperlink{classc_kinect_aa718243c8ad9409ce249b61fd92b98fd}{deinit}} ()
+\begin{DoxyCompactList}\small\item\em Deinitializer. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classc_kinect_ad496f08195abea945842d94256f5809b}\label{classc_kinect_ad496f08195abea945842d94256f5809b}} 
+int \mbox{\hyperlink{classc_kinect_ad496f08195abea945842d94256f5809b}{run}} ()
+\begin{DoxyCompactList}\small\item\em Run kinect image capture. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classc_kinect_a83470a348d456bfac545d9fda46fa4ea}\label{classc_kinect_a83470a348d456bfac545d9fda46fa4ea}} 
+int \mbox{\hyperlink{classc_kinect_a83470a348d456bfac545d9fda46fa4ea}{stop}} ()
+\begin{DoxyCompactList}\small\item\em Stop kinect image capture. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classc_kinect_a0310724aa56e573b78af7729d4e5b4a6}\label{classc_kinect_a0310724aa56e573b78af7729d4e5b4a6}} 
+int \mbox{\hyperlink{classc_kinect_a0310724aa56e573b78af7729d4e5b4a6}{get\+\_\+depth\+\_\+frame}} (uint16\+\_\+t $\ast$depth\+\_\+frame)
+\begin{DoxyCompactList}\small\item\em To get depth frame. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classc_kinect_af2a800d0a5ceb0e1d1eaecddbe57cb9c}\label{classc_kinect_af2a800d0a5ceb0e1d1eaecddbe57cb9c}} 
+int \mbox{\hyperlink{classc_kinect_af2a800d0a5ceb0e1d1eaecddbe57cb9c}{get\+\_\+video\+\_\+frame}} (uint16\+\_\+t $\ast$video\+\_\+frame)
+\begin{DoxyCompactList}\small\item\em To get video frame. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classc_kinect_a729f69cc4f9bfd842775234955f75deb}{change\+\_\+tilt}} (double tilt\+\_\+angle)
+\begin{DoxyCompactList}\small\item\em To get change kinect\textquotesingle{}s tilt. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classc_kinect_a5bfa1f57240d21a5c6b3947d663cf39f}{change\+\_\+led\+\_\+color}} (freenect\+\_\+led\+\_\+options color)
+\begin{DoxyCompactList}\small\item\em To get change kinect\textquotesingle{}s led color. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classc_kinect_a3348a5a741997580788f061a1518f2dc}\label{classc_kinect_a3348a5a741997580788f061a1518f2dc}} 
+void $\ast$ {\bfseries kinect\+\_\+process\+\_\+events} (void)
+\end{DoxyCompactItemize}
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classc_kinect_a3efc45bf431d7522dd5fba24c1049212}\label{classc_kinect_a3efc45bf431d7522dd5fba24c1049212}} 
+static void $\ast$ {\bfseries kinect\+\_\+process\+\_\+events\+\_\+helper} (void $\ast$context)
+\end{DoxyCompactItemize}
+\subsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classc_kinect_acffdbc9763e84154378003559cd07f92}\label{classc_kinect_acffdbc9763e84154378003559cd07f92}} 
+static uint16\+\_\+t $\ast$ {\bfseries temp\+\_\+depth\+\_\+frame\+\_\+raw}
+\item 
+\mbox{\Hypertarget{classc_kinect_a8ddb56f5ad81e7e06170ee457673c95e}\label{classc_kinect_a8ddb56f5ad81e7e06170ee457673c95e}} 
+static uint16\+\_\+t $\ast$ {\bfseries temp\+\_\+video\+\_\+frame\+\_\+raw}
+\item 
+\mbox{\Hypertarget{classc_kinect_a4f12a5bd20070b1171f5dd1d1bc0146b}\label{classc_kinect_a4f12a5bd20070b1171f5dd1d1bc0146b}} 
+static pthread\+\_\+mutex\+\_\+t {\bfseries depth\+\_\+lock}
+\item 
+\mbox{\Hypertarget{classc_kinect_a1f6310ddb6bc98ef46bf30e5efd9cfbc}\label{classc_kinect_a1f6310ddb6bc98ef46bf30e5efd9cfbc}} 
+static pthread\+\_\+mutex\+\_\+t {\bfseries video\+\_\+lock}
+\item 
+\mbox{\Hypertarget{classc_kinect_aebc0287dc3b472caf152731da48dc0b0}\label{classc_kinect_aebc0287dc3b472caf152731da48dc0b0}} 
+static pthread\+\_\+cond\+\_\+t {\bfseries depth\+\_\+ready}
+\item 
+\mbox{\Hypertarget{classc_kinect_a205923c6ab7dcb066e9ad87dd3d35559}\label{classc_kinect_a205923c6ab7dcb066e9ad87dd3d35559}} 
+static pthread\+\_\+cond\+\_\+t {\bfseries video\+\_\+ready}
+\end{DoxyCompactItemize}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classc_kinect_a5bfa1f57240d21a5c6b3947d663cf39f}\label{classc_kinect_a5bfa1f57240d21a5c6b3947d663cf39f}} 
+\index{c\+Kinect@{c\+Kinect}!change\+\_\+led\+\_\+color@{change\+\_\+led\+\_\+color}}
+\index{change\+\_\+led\+\_\+color@{change\+\_\+led\+\_\+color}!c\+Kinect@{c\+Kinect}}
+\subsubsection{\texorpdfstring{change\+\_\+led\+\_\+color()}{change\_led\_color()}}
+{\footnotesize\ttfamily void c\+Kinect\+::change\+\_\+led\+\_\+color (\begin{DoxyParamCaption}\item[{freenect\+\_\+led\+\_\+options}]{color }\end{DoxyParamCaption})}
+
+
+
+To get change kinect\textquotesingle{}s led color. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em color} & Wanterd color \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classc_kinect_a729f69cc4f9bfd842775234955f75deb}\label{classc_kinect_a729f69cc4f9bfd842775234955f75deb}} 
+\index{c\+Kinect@{c\+Kinect}!change\+\_\+tilt@{change\+\_\+tilt}}
+\index{change\+\_\+tilt@{change\+\_\+tilt}!c\+Kinect@{c\+Kinect}}
+\subsubsection{\texorpdfstring{change\+\_\+tilt()}{change\_tilt()}}
+{\footnotesize\ttfamily bool c\+Kinect\+::change\+\_\+tilt (\begin{DoxyParamCaption}\item[{double}]{tilt\+\_\+angle }\end{DoxyParamCaption})}
+
+
+
+To get change kinect\textquotesingle{}s tilt. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em tilt\+\_\+angle} & Wanted kinect\textquotesingle{}s tilt angle, range \mbox{[}-\/61,61\mbox{]} \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/asolo/git/kinect/freenect\+\_\+test\+\_\+1/src/\mbox{\hyperlink{c_kinect_8h}{c\+Kinect.\+h}}\item 
+C\+:/\+Users/asolo/git/kinect/freenect\+\_\+test\+\_\+1/src/\mbox{\hyperlink{c_kinect_8cpp}{c\+Kinect.\+cpp}}\end{DoxyCompactItemize}
