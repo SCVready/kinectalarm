@@ -55,6 +55,7 @@ int cAlarma::init()
 
 	return 0;
 }
+
 int cAlarma::deinit()
 {
 	kinect.deinit();
@@ -76,7 +77,6 @@ int cAlarma::stop()
 	kinect.stop();
 	return 0;
 }
-
 
 uint32_t cAlarma::compare_depth_frame_to_reference_depth_image()
 {
@@ -129,6 +129,7 @@ bool cAlarma::save_depth_frame_to_bmp(uint16_t* depth_frame,char *filename)
 		return true;
 	return false;
 }
+
 bool cAlarma::save_video_frame_to_bmp(uint16_t* video_frame,char *filename)
 {
 	FIBITMAP *video_bitmap;

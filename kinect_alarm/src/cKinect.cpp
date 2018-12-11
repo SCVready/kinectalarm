@@ -113,6 +113,7 @@ bool cKinect::init()
 	}
 	return false;
 }
+
 bool cKinect::deinit()
 {
 	printf("Shutting down kinect\n");

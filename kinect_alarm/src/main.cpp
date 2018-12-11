@@ -50,6 +50,5 @@ int main(int argc, char** argv)
 
 	alarma.deinit();
 
-
 	return 0;
 }
