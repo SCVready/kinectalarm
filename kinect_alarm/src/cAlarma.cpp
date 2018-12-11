@@ -37,6 +37,9 @@ int cAlarma::init()
 		return -1;
 	}
 
+	// Change led color to green
+	kinect.change_led_color(LED_GREEN);
+
 	// Create base dir
 	create_dir((char *)LOCAL_PATH);
 
@@ -58,6 +61,7 @@ int cAlarma::init()
 
 int cAlarma::deinit()
 {
+	kinect.change_led_color(LED_OFF);
 	kinect.deinit();
 	return 0;
 }
@@ -65,6 +69,7 @@ int cAlarma::deinit()
 int cAlarma::run()
 {
 	running = true;
+	kinect.change_led_color(LED_YELLOW);
 	kinect.run();
 	pthread_create(&detection_thread, 0, detection_thread_helper, this);
 	return 0;
