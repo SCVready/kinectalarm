@@ -8,8 +8,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <syslog.h>
 #include "cAlarma.h"
+
+#define FIFO_PATH "/home/pi/kinect_alarm_ctl"
+
+volatile bool kinect_alarm_running = true;
 
 void signalHandler(int signal)
 {
@@ -17,22 +26,22 @@ void signalHandler(int signal)
 	 || signal == SIGTERM
 	 || signal == SIGQUIT)
 	{
-		/*
-		alarma.running = false;
-		pthread_cond_signal(&cKinect::depth_ready);
-		pthread_cond_signal(&cKinect::video_ready);
-		*/
+		kinect_alarm_running = false;
 	}
 }
 
 int main(int argc, char** argv)
 {
+	// Variables
+	int fifo_fd =-1;
+	char read_fifo[80];
+
 	// Handle signals
 	signal(SIGINT, signalHandler);
 	signal(SIGTERM, signalHandler);
 	signal(SIGQUIT, signalHandler);
 
-	//Set syslog
+	//Set up syslog
 	setlogmask(LOG_UPTO(LOG_DEBUG));
 	openlog ("kinect_alarm", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
@@ -43,29 +52,37 @@ int main(int argc, char** argv)
 	else
 		syslog(LOG_NOTICE, "Initialize successful");
 
-	sleep(2);
-	if(!alarma.start_detection())
-		syslog(LOG_INFO, "Detection started");
-	else
-		syslog(LOG_INFO, "Detection already started");
+	// Fifo creation
+	mkfifo(FIFO_PATH, 0666);
+	fifo_fd = open(FIFO_PATH, O_RDONLY | O_NONBLOCK);
 
-	sleep(2);
-	if(!alarma.stop_detection())
-		syslog(LOG_INFO, "Detection stopped");
-	else
-		syslog(LOG_INFO, "Detection already stopped");
-
-	sleep(2);
-	if(!alarma.start_detection())
-		syslog(LOG_INFO, "Detection started");
-	else
-		syslog(LOG_INFO, "Detection already started");
-
-	sleep(2);
-	if(!alarma.stop_detection())
-		syslog(LOG_INFO, "Detection stopped");
-	else
-		syslog(LOG_INFO, "Detection already stopped");
+	// Loop reading comands from fifo
+	while(kinect_alarm_running)
+	{
+		usleep(200000);
+		if (read(fifo_fd, read_fifo, sizeof(read_fifo)) <= 0)
+			continue;
+		else
+		{
+			if(strncmp(read_fifo,"0",1))
+			{
+				if(!alarma.start_detection())
+					syslog(LOG_INFO, "Detection started");
+				else
+					syslog(LOG_INFO, "Detection already started");
+			}
+			else if(strncmp(read_fifo,"1",1))
+			{
+				if(!alarma.stop_detection())
+					syslog(LOG_INFO, "Detection stopped");
+				else
+					syslog(LOG_INFO, "Detection already stopped");
+			}
+			else
+				continue;
+		}
+	}
+	close(fifo_fd);
 
 	alarma.deinit();
 	syslog(LOG_NOTICE, "Deinitialize successful");

@@ -66,7 +66,8 @@ int cAlarma::deinit()
 		stop_detection();
 	if(liveview_running)
 		stop_liveview();
-	kinect.stop();
+	if(kinect.is_kinect_running())
+		kinect.stop();
 	kinect.deinit();
 	return 0;
 }
