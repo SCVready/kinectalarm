@@ -51,11 +51,17 @@ public:
 	/** @brief Deinitializer */
 	int deinit();
 
-	/** @brief Run detection*/
-	int run();
+	/** @brief Start detection */
+	int start_detection();
 
-	/** @brief Stop detection*/
-	int stop();
+	/** @brief Stop detection */
+	int stop_detection();
+
+	/** @brief Start live view */
+	int start_liveview();
+
+	/** @brief Stop live view */
+	int stop_liveview();
 
 private:
 
@@ -63,10 +69,12 @@ private:
 
 	pthread_t detection_thread;
 	class cKinect kinect;
-	volatile bool running;
+	volatile bool detection_running; // Flag to control detection logic
+	volatile bool liveview_running;// Flag to control liveview logic
 
 	//// Functions ////
 
+	void update_led();
 	bool save_depth_frame_to_bmp(uint16_t* depth_frame,char *filename);
 	bool save_video_frame_to_bmp(uint16_t* video_frame,char *filename);
 	void set_reference_depth_image();

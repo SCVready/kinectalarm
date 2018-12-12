@@ -45,13 +45,13 @@ public:
 	virtual ~cKinect();
 
 	/** @brief Initializer */
-	bool init();
+	int init();
 
 	/** @brief Deinitializer */
-	bool deinit();
+	int deinit();
 
 	/** @brief Run kinect image capture */
-	int run();
+	int start();
 
 	/** @brief Stop kinect image capture */
 	int stop();
@@ -73,6 +73,9 @@ public:
 	  * @param color Wanted color
 	  */
 	void change_led_color(freenect_led_options color);
+
+	/** @brief Check if kinect is running */
+	bool is_kinect_running();
 
 private:
 

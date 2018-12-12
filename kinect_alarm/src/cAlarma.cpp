@@ -11,7 +11,8 @@ cAlarma::cAlarma()
 	reff_depth_frame	= NULL;
 	depth_frame			= NULL;
 	diff_depth_frame	= NULL;
-	running				= true;
+	detection_running	= false;
+	liveview_running	= false;
 	detection_thread	= 0;
 }
 
@@ -22,14 +23,14 @@ cAlarma::~cAlarma()
 
 int cAlarma::init()
 {
-	// Inicializacion de kinect
+	// Kinect initialization
 	if(kinect.init())
 	{
 		printf("Fallo en la inicializacion de kinect");
 		kinect.deinit();
 		return -1;
 	}
-	// Ajuste de la inclinacion de kinect
+	// Adjust kintet's tilt
 	if(kinect.change_tilt(-25))
 	{
 		printf("Fallo al cambiar la inclinacion de kinect");
@@ -37,16 +38,16 @@ int cAlarma::init()
 		return -1;
 	}
 
-	// Change led color to green
-	kinect.change_led_color(LED_GREEN);
+	// Update kinect led
+	update_led();
 
-	// Create base dir
+	// Create base directory to save detection images
 	create_dir((char *)LOCAL_PATH);
 
 	if(init_num_detection())
 	{
 		printf("Num detection exedded\n");
-		return true;
+		return -1;
 	}
 
 	reff_depth_frame = (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
@@ -61,25 +62,56 @@ int cAlarma::init()
 
 int cAlarma::deinit()
 {
-	kinect.change_led_color(LED_OFF);
+	if(detection_running)
+		stop_detection();
+	if(liveview_running)
+		stop_liveview();
+	kinect.stop();
 	kinect.deinit();
 	return 0;
 }
 
-int cAlarma::run()
+int cAlarma::start_detection()
 {
-	running = true;
-	kinect.change_led_color(LED_YELLOW);
-	kinect.run();
-	pthread_create(&detection_thread, 0, detection_thread_helper, this);
+	// Start kinect's frame gathering
+	if(!kinect.is_kinect_running())
+		kinect.start();
+
+	if(!detection_running)
+	{
+		detection_running = true;
+		update_led();
+		pthread_create(&detection_thread, 0, detection_thread_helper, this);
+		return 0;
+	}
+	return 1;
+}
+
+int cAlarma::stop_detection()
+{
+	if(detection_running)
+	{
+		detection_running = false;
+		update_led();
+
+		// Stop kinect's frame gathering
+		if(!detection_running && !liveview_running)
+			kinect.stop();
+
+		return 0;
+	}
+	return 1;
+}
+
+int cAlarma::start_liveview()
+{
+	// TODO
 	return 0;
 }
 
-int cAlarma::stop()
+int cAlarma::stop_liveview()
 {
-	running = false;
-	kinect.change_led_color(LED_GREEN);
-	kinect.stop();
+	// TODO
 	return 0;
 }
 
@@ -149,9 +181,9 @@ bool cAlarma::save_video_frame_to_bmp(uint16_t* video_frame,char *filename)
 }
 void *cAlarma::detection(void)
 {
-	while(num_detections < MAX_NUM_DETECTIONS && running)
+	while(num_detections < MAX_NUM_DETECTIONS && detection_running)
 	{
-		kinect.change_led_color(LED_YELLOW);
+		update_led();
 		// Get Reference frame
 		if(kinect.get_depth_frame(reff_depth_frame))
 		{
@@ -172,10 +204,10 @@ void *cAlarma::detection(void)
 				return NULL;
 			}
 			diff_cont = compare_depth_frame_to_reference_depth_image();
-		}while(diff_cont < DETECTION_THRESHOLD && running);
+		}while(diff_cont < DETECTION_THRESHOLD && detection_running);
 
 
-		if(running)
+		if(detection_running)
 		{
 			kinect.change_led_color(LED_RED);
 			printf("Intrusion happen\n");
@@ -220,4 +252,17 @@ void *cAlarma::detection(void)
 void *cAlarma::detection_thread_helper(void *context)
 {
 	return ((cAlarma *)context)->detection();
+}
+
+void cAlarma::update_led()
+{
+	if(liveview_running && detection_running)
+		kinect.change_led_color((freenect_led_options)4);
+	else if(detection_running)
+		kinect.change_led_color(LED_YELLOW);
+	else if(liveview_running)
+		kinect.change_led_color((freenect_led_options)5);
+	else
+		kinect.change_led_color(LED_OFF);
+
 }

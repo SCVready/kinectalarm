@@ -22,7 +22,7 @@ cKinect::cKinect()
 	kinect_dev				= NULL;
 	done_depth				= false;
 	done_video				= false;
-	running					= true;
+	running					= false;
 	process_event_thread	= 0;
 }
 
@@ -33,7 +33,7 @@ cKinect::~cKinect()
 }
 
 
-bool cKinect::init()
+int cKinect::init()
 {
 	int ret = 0;
 
@@ -51,7 +51,7 @@ bool cKinect::init()
 		// Library freenect init
 		ret = freenect_init(&kinect_ctx, NULL);
 		if (ret < 0)
-			return true;
+			return -1;
 
 		// Set log level
 		freenect_set_log_level(kinect_ctx, FREENECT_LOG_FATAL);// FREENECT_LOG_DEBUG|FREENECT_LOG_FATAL|
@@ -64,13 +64,13 @@ bool cKinect::init()
 		// Find out how many devices are connected.
 		int num_devices = ret = freenect_num_devices(kinect_ctx);
 		if (ret < 0)
-			return true;
+			return -1;
 
 		else if (num_devices == 0)
 		{
 			printf("No device found!\n");
 			freenect_shutdown(kinect_ctx);
-			return true;
+			return -1;
 		}
 
 		// Open the first device.
@@ -78,7 +78,7 @@ bool cKinect::init()
 		if (ret < 0)
 		{
 			freenect_shutdown(kinect_ctx);
-			return true;
+			return -1;
 		}
 
 		// Configure depth and video mode
@@ -86,14 +86,14 @@ bool cKinect::init()
 		if (ret < 0)
 		{
 			freenect_shutdown(kinect_ctx);
-			return true;
+			return -1;
 		}
 
 		ret = freenect_set_video_mode(kinect_dev, freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_IR_10BIT));
 		if (ret < 0)
 		{
 			freenect_shutdown(kinect_ctx);
-			return true;
+			return -1;
 		}
 
 		// Set frame callbacks.
@@ -111,10 +111,10 @@ bool cKinect::init()
 		// Set kinect init flag to true
 		is_kinect_initialize = true;
 	}
-	return false;
+	return 0;
 }
 
-bool cKinect::deinit()
+int cKinect::deinit()
 {
 	printf("Shutting down kinect\n");
 
@@ -126,10 +126,10 @@ bool cKinect::deinit()
 	if(kinect_ctx)
 		freenect_shutdown(kinect_ctx);
 
-	return false;
+	return 0;
 }
 
-int cKinect::run()
+int cKinect::start()
 {
 	running = true;
 	freenect_start_video(kinect_dev);
@@ -232,4 +232,12 @@ void *cKinect::kinect_process_events_helper(void *context)
 void cKinect::change_led_color(freenect_led_options color)
 {
 	freenect_set_led(kinect_dev,color);
+}
+
+bool cKinect::is_kinect_running()
+{
+	if(running)
+		return true;
+	else
+		return false;
 }
