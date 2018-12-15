@@ -93,6 +93,7 @@ int cAlarma::stop_detection()
 	if(detection_running)
 	{
 		detection_running = false;
+		pthread_join(detection_thread,NULL);
 		update_led();
 
 		// Stop kinect's frame gathering
@@ -159,26 +160,32 @@ bool cAlarma::save_depth_frame_to_bmp(uint16_t* depth_frame,char *filename)
 {
 	FIBITMAP *depth_bitmap;
 	char filepath[PATH_MAX];
+	bool retval = false;
 	sprintf(filepath,"%s/%d/%s",LOCAL_PATH,num_detections,filename);
 
 	depth_bitmap = FreeImage_ConvertFromRawBits((BYTE *) depth_frame, DEPTH_WIDTH, DEPTH_HEIGHT, DEPTH_WIDTH*2, 16, 0x00FF, 0x00FF, 0x00FF, FALSE);
 	FreeImage_FlipVertical(depth_bitmap);
 	if(!FreeImage_Save(FIF_BMP, depth_bitmap, filepath, 0))
-		return true;
-	return false;
+		retval = true;
+
+	FreeImage_Unload(depth_bitmap);
+	return retval;
 }
 
 bool cAlarma::save_video_frame_to_bmp(uint16_t* video_frame,char *filename)
 {
 	FIBITMAP *video_bitmap;
 	char filepath[PATH_MAX];
+	bool retval = false;
 	sprintf(filepath,"%s/%d/%s",LOCAL_PATH,num_detections,filename);
 
 	video_bitmap = FreeImage_ConvertFromRawBits((BYTE *) video_frame, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_WIDTH*2, 16, 0x03FF, 0x03FF, 0x03FF, FALSE);
 	FreeImage_FlipVertical(video_bitmap);
 	if(!FreeImage_Save(FIF_BMP, video_bitmap, filepath, 0))
-		return true;
-	return false;
+		retval = true;
+
+	FreeImage_Unload(video_bitmap);
+	return retval;
 }
 void *cAlarma::detection(void)
 {
@@ -190,7 +197,7 @@ void *cAlarma::detection(void)
 		{
 			printf("Fallo al capturar un frame de depth");
 			kinect.deinit();
-			return NULL;
+			return 0;
 		}
 		printf("Reference depth frame get\n");
 		// Deteccion
@@ -202,7 +209,7 @@ void *cAlarma::detection(void)
 			{
 				printf("Fallo al capturar un frame de depth");
 				kinect.deinit();
-				return NULL;
+				return 0;
 			}
 			diff_cont = compare_depth_frame_to_reference_depth_image();
 		}while(diff_cont < DETECTION_THRESHOLD && detection_running);
@@ -219,7 +226,7 @@ void *cAlarma::detection(void)
 				{
 					printf("Fallo al capturar un frame de video");
 					kinect.deinit();
-					return NULL;
+					return 0;
 				}
 				printf("Video frame captured\n");
 				if(i != (NUM_DETECTIONS_FRAMES-1))
@@ -246,7 +253,7 @@ void *cAlarma::detection(void)
 			num_detections++;
 		}
 	}
-	return NULL;
+	return 0;
 }
 
 

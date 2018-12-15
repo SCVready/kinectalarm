@@ -142,6 +142,7 @@ int cKinect::stop()
 {
 	// TODO
 	running = false;
+	pthread_join(process_event_thread,NULL);
 	if(kinect_dev)
 	{
 		freenect_stop_depth(kinect_dev);
@@ -214,14 +215,13 @@ bool cKinect::change_tilt(double tilt_angle)
 
 void *cKinect::kinect_process_events(void)
 {
-	int ret = -1;
 	do
 	{
 		if(freenect_process_events(kinect_ctx) < 0)
-			pthread_exit(&ret);
+			return 0;
 
 	}while(running);
-	return NULL;
+	return 0;
 }
 
 void *cKinect::kinect_process_events_helper(void *context)
