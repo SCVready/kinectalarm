@@ -274,3 +274,19 @@ void cAlarma::update_led()
 		kinect.change_led_color(LED_OFF);
 
 }
+
+bool cAlarma::is_detection_running()
+{
+	if(detection_running)
+		return true;
+	else
+		return false;
+}
+
+bool cAlarma::is_liveview_running()
+{
+	if(liveview_running)
+		return true;
+	else
+		return false;
+}

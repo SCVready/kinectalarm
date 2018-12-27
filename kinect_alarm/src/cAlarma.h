@@ -57,11 +57,17 @@ public:
 	/** @brief Stop detection */
 	int stop_detection();
 
+	/** @brief Check if kinect is running */
+	bool is_detection_running();
+
 	/** @brief Start live view */
 	int start_liveview();
 
 	/** @brief Stop live view */
 	int stop_liveview();
+
+	/** @brief Check if kinect is running */
+	bool is_liveview_running();
 
 private:
 

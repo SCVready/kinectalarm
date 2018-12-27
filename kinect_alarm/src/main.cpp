@@ -15,10 +15,13 @@
 #include <errno.h>
 #include <syslog.h>
 #include "cAlarma.h"
+#include "server.h"
 
 #define FIFO_PATH "/home/pi/kinect_alarm_ctl"
 
 volatile bool kinect_alarm_running = true;
+
+int process_request(class cAlarma *alarma, char *buff_in,int buff_in_len, char *buff_out, int buff_out_size);
 
 void signalHandler(int signal)
 {
@@ -32,10 +35,6 @@ void signalHandler(int signal)
 
 int main(int argc, char** argv)
 {
-	// Variables
-	int fifo_fd =-1;
-	char read_fifo[80];
-
 	// Handle signals
 	signal(SIGINT, signalHandler);
 	signal(SIGTERM, signalHandler);
@@ -48,44 +47,104 @@ int main(int argc, char** argv)
 	class cAlarma alarma;
 
 	if(alarma.init())
+	{
 		syslog(LOG_ERR, "Initialization error");
+		return -1;
+	}
 	else
 		syslog(LOG_NOTICE, "Initialize successful");
 
-	// Fifo creation
-	mkfifo(FIFO_PATH, 0666);
-	fifo_fd = open(FIFO_PATH, O_RDONLY | O_NONBLOCK);
+	// Initialize server on Unix socket
+	init_server();
+	//TODO error return handle
 
-	// Loop reading comands from fifo
+	// Loop waiting conections
 	while(kinect_alarm_running)
 	{
-		usleep(200000);
-		if (read(fifo_fd, read_fifo, sizeof(read_fifo)) <= 0)
-			continue;
-		else
-		{
-			if(strncmp(read_fifo,"0",1))
-			{
-				if(!alarma.start_detection())
-					syslog(LOG_INFO, "Detection started");
-				else
-					syslog(LOG_INFO, "Detection already started");
-			}
-			else if(strncmp(read_fifo,"1",1))
-			{
-				if(!alarma.stop_detection())
-					syslog(LOG_INFO, "Detection stopped");
-				else
-					syslog(LOG_INFO, "Detection already stopped");
-			}
-			else
-				continue;
-		}
+		server_loop(&alarma,&process_request);
 	}
-	close(fifo_fd);
+
+	//deinit_server();
 
 	alarma.deinit();
 	syslog(LOG_NOTICE, "Deinitialize successful");
 
 	return 0;
 }
+
+int process_request(class cAlarma *alarma, char *buff_in,int buff_in_len, char *buff_out, int buff_out_size)//BUFF int lengh conten//BUFFout total size
+{
+	// Prototype
+	// digest_request()//perform_request()//response_request()
+
+	if(buff_in_len >= 3 && !strncmp(buff_in,"com",3))
+	{
+		if(!strncmp(buff_in+4,"det",3))
+		{
+			if(!strncmp(buff_in+8,"start",4))
+			{
+				alarma->start_detection();
+				strncpy(buff_out,"Detection started",buff_out_size);
+			}
+			else if(!strncmp(buff_in+8,"stop",4))
+			{
+				alarma->stop_detection();
+				strncpy(buff_out,"Detection stopped",buff_out_size);
+			}
+			else
+			{
+				strncpy(buff_out,"Detection command not recognized",buff_out_size);
+			}
+		}
+		else if(!strncmp(buff_in+4,"lvw",3))
+		{
+			strncpy(buff_out,"Command not implemented",buff_out_size);
+		}
+		else
+		{
+			strncpy(buff_out,"Command not recognized",buff_out_size);
+		}
+	}
+	else if (buff_in_len >= 3 && !strncmp(buff_in,"req",3))
+	{
+		if(!strncmp(buff_in+4,"det",3))
+		{
+			if(!strncmp(buff_in+8,"status",6))
+			{
+				if(alarma->is_detection_running())
+					strncpy(buff_out,"yes",buff_out_size);
+				else
+					strncpy(buff_out,"no",buff_out_size);
+			}
+			else
+			{
+				strncpy(buff_out,"Detection Request not recognized",buff_out_size);
+			}
+		}
+		else if(!strncmp(buff_in+4,"lvw",3))
+		{
+			if(!strncmp(buff_in+8,"status",6))
+			{
+				if(alarma->is_liveview_running())
+					strncpy(buff_out,"yes",buff_out_size);
+				else
+					strncpy(buff_out,"no",buff_out_size);
+			}
+			else
+			{
+				strncpy(buff_out,"Liveview Request not recognized",buff_out_size);
+			}
+		}
+		else
+		{
+			strncpy(buff_out,"Request not recognized",buff_out_size);
+		}
+	}
+	else
+	{
+		strncpy(buff_out,"Action not recognized",buff_out_size);
+	}
+
+	return 0;
+}
+
