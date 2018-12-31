@@ -7,7 +7,6 @@
 
 uint16_t* cKinect::temp_depth_frame_raw;
 uint16_t* cKinect::temp_video_frame_raw;
-
 volatile bool cKinect::done_depth;
 volatile bool cKinect::done_video;
 pthread_mutex_t cKinect::depth_lock;
@@ -29,7 +28,6 @@ cKinect::cKinect()
 cKinect::~cKinect()
 {
 	// TODO Auto-generated destructor stub
-
 }
 
 
@@ -156,7 +154,7 @@ int cKinect::get_depth_frame(uint16_t *depth_frame)
 	//wait for new frame
 	pthread_mutex_lock(&cKinect::depth_lock);
 	pthread_cond_wait(&cKinect::depth_ready, &cKinect::depth_lock);
-	memcpy (depth_frame, temp_depth_frame_raw, (DEPTH_WIDTH*DEPTH_HEIGHT)*sizeof(uint16_t));
+	memcpy (depth_frame, cKinect::temp_depth_frame_raw, (DEPTH_WIDTH*DEPTH_HEIGHT)*sizeof(uint16_t));
 	pthread_mutex_unlock(&cKinect::depth_lock);
 	return 0;
 }
@@ -165,7 +163,7 @@ int cKinect::get_video_frame(uint16_t *video_frame)
 {
 	pthread_mutex_lock(&cKinect::video_lock);
 	pthread_cond_wait(&cKinect::video_ready, &cKinect::video_lock);
-	memcpy (video_frame, temp_video_frame_raw, (VIDEO_WIDTH*VIDEO_HEIGHT)*sizeof(uint16_t));
+	memcpy (video_frame, cKinect::temp_video_frame_raw, (VIDEO_WIDTH*VIDEO_HEIGHT)*sizeof(uint16_t));
 	pthread_mutex_unlock(&cKinect::video_lock);
 	return 0;
 }
@@ -174,7 +172,7 @@ int cKinect::get_video_frame(uint16_t *video_frame)
 void cKinect::depth_cb(freenect_device* dev, void* data, uint32_t timestamp)
 {
 	pthread_mutex_lock(&cKinect::depth_lock);
-	memcpy (temp_depth_frame_raw, data, (DEPTH_WIDTH*DEPTH_HEIGHT)*sizeof(uint16_t));
+	memcpy (cKinect::temp_depth_frame_raw, data, (DEPTH_WIDTH*DEPTH_HEIGHT)*sizeof(uint16_t));
 	pthread_cond_signal(&cKinect::depth_ready);
 	pthread_mutex_unlock(&cKinect::depth_lock);
 	return;
@@ -183,7 +181,7 @@ void cKinect::depth_cb(freenect_device* dev, void* data, uint32_t timestamp)
 void cKinect::video_cb(freenect_device* dev, void* data, uint32_t timestamp)
 {
 	pthread_mutex_lock(&cKinect::video_lock);
-	memcpy (temp_video_frame_raw, data, (VIDEO_WIDTH*VIDEO_HEIGHT)*sizeof(uint16_t));
+	memcpy (cKinect::temp_video_frame_raw, data, (VIDEO_WIDTH*VIDEO_HEIGHT)*sizeof(uint16_t));
 	pthread_cond_signal(&cKinect::video_ready);
 	pthread_mutex_unlock(&cKinect::video_lock);
 	return;

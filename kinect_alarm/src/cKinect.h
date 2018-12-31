@@ -24,7 +24,6 @@
 
 //// Defines ////
 
-#define LOCAL_PATH		"/home/pi/detections"
 #define MAX_TILT_WAIT 	10	// Seconds to wait until the kinect's tilting is complete
 #define DEPTH_WIDTH		640 // Depth image's width resolution
 #define DEPTH_HEIGHT 	480 // Depth image's height resolution

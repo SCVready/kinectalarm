@@ -42,7 +42,7 @@ int cAlarma::init()
 	update_led();
 
 	// Create base directory to save detection images
-	create_dir((char *)LOCAL_PATH);
+	create_dir((char *)PATH);
 
 	if(init_num_detection())
 	{
@@ -146,7 +146,7 @@ bool cAlarma::init_num_detection()
 
 	for(int i = 0; i < MAX_NUM_DETECTIONS; i++)
 	{
-		sprintf(path,"%s/%d",LOCAL_PATH,num_detections);
+		sprintf(path,"%s/%d",PATH,num_detections);
 		if(!check_dir_exist(path))
 			return false;
 		else
@@ -161,7 +161,7 @@ bool cAlarma::save_depth_frame_to_bmp(uint16_t* depth_frame,char *filename)
 	FIBITMAP *depth_bitmap;
 	char filepath[PATH_MAX];
 	bool retval = false;
-	sprintf(filepath,"%s/%d/%s",LOCAL_PATH,num_detections,filename);
+	sprintf(filepath,"%s/%d/%s",PATH,num_detections,filename);
 
 	depth_bitmap = FreeImage_ConvertFromRawBits((BYTE *) depth_frame, DEPTH_WIDTH, DEPTH_HEIGHT, DEPTH_WIDTH*2, 16, 0x00FF, 0x00FF, 0x00FF, FALSE);
 	FreeImage_FlipVertical(depth_bitmap);
@@ -177,7 +177,7 @@ bool cAlarma::save_video_frame_to_bmp(uint16_t* video_frame,char *filename)
 	FIBITMAP *video_bitmap;
 	char filepath[PATH_MAX];
 	bool retval = false;
-	sprintf(filepath,"%s/%d/%s",LOCAL_PATH,num_detections,filename);
+	sprintf(filepath,"%s/%d/%s",PATH,num_detections,filename);
 
 	video_bitmap = FreeImage_ConvertFromRawBits((BYTE *) video_frame, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_WIDTH*2, 16, 0x03FF, 0x03FF, 0x03FF, FALSE);
 	FreeImage_FlipVertical(video_bitmap);
@@ -234,7 +234,7 @@ void *cAlarma::detection(void)
 			}
 
 			char temp[PATH_MAX];
-			sprintf(temp,"%s/%d",LOCAL_PATH,num_detections);
+			sprintf(temp,"%s/%d",PATH,num_detections);
 			create_dir(temp);
 
 

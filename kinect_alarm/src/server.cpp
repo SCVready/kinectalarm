@@ -6,19 +6,7 @@
  *      Modified from: https://www.geeksforgeeks.org/socket-programming-in-cc-handling-multiple-clients-on-server-without-multi-threading/
  */
 
-#include <stdio.h>
-#include <string.h> //strlen
-#include <stdlib.h>
-#include <errno.h>
-#include <unistd.h> //close
-#include <arpa/inet.h> //close
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <netinet/in.h>
-#include <sys/select.h>
-#include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
-#include <signal.h>
+
 #include "server.h"
 
 #define PORT 8888
@@ -28,8 +16,14 @@
 #define BUFFER_SIZE 1024
 
 // Global variables
-int server_socket = 0, new_socket = 0, client_socket[MAX_CONNECTIONS] = {0};
-struct sockaddr_un address;
+
+static int server_socket = 0, new_socket = 0, client_socket[MAX_CONNECTIONS] = {0};
+static struct sockaddr_un address;
+static sigset_t signal_mask;
+static struct timespec timeout;
+static char buffer_in[BUFFER_SIZE];
+static char buffer_out[BUFFER_SIZE];
+static int addrlen;
 
 int init_server()
 {
@@ -68,22 +62,6 @@ int init_server()
 		exit(EXIT_FAILURE);
 	}
 
-	return 0;
-}
-
-int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,char *, int, char *, int))
-{
-	int activity, i , valread , sd, addrlen;
-	char buffer_in[BUFFER_SIZE],buffer_out[BUFFER_SIZE];
-	fd_set readfds;
-	int max_sd;
-	sigset_t signal_mask;
-	struct timespec timeout;
-	timeout.tv_sec = 0;
-	timeout.tv_nsec = 500000000;
-
-	addrlen = sizeof(address);
-
 	// Mask to disable signal handling of the pselect
 	sigemptyset(&signal_mask);
 	sigaddset(&signal_mask, SIGINT);
@@ -91,36 +69,54 @@ int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,c
 	sigaddset(&signal_mask, SIGQUIT);
 	sigprocmask(SIG_BLOCK, &signal_mask, NULL);
 
-	//clear the socket set
+	// pselect timeout
+	timeout.tv_sec = 0;
+	timeout.tv_nsec = 500000000;
+
+	addrlen = sizeof(address);
+
+	return 0;
+}
+
+int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,char *, int, char *, int))
+{
+	int activity, i , valread , sd;
+	fd_set readfds;
+	int max_fd;
+
+	// Clear the fd_set
 	FD_ZERO(&readfds);
 
-	//add master socket to set
+	// Add master socket to fd_set
 	FD_SET(server_socket, &readfds);
-	max_sd = server_socket;
+	max_fd = server_socket;
 
-	//add child sockets to set
+	// Add child sockets to fd_set
 	for ( i = 0 ; i < MAX_CONNECTIONS ; i++)
 	{
-		//socket descriptor
 		sd = client_socket[i];
 
-		//if valid socket descriptor then add to read list
+		// If valid socket descriptor then add to read list
 		if(sd > 0)
 			FD_SET( sd , &readfds);
 
-		//highest file descriptor number, need it for the select function
-		if(sd > max_sd)
-			max_sd = sd;
+		// Get the highest fd, need it for the pselect function
+		if(sd > max_fd)
+			max_fd = sd;
 	}
 
 	//wait for an activity on one of the sockets , timeout is NULL ,
 	//so wait indefinitely
-	activity = pselect( max_sd + 1 , &readfds , NULL , NULL , &timeout,&signal_mask);
+	activity = pselect( max_fd + 1 , &readfds , NULL , NULL , &timeout,&signal_mask);
 
 	if ((activity < 0) && (errno!=EINTR))
 	{
 		printf("select error");
+		return -1;
 	}
+
+	if(activity == 0)
+		return 0;
 
 	//If something happened on the master socket ,
 	//then its an incoming connection
@@ -145,7 +141,6 @@ int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,c
 			{
 				client_socket[i] = new_socket;
 				printf("Adding to list of sockets as %d\n" , i);
-
 				break;
 			}
 		}
@@ -162,10 +157,9 @@ int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,c
 	{
 		sd = client_socket[i];
 
-		if (FD_ISSET( sd , &readfds))
+		if (sd > 0 && FD_ISSET( sd , &readfds))
 		{
-			//Check if it was for closing , and also read the
-			//incoming message
+			// Read socket
 			if ((valread = recv( sd , buffer_in, BUFFER_SIZE,0)) == 0)
 			{
 				// Client Disconnected
@@ -175,7 +169,7 @@ int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,c
 			}
 			else
 			{
-				// TODO: Function to digest message, execute and response to comand
+				// Read message
 				buffer_in[valread] = '\0';
 				callback_function(alarma,buffer_in,valread,buffer_out,BUFFER_SIZE);
 				send(sd , buffer_out , strlen(buffer_out) , 0 );
