@@ -35,6 +35,7 @@ void signalHandler(int signal)
 
 int main(int argc, char** argv)
 {
+	int retvalue = 0;
 	// Handle signals
 	signal(SIGINT, signalHandler);
 	signal(SIGTERM, signalHandler);
@@ -48,24 +49,36 @@ int main(int argc, char** argv)
 
 	if(alarma.init())
 	{
-		syslog(LOG_ERR, "Initialization error");
-		return -1;
+		syslog(LOG_ERR, "Alarm initialization error");
+		retvalue = -1;
+		goto closing_alarm;
 	}
 	else
-		syslog(LOG_NOTICE, "Initialize successful");
+		syslog(LOG_NOTICE, "Alarm initialize successful");
 
 	// Initialize server on Unix socket
-	init_server();
-	//TODO error return handle
+	if(init_server())
+	{
+		syslog(LOG_ERR, "Server initialization error");
+		retvalue = -1;
+		goto closing_server;
+	}
+	else
+			syslog(LOG_NOTICE, "Server initialize successful");
 
-	// Loop waiting conections
+	// Loop readding commands
 	while(kinect_alarm_running)
 	{
-		server_loop(&alarma,&process_request);
+		if(server_loop(&alarma,&process_request))
+		{
+			syslog(LOG_ERR, "Server error");
+			break;
+		}
 	}
 
-	//deinit_server();
-
+closing_server:
+	deinit_server();
+closing_alarm:
 	alarma.deinit();
 	syslog(LOG_NOTICE, "Deinitialize successful");
 

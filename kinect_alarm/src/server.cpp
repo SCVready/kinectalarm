@@ -111,7 +111,7 @@ int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,c
 
 	if ((activity < 0) && (errno!=EINTR))
 	{
-		printf("select error");
+		printf("Select error");
 		return -1;
 	}
 
@@ -125,8 +125,8 @@ int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,c
 		if ((new_socket = accept(server_socket,
 				(struct sockaddr *)&address, (socklen_t*)&addrlen))<0)
 		{
-			perror("accept");
-			exit(EXIT_FAILURE);
+			printf("Accept error");
+			return -1;
 		}
 
 		//inform user of socket number - used in send and receive commands
