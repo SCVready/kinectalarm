@@ -104,6 +104,11 @@ int process_request(class cAlarma *alarma, char *buff_in,int buff_in_len, char *
 				alarma->stop_detection();
 				strncpy(buff_out,"Detection stopped",buff_out_size);
 			}
+			else if(!strncmp(buff_in+8,"rst",3))
+			{
+				alarma->reset_detection();
+				strncpy(buff_out,"Number of detection to 0",buff_out_size);
+			}
 			else
 			{
 				strncpy(buff_out,"Detection command not recognized",buff_out_size);
@@ -128,6 +133,10 @@ int process_request(class cAlarma *alarma, char *buff_in,int buff_in_len, char *
 					strncpy(buff_out,"yes",buff_out_size);
 				else
 					strncpy(buff_out,"no",buff_out_size);
+			}
+			else if(!strncmp(buff_in+8,"num",3))
+			{
+				snprintf(buff_out,buff_in_len,"%d",alarma->get_num_detections());
 			}
 			else
 			{

@@ -175,23 +175,35 @@ bool cAlarma::save_depth_frame_to_bmp(uint16_t* depth_frame,char *filename)
 bool cAlarma::save_video_frame_to_bmp(uint16_t* video_frame,char *filename)
 {
 	FIBITMAP *video_bitmap;
+	uint8_t bmap[VIDEO_WIDTH*VIDEO_HEIGHT*3];
+
 	char filepath[PATH_MAX];
 	bool retval = false;
 	sprintf(filepath,"%s/%d/%s",PATH,num_detections,filename);
 
-	video_bitmap = FreeImage_ConvertFromRawBits((BYTE *) video_frame, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_WIDTH*2, 16, 0x03FF, 0x03FF, 0x03FF, FALSE);
-	FreeImage_FlipVertical(video_bitmap);
-	if(!FreeImage_Save(FIF_BMP, video_bitmap, filepath, 0))
+	//TODO TEMPORAL
+	for(int i = 0;i <  VIDEO_WIDTH * VIDEO_HEIGHT; i++)
+	{
+		bmap[3*i]   = video_frame[i];
+		bmap[3*i+1] = video_frame[i];
+		bmap[3*i+2] = video_frame[i];
+	}
+
+	video_bitmap = FreeImage_ConvertFromRawBits((BYTE *) bmap, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_WIDTH*3, 24, 0xFF0000,  0x00FF00, 0x0000FF, TRUE);
+	FreeImage_AdjustBrightness(video_bitmap, 80); //TODO not working
+	if(!FreeImage_Save(FIF_JPEG, video_bitmap, filepath, 0))
 		retval = true;
 
 	FreeImage_Unload(video_bitmap);
 	return retval;
 }
+
 void *cAlarma::detection(void)
 {
 	while(num_detections < MAX_NUM_DETECTIONS && detection_running)
 	{
 		update_led();
+
 		// Get Reference frame
 		if(kinect.get_depth_frame(reff_depth_frame))
 		{
@@ -245,7 +257,7 @@ void *cAlarma::detection(void)
 
 			for(int i = 0; i < NUM_DETECTIONS_FRAMES; i++)
 			{
-				sprintf(temp,"capture_%d.bmp",i);
+				sprintf(temp,"capture_%d.jpeg",i);
 				if(save_video_frame_to_bmp(video_frames[i],temp))
 					printf("Error al guardar el archivo\n");
 			}
@@ -289,4 +301,26 @@ bool cAlarma::is_liveview_running()
 		return true;
 	else
 		return false;
+}
+
+int cAlarma::get_num_detections()
+{
+	return num_detections;
+}
+
+bool cAlarma::delete_detections()
+{
+
+	return true;
+}
+
+int cAlarma::reset_detection()
+{
+	int det_was_running = detection_running;
+	if(det_was_running)
+		stop_detection();
+	num_detections = 0;
+	if(det_was_running)
+		start_detection();
+	return 0;
 }
