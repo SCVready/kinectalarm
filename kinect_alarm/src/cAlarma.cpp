@@ -7,6 +7,7 @@
 
 cAlarma::cAlarma()
 {
+	// Members initialization
 	num_detections 		= 0;
 	reff_depth_frame	= NULL;
 	depth_frame			= NULL;
@@ -14,6 +15,9 @@ cAlarma::cAlarma()
 	detection_running	= false;
 	liveview_running	= false;
 	detection_thread	= 0;
+
+	// Syslog initialization
+	openlog ("kinect_alarm::cAlarm", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 }
 
 cAlarma::~cAlarma()
@@ -26,14 +30,15 @@ int cAlarma::init()
 	// Kinect initialization
 	if(kinect.init())
 	{
-		printf("Fallo en la inicializacion de kinect");
+		LOG(LOG_ERR,"Fallo en la inicializacion de kinect");
 		kinect.deinit();
 		return -1;
 	}
+
 	// Adjust kintet's tilt
 	if(kinect.change_tilt(-25))
 	{
-		printf("Fallo al cambiar la inclinacion de kinect");
+		LOG(LOG_ERR,"Fallo al cambiar la inclinacion de kinect");
 		kinect.deinit();
 		return -1;
 	}
@@ -46,17 +51,30 @@ int cAlarma::init()
 
 	if(init_num_detection())
 	{
-		printf("Num detection exedded\n");
+		LOG(LOG_ERR,"Num detection exedded\n");
 		return -1;
 	}
 
-	reff_depth_frame = (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
-	depth_frame = (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
-	diff_depth_frame = (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
+	// Memory allocation for frames
+	reff_depth_frame	= (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
+	depth_frame			= (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
+	diff_depth_frame	= (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
+
+	if(!reff_depth_frame || !depth_frame || !diff_depth_frame)
+	{
+		LOG(LOG_ERR,"Memory allocation for frames\n");
+		return -1;
+	}
 
 	for(int i = 0; i< NUM_DETECTIONS_FRAMES ; i++)
+	{
 		video_frames[i] = (uint16_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint16_t));
-
+		if(!video_frames[i])
+		{
+			LOG(LOG_ERR,"Memory allocation for frames\n");
+			return -1;
+		}
+	}
 	return 0;
 }
 
@@ -74,7 +92,6 @@ int cAlarma::deinit()
 
 int cAlarma::start_detection()
 {
-	// Start kinect's frame gathering
 	if(!kinect.is_kinect_running())
 		kinect.start();
 
@@ -96,7 +113,6 @@ int cAlarma::stop_detection()
 		pthread_join(detection_thread,NULL);
 		update_led();
 
-		// Stop kinect's frame gathering
 		if(!detection_running && !liveview_running)
 			kinect.stop();
 
@@ -198,6 +214,67 @@ bool cAlarma::save_video_frame_to_bmp(uint16_t* video_frame,char *filename)
 	return retval;
 }
 
+bool cAlarma::save_video_frames_to_gif(uint16_t** video_frames_array, int num_frames, float frame_interval, char *filename)
+{
+	//TODO
+	FIBITMAP *video_bitmap[num_frames];
+	FIBITMAP *video_bitmap_rescale[num_frames];
+	FIBITMAP *video_bitmap_tmp[num_frames];
+	uint8_t bmap_array[VIDEO_WIDTH*VIDEO_HEIGHT*3];
+	bool retval = false;
+
+	for(int i = 0; i < num_frames; i++)
+	{
+		for(int j = 0; j <  VIDEO_WIDTH * VIDEO_HEIGHT; j++)
+		{
+			bmap_array[3*j]   = *(video_frames_array[i]+j);
+			bmap_array[3*j+1] = *(video_frames_array[i]+j);
+			bmap_array[3*j+2] = *(video_frames_array[i]+j);
+
+		}
+
+		video_bitmap[i] = FreeImage_ConvertFromRawBits((BYTE *) bmap_array, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_WIDTH*3, 24, 0xFF0000,  0x00FF00, 0x0000FF, TRUE);
+		FreeImage_AdjustBrightness(video_bitmap[i], 80); //TODO not working
+		video_bitmap_rescale[i] = FreeImage_Rescale(video_bitmap[i], VIDEO_WIDTH, VIDEO_HEIGHT, FILTER_CATMULLROM);
+		video_bitmap_tmp[i] = FreeImage_ConvertTo8Bits(video_bitmap_rescale[i]);
+	}
+
+	// assume we have an array of dibs which are already 8bpp and all the same size,
+	// and some float called fps for frames per second
+
+	FIMULTIBITMAP *multi = FreeImage_OpenMultiBitmap(FIF_GIF, "output.gif", TRUE, FALSE);
+	float fps = 1/frame_interval;
+	DWORD dwFrameTime = (DWORD)((1000.0f / fps) + 0.5f);
+	for(int i = 0; i < num_frames; i++ )
+	{
+		// clear any animation metadata used by this dib as we’ll adding our own ones
+		FreeImage_SetMetadata(FIMD_ANIMATION, video_bitmap_tmp[i], NULL, NULL);
+		// add animation tags to dib[i]
+		FITAG *tag = FreeImage_CreateTag();
+		if(tag)
+		{
+			FreeImage_SetTagKey(tag, "FrameTime");
+			FreeImage_SetTagType(tag, FIDT_LONG);
+			FreeImage_SetTagCount(tag, 1);
+			FreeImage_SetTagLength(tag, 4);
+			FreeImage_SetTagValue(tag, &dwFrameTime);
+			FreeImage_SetMetadata(FIMD_ANIMATION, video_bitmap_tmp[i], FreeImage_GetTagKey(tag), tag);
+			FreeImage_DeleteTag(tag);
+		}
+		FreeImage_AppendPage(multi, video_bitmap[i]);
+	}
+	retval = FreeImage_CloseMultiBitmap(multi,0);
+
+	for(int i = 0; i<num_frames ; i++)
+	{
+		FreeImage_Unload(video_bitmap[i]);
+		FreeImage_Unload(video_bitmap_tmp[i]);
+	}
+
+
+	return retval;
+}
+
 void *cAlarma::detection(void)
 {
 	while(num_detections < MAX_NUM_DETECTIONS && detection_running)
@@ -207,11 +284,11 @@ void *cAlarma::detection(void)
 		// Get Reference frame
 		if(kinect.get_depth_frame(reff_depth_frame))
 		{
-			printf("Fallo al capturar un frame de depth");
+			LOG(LOG_ERR,"Failed to capture depth frame\n");
 			kinect.deinit();
 			return 0;
 		}
-		printf("Reference depth frame get\n");
+		LOG(LOG_INFO,"Reference depth frame captured\n");
 		// Deteccion
 		int diff_cont = 0;
 		do
@@ -219,7 +296,7 @@ void *cAlarma::detection(void)
 			// get depth image to compare
 			if(kinect.get_depth_frame(depth_frame))
 			{
-				printf("Fallo al capturar un frame de depth");
+				LOG(LOG_ERR,"Failed to capture depth frame\n");
 				kinect.deinit();
 				return 0;
 			}
@@ -230,19 +307,19 @@ void *cAlarma::detection(void)
 		if(detection_running)
 		{
 			kinect.change_led_color(LED_RED);
-			printf("Intrusion happen\n");
+			LOG(LOG_ALERT,"DETECTION\n");
 
 			for(int i = 0; i < NUM_DETECTIONS_FRAMES; i++)
 			{
 				if(kinect.get_video_frame(video_frames[i]))
 				{
-					printf("Fallo al capturar un frame de video");
+					LOG(LOG_ERR,"Failed to capture video frame\n");
 					kinect.deinit();
 					return 0;
 				}
-				printf("Video frame captured\n");
+				LOG(LOG_INFO,"Video Frame captured\n");
 				if(i != (NUM_DETECTIONS_FRAMES-1))
-					usleep(200000);
+					usleep(FRAME_INTERVAL_US);
 			}
 
 			char temp[PATH_MAX];
@@ -251,16 +328,18 @@ void *cAlarma::detection(void)
 
 
 			if(save_depth_frame_to_bmp(reff_depth_frame,(char *)"ref_depth.bmp"))
-				printf("Error al guardar el archivo\n");
+				LOG(LOG_ERR,"Error saving depth frame\n");
 			if(save_depth_frame_to_bmp(diff_depth_frame,(char *)"diff.bmp"))
-				printf("Error al guardar el archivo\n");
+				LOG(LOG_ERR,"Error saving depth frame\n");
 
 			for(int i = 0; i < NUM_DETECTIONS_FRAMES; i++)
 			{
 				sprintf(temp,"capture_%d.jpeg",i);
 				if(save_video_frame_to_bmp(video_frames[i],temp))
-					printf("Error al guardar el archivo\n");
+					LOG(LOG_ERR,"Error saving video frame\n");
 			}
+
+			//save_video_frames_to_gif(video_frames,NUM_DETECTIONS_FRAMES,(1/0.2),(char *)"asd");
 
 			num_detections++;
 		}

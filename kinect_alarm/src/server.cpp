@@ -27,17 +27,22 @@ static int addrlen;
 
 int init_server()
 {
+	// Syslog initialization
+	openlog ("kinect_alarm::server", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+
 	int socket_option = true;
 
 	// Create a server socket Unix
 	if( (server_socket = socket(AF_UNIX , SOCK_SEQPACKET , 0)) == 0)
 	{
+		LOG(LOG_ERR,"Error opening the socket\n");
 		return -1;
 	}
 
 	// Set socket option reuseaddr, no needed
 	if( setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&socket_option, sizeof(socket_option)) < 0 )
 	{
+		LOG(LOG_ERR,"Error on setsockopt\n");
 		return -1;
 	}
 
@@ -52,14 +57,15 @@ int init_server()
 	// Bind
 	if (bind(server_socket, (struct sockaddr *)&address, sizeof(address))<0)
 	{
+		LOG(LOG_ERR,"Error on bind\n");
 		return -1;
 	}
 
 	// Listen
 	if (listen(server_socket, MAX_PENDING_CONNECTIONS) < 0)
 	{
-		perror("listen");
-		exit(EXIT_FAILURE);
+		LOG(LOG_ERR,"Error on listen\n");
+		return -1;
 	}
 
 	// Mask to disable signal handling of the pselect
@@ -74,7 +80,6 @@ int init_server()
 	timeout.tv_nsec = 500000000;
 
 	addrlen = sizeof(address);
-
 	return 0;
 }
 
@@ -111,7 +116,7 @@ int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,c
 
 	if ((activity < 0) && (errno!=EINTR))
 	{
-		printf("Select error");
+		LOG(LOG_ERR,"Error on pselect\n");
 		return -1;
 	}
 
@@ -125,13 +130,12 @@ int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,c
 		if ((new_socket = accept(server_socket,
 				(struct sockaddr *)&address, (socklen_t*)&addrlen))<0)
 		{
-			printf("Accept error");
+			LOG(LOG_ERR,"Error on accept\n");
 			return -1;
 		}
 
 		//inform user of socket number - used in send and receive commands
-		printf("New connection , socket fd is %d\n" , new_socket);
-
+		LOG(LOG_DEBUG,"New connection\n");
 
 		//add new socket to array of sockets
 		for (i = 0; i < MAX_CONNECTIONS; i++)
@@ -140,14 +144,13 @@ int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,c
 			if( client_socket[i] == 0 )
 			{
 				client_socket[i] = new_socket;
-				printf("Adding to list of sockets as %d\n" , i);
 				break;
 			}
 		}
 
 		if (i == MAX_CONNECTIONS)
 		{
-			printf("Server full, closing incoming connection\n");
+			LOG(LOG_NOTICE,"Server full, closing incoming connection\n");
 			close(new_socket);
 		}
 	}
@@ -163,7 +166,7 @@ int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,c
 			if ((valread = recv( sd , buffer_in, BUFFER_SIZE,0)) == 0)
 			{
 				// Client Disconnected
-				printf("Host disconnected\n");
+				LOG(LOG_DEBUG,"Host disconnected\n");
 				close(sd);
 				client_socket[i] = 0;
 			}

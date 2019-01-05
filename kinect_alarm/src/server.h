@@ -23,7 +23,8 @@
 #include <sys/select.h>
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
 #include <signal.h>
-
+#include <syslog.h>
+#include "log.h"
 
 int init_server();
 int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,char *, int, char *, int));

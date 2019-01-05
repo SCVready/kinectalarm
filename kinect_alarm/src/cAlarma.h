@@ -17,6 +17,8 @@
 #include <pthread.h>
 #include "FreeImage.h"
 #include "cKinect.h"
+#include <syslog.h>
+#include "log.h"
 
 //// Defines ////
 
@@ -25,6 +27,7 @@
 #define DEPTH_CHANGE_TOLERANCE 	10
 #define MAX_NUM_DETECTIONS 		100
 #define NUM_DETECTIONS_FRAMES 	5
+#define FRAME_INTERVAL_US		200000
 
 //// Class ////
 
@@ -93,7 +96,7 @@ private:
 	void update_led();
 	bool save_depth_frame_to_bmp(uint16_t* depth_frame,char *filename);
 	bool save_video_frame_to_bmp(uint16_t* video_frame,char *filename);
-	bool save_video_frames_to_gif(uint16_t* video_frames_array,char *filename);
+	bool save_video_frames_to_gif(uint16_t** video_frames_array, int num_frames, float frame_interval, char *filename);
 	void set_reference_depth_image();
 	void set_capture_video_image(int num);
 	uint32_t compare_depth_frame_to_reference_depth_image();

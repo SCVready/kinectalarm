@@ -15,7 +15,7 @@ pthread_cond_t  cKinect::depth_ready;
 pthread_cond_t  cKinect::video_ready;
 cKinect::cKinect()
 {
-	//Members initialization
+	// Members initialization
 	is_kinect_initialize	= false;
 	kinect_ctx				= NULL;
 	kinect_dev				= NULL;
@@ -23,6 +23,9 @@ cKinect::cKinect()
 	done_video				= false;
 	running					= false;
 	process_event_thread	= 0;
+
+	// Syslog initialization
+	openlog ("kinect_alarm::cKinect", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 }
 
 cKinect::~cKinect()
@@ -66,7 +69,7 @@ int cKinect::init()
 
 		else if (num_devices == 0)
 		{
-			printf("No device found!\n");
+			LOG(LOG_ERR,"No kinect device found\n");
 			freenect_shutdown(kinect_ctx);
 			return -1;
 		}
@@ -114,7 +117,7 @@ int cKinect::init()
 
 int cKinect::deinit()
 {
-	printf("Shutting down kinect\n");
+	LOG(LOG_INFO,"Shutting down kinect\n");
 
 	// Stop everything and shutdown.
 	if(kinect_dev)
@@ -138,7 +141,6 @@ int cKinect::start()
 
 int cKinect::stop()
 {
-	// TODO
 	running = false;
 	pthread_join(process_event_thread,NULL);
 	if(kinect_dev)
@@ -151,7 +153,6 @@ int cKinect::stop()
 
 int cKinect::get_depth_frame(uint16_t *depth_frame)
 {
-	//wait for new frame
 	pthread_mutex_lock(&cKinect::depth_lock);
 	pthread_cond_wait(&cKinect::depth_ready, &cKinect::depth_lock);
 	memcpy (depth_frame, cKinect::temp_depth_frame_raw, (DEPTH_WIDTH*DEPTH_HEIGHT)*sizeof(uint16_t));
@@ -194,9 +195,11 @@ bool cKinect::change_tilt(double tilt_angle)
 	freenect_update_tilt_state(kinect_dev);
 	int num_tries = 0;
 
+	// Send the desire tilt
 	if(freenect_set_tilt_degs(kinect_dev, tilt_angle))
 		return true;
 
+	// Loop waiting
 	do
 	{
 		if(num_tries++ > MAX_TILT_WAIT)
@@ -213,6 +216,7 @@ bool cKinect::change_tilt(double tilt_angle)
 
 void *cKinect::kinect_process_events(void)
 {
+	// Loop processing packets from kinect
 	do
 	{
 		if(freenect_process_events(kinect_ctx) < 0)

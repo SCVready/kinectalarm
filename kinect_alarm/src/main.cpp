@@ -16,8 +16,7 @@
 #include <syslog.h>
 #include "cAlarma.h"
 #include "server.h"
-
-#define FIFO_PATH "/home/pi/kinect_alarm_ctl"
+#include "log.h"
 
 volatile bool kinect_alarm_running = true;
 
@@ -35,43 +34,47 @@ void signalHandler(int signal)
 
 int main(int argc, char** argv)
 {
+
 	int retvalue = 0;
+
 	// Handle signals
 	signal(SIGINT, signalHandler);
 	signal(SIGTERM, signalHandler);
 	signal(SIGQUIT, signalHandler);
 
-	//Set up syslog
+	// Set up syslog
 	setlogmask(LOG_UPTO(LOG_DEBUG));
 	openlog ("kinect_alarm", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
+	// Alarma Class creation
 	class cAlarma alarma;
 
+	// Alarm initialization
 	if(alarma.init())
 	{
-		syslog(LOG_ERR, "Alarm initialization error");
+		LOG(LOG_ERR, "Alarm initialization error\n");
 		retvalue = -1;
 		goto closing_alarm;
 	}
 	else
-		syslog(LOG_NOTICE, "Alarm initialize successful");
+		LOG(LOG_NOTICE, "Alarm initialize successful\n");
 
 	// Initialize server on Unix socket
 	if(init_server())
 	{
-		syslog(LOG_ERR, "Server initialization error");
+		LOG(LOG_ERR, "Server initialization error\n");
 		retvalue = -1;
 		goto closing_server;
 	}
 	else
-			syslog(LOG_NOTICE, "Server initialize successful");
+		LOG(LOG_NOTICE, "Server initialize successful\n");
 
-	// Loop readding commands
+	// Loop reading commands
 	while(kinect_alarm_running)
 	{
 		if(server_loop(&alarma,&process_request))
 		{
-			syslog(LOG_ERR, "Server error");
+			LOG(LOG_ERR, "Server error\n");
 			break;
 		}
 	}
@@ -80,14 +83,14 @@ closing_server:
 	deinit_server();
 closing_alarm:
 	alarma.deinit();
-	syslog(LOG_NOTICE, "Deinitialize successful");
+	LOG(LOG_NOTICE, "Deinitialize successful\n");
 
-	return 0;
+	return retvalue;
 }
 
 int process_request(class cAlarma *alarma, char *buff_in,int buff_in_len, char *buff_out, int buff_out_size)//BUFF int lengh conten//BUFFout total size
 {
-	// Prototype
+	// Prototype TODO
 	// digest_request()//perform_request()//response_request()
 
 	if(buff_in_len >= 3 && !strncmp(buff_in,"com",3))

@@ -21,6 +21,8 @@
 #include "common.h"
 #include "libfreenect.h"
 #include "libfreenect_sync.h"
+#include <syslog.h>
+#include "log.h"
 
 //// Defines ////
 
