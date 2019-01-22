@@ -17,12 +17,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
-#include "FreeImage.h"
-#include "common.h"
-#include "libfreenect.h"
-#include "libfreenect_sync.h"
+#include <FreeImage.h>
+#include <libfreenect.h>
+#include <libfreenect_sync.h>
 #include <syslog.h>
 #include "log.h"
+#include "common.h"
 
 //// Defines ////
 

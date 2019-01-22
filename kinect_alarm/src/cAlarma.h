@@ -15,9 +15,9 @@
 #include <unistd.h>
 #include <limits.h>
 #include <pthread.h>
-#include "FreeImage.h"
-#include "cKinect.h"
 #include <syslog.h>
+#include <FreeImage.h>
+#include "cKinect.h"
 #include "log.h"
 
 //// Defines ////
@@ -29,15 +29,25 @@
 #define NUM_DETECTIONS_FRAMES 	5
 #define FRAME_INTERVAL_US		200000
 
+
+//// Structs ////
+struct sDet_conf
+{
+	bool		is_active;
+	uint16_t	threshold;
+	uint16_t	tolerance;
+	uint16_t	num_frames;
+	uint16_t	curr_det_num;
+};
+struct lvw_conf
+{
+	bool		is_active;
+};
+
 //// Class ////
 
 class cAlarma {
 public:
-
-	//// Variables ////
-
-
-
 	//// Functions ////
 
 	/** @brief Constructor */

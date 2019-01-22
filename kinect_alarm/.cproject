@@ -37,8 +37,11 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libfreenect/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libusb/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libudev/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libsqlite3/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libxml2/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libxml2/dep/libicu/include}&quot;"/>
 								</option>
-								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.preprocessor.def.610683577" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
+								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.compiler.option.preprocessor.def.610683577" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="DEBUG_ALARM"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1097815315" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
@@ -50,6 +53,9 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libudev/lib}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libfreenect/lib}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libusb/lib}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libsqlite3/lib}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libxml2/lib}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libxml2/dep/libicu/lib}&quot;"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.libs.1365858765" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="pthread"/>
@@ -76,6 +82,16 @@
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="jbig"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="Imath-2_2"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="IlmThread-2_2"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="sqlite3"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="xml2"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="icudata"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="icui18n"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="icuio"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="icule"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="iculx"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="icutest"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="icutu"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="icuuc"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.2052436454" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>
@@ -147,6 +163,9 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libudev/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libfreenect/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libusb/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libsqlite3/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libxml2/include}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libxml2/dep/libicu/include}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1790464681" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -157,6 +176,9 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libudev/lib}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libfreenect/lib}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libusb/lib}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libsqlite3/lib}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libxml2/lib}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/kinect_alarm/dep/libxml2/dep/libicu/lib}&quot;"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="gnu.cpp.link.option.libs.1572553715" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="pthread"/>
@@ -183,6 +205,16 @@
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="jbig"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="Imath-2_2"/>
 									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="IlmThread-2_2"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="sqlite3"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="xml2"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="icudata"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="icui18n"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="icuio"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="icule"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="iculx"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="icutest"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="icutu"/>
+									<listOptionValue builtIn="false" srcPrefixMapping="" srcRootPath="" value="icuuc"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.15078047" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>

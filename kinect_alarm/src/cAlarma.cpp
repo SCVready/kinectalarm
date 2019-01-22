@@ -35,7 +35,7 @@ int cAlarma::init()
 		return -1;
 	}
 
-	// Adjust kintet's tilt
+	// Adjust kinect's tilt
 	if(kinect.change_tilt(-25))
 	{
 		LOG(LOG_ERR,"Fallo al cambiar la inclinacion de kinect");
@@ -282,6 +282,7 @@ void *cAlarma::detection(void)
 		update_led();
 
 		// Get Reference frame
+
 		if(kinect.get_depth_frame(reff_depth_frame))
 		{
 			LOG(LOG_ERR,"Failed to capture depth frame\n");
@@ -289,7 +290,9 @@ void *cAlarma::detection(void)
 			return 0;
 		}
 		LOG(LOG_INFO,"Reference depth frame captured\n");
-		// Deteccion
+
+		// Detection depth changes
+
 		int diff_cont = 0;
 		do
 		{
@@ -303,6 +306,8 @@ void *cAlarma::detection(void)
 			diff_cont = compare_depth_frame_to_reference_depth_image();
 		}while(diff_cont < DETECTION_THRESHOLD && detection_running);
 
+
+		// Detection occurs
 
 		if(detection_running)
 		{

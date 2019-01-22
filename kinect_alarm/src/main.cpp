@@ -17,6 +17,7 @@
 #include "cAlarma.h"
 #include "server.h"
 #include "log.h"
+#include "config.h"
 
 volatile bool kinect_alarm_running = true;
 
@@ -34,6 +35,13 @@ void signalHandler(int signal)
 
 int main(int argc, char** argv)
 {
+
+	//TODO
+	//// LibXML2 test
+	struct sDet_conf det_conf={false,2000,10,5,0};
+	write_conf_file(det_conf,"config.xml");
+	parse_conf_file(&det_conf,"config.xml");
+	////
 
 	int retvalue = 0;
 
@@ -84,7 +92,6 @@ closing_server:
 closing_alarm:
 	alarma.deinit();
 	LOG(LOG_NOTICE, "Deinitialize successful\n");
-
 	return retvalue;
 }
 
@@ -172,4 +179,3 @@ int process_request(class cAlarma *alarma, char *buff_in,int buff_in_len, char *
 
 	return 0;
 }
-
