@@ -119,8 +119,8 @@ private:
 
 	pthread_t detection_thread;
 	class cKinect kinect;
-	//volatile bool detection_running; // Flag to control detection logic
-	//volatile bool liveview_running;// Flag to control liveview logic
+	volatile bool detection_running; // Flag to control detection logic
+	volatile bool liveview_running;// Flag to control liveview logic
 
 	struct sDet_conf det_conf;
 	struct sLvw_conf lvw_conf;
