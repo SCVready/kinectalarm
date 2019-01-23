@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <string>
 #include <libxml/encoding.h>
 #include <libxml/xmlwriter.h>
 

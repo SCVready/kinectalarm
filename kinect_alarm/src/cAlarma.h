@@ -16,30 +16,52 @@
 #include <limits.h>
 #include <pthread.h>
 #include <syslog.h>
+
+#include <iostream>
+
 #include <FreeImage.h>
+
 #include "cKinect.h"
 #include "log.h"
+#include "config.h"
 
 //// Defines ////
 
 #define PATH					"detections"
+#define CONF_PATH				"config.xml"
+
 #define DETECTION_THRESHOLD 	2000
 #define DEPTH_CHANGE_TOLERANCE 	10
 #define MAX_NUM_DETECTIONS 		100
 #define NUM_DETECTIONS_FRAMES 	5
 #define FRAME_INTERVAL_US		200000
 
+#define NUM_DET_PARAMETERS 6 //TODO CHANGE LOCATION
+#define NUM_LVW_PARAMETERS 1 //TODO CHANGE LOCATION
 
 //// Structs ////
+
 struct sDet_conf
 {
-	bool		is_active;
-	uint16_t	threshold;
-	uint16_t	tolerance;
-	uint16_t	num_frames;
-	uint16_t	curr_det_num;
+	volatile bool		is_active;
+	uint16_t			threshold;
+	uint16_t			tolerance;
+	uint16_t			det_num_shots;
+	float				frame_interval;
+	uint16_t			curr_det_num;
 };
-struct lvw_conf
+
+enum enumDet_conf
+{
+	IS_ACTIVE,
+	THRESHOLD,
+	TOLERANCE,
+	DET_NUM_SHOTS,
+	FRAME_INTERVAL,
+	CURR_DET_NUM,
+};
+
+struct sLvw_conf //TODO
 {
 	bool		is_active;
 };
@@ -91,15 +113,17 @@ private:
 	//// Variables ////
 
 	uint16_t* video_frames[NUM_DETECTIONS_FRAMES];
-	uint16_t num_detections;
 	uint16_t* reff_depth_frame;
 	uint16_t* depth_frame;
 	uint16_t* diff_depth_frame;
 
 	pthread_t detection_thread;
 	class cKinect kinect;
-	volatile bool detection_running; // Flag to control detection logic
-	volatile bool liveview_running;// Flag to control liveview logic
+	//volatile bool detection_running; // Flag to control detection logic
+	//volatile bool liveview_running;// Flag to control liveview logic
+
+	struct sDet_conf det_conf;
+	struct sLvw_conf lvw_conf;
 
 	//// Functions ////
 
@@ -114,6 +138,9 @@ private:
 	bool delete_detections();
 	static void *detection_thread_helper(void *context);
 	void *detection(void);
+
+	template <typename T>
+	int change_det_status(enum enumDet_conf, T value);
 };
 
 #endif /* CALARMA_H_ */

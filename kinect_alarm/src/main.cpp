@@ -35,14 +35,6 @@ void signalHandler(int signal)
 
 int main(int argc, char** argv)
 {
-
-	//TODO
-	//// LibXML2 test
-	struct sDet_conf det_conf={false,2000,10,5,0};
-	write_conf_file(det_conf,"config.xml");
-	parse_conf_file(&det_conf,"config.xml");
-	////
-
 	int retvalue = 0;
 
 	// Handle signals

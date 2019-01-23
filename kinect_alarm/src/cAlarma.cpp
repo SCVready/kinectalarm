@@ -7,14 +7,24 @@
 
 cAlarma::cAlarma()
 {
-	// Members initialization
-	num_detections 		= 0;
+	// Frame pointers
 	reff_depth_frame	= NULL;
 	depth_frame			= NULL;
 	diff_depth_frame	= NULL;
-	detection_running	= false;
-	liveview_running	= false;
+
+	//Detection Thread ID
 	detection_thread	= 0;
+
+	//Detection config
+	det_conf.is_active		= false;
+	det_conf.threshold		= DETECTION_THRESHOLD;
+	det_conf.tolerance		= DEPTH_CHANGE_TOLERANCE;
+	det_conf.det_num_shots	= NUM_DETECTIONS_FRAMES;
+	det_conf.frame_interval	= NUM_DETECTIONS_FRAMES;
+	det_conf.curr_det_num	= 0;
+
+	//LiveView config
+	lvw_conf.is_active		= false;
 
 	// Syslog initialization
 	openlog ("kinect_alarm::cAlarm", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
@@ -27,6 +37,13 @@ cAlarma::~cAlarma()
 
 int cAlarma::init()
 {
+	// Parse config file
+	if(parse_conf_file(&det_conf,CONF_PATH))
+	{
+		// Generate new config file with default values
+		write_conf_file(det_conf,CONF_PATH);
+	}
+
 	// Kinect initialization
 	if(kinect.init())
 	{
@@ -49,12 +66,13 @@ int cAlarma::init()
 	// Create base directory to save detection images
 	create_dir((char *)PATH);
 
+/*	//TODO
 	if(init_num_detection())
 	{
 		LOG(LOG_ERR,"Num detection exedded\n");
 		return -1;
 	}
-
+*/
 	// Memory allocation for frames
 	reff_depth_frame	= (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
 	depth_frame			= (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
@@ -80,9 +98,9 @@ int cAlarma::init()
 
 int cAlarma::deinit()
 {
-	if(detection_running)
+	if(det_conf.is_active)
 		stop_detection();
-	if(liveview_running)
+	if(lvw_conf.is_active)
 		stop_liveview();
 	if(kinect.is_kinect_running())
 		kinect.stop();
@@ -95,9 +113,9 @@ int cAlarma::start_detection()
 	if(!kinect.is_kinect_running())
 		kinect.start();
 
-	if(!detection_running)
+	if(!det_conf.is_active)
 	{
-		detection_running = true;
+		change_det_status(IS_ACTIVE,true);
 		update_led();
 		pthread_create(&detection_thread, 0, detection_thread_helper, this);
 		return 0;
@@ -107,13 +125,13 @@ int cAlarma::start_detection()
 
 int cAlarma::stop_detection()
 {
-	if(detection_running)
+	if(det_conf.is_active)
 	{
-		detection_running = false;
+		change_det_status(IS_ACTIVE,false);
 		pthread_join(detection_thread,NULL);
 		update_led();
 
-		if(!detection_running && !liveview_running)
+		if(!det_conf.is_active && !lvw_conf.is_active)
 			kinect.stop();
 
 		return 0;
@@ -158,15 +176,15 @@ bool cAlarma::init_num_detection()
 {
 	char path[PATH_MAX];
 
-	num_detections = 0;
+	det_conf.curr_det_num = 0;
 
 	for(int i = 0; i < MAX_NUM_DETECTIONS; i++)
 	{
-		sprintf(path,"%s/%d",PATH,num_detections);
+		sprintf(path,"%s/%d",PATH,det_conf.curr_det_num);
 		if(!check_dir_exist(path))
 			return false;
 		else
-			num_detections++;
+			det_conf.curr_det_num++;
 	}
 
 	return true;
@@ -177,7 +195,7 @@ bool cAlarma::save_depth_frame_to_bmp(uint16_t* depth_frame,char *filename)
 	FIBITMAP *depth_bitmap;
 	char filepath[PATH_MAX];
 	bool retval = false;
-	sprintf(filepath,"%s/%d/%s",PATH,num_detections,filename);
+	sprintf(filepath,"%s/%d/%s",PATH,det_conf.curr_det_num,filename);
 
 	depth_bitmap = FreeImage_ConvertFromRawBits((BYTE *) depth_frame, DEPTH_WIDTH, DEPTH_HEIGHT, DEPTH_WIDTH*2, 16, 0x00FF, 0x00FF, 0x00FF, FALSE);
 	FreeImage_FlipVertical(depth_bitmap);
@@ -195,7 +213,7 @@ bool cAlarma::save_video_frame_to_bmp(uint16_t* video_frame,char *filename)
 
 	char filepath[PATH_MAX];
 	bool retval = false;
-	sprintf(filepath,"%s/%d/%s",PATH,num_detections,filename);
+	sprintf(filepath,"%s/%d/%s",PATH,det_conf.curr_det_num,filename);
 
 	//TODO TEMPORAL
 	for(int i = 0;i <  VIDEO_WIDTH * VIDEO_HEIGHT; i++)
@@ -277,7 +295,7 @@ bool cAlarma::save_video_frames_to_gif(uint16_t** video_frames_array, int num_fr
 
 void *cAlarma::detection(void)
 {
-	while(num_detections < MAX_NUM_DETECTIONS && detection_running)
+	while(det_conf.curr_det_num < MAX_NUM_DETECTIONS && det_conf.is_active)
 	{
 		update_led();
 
@@ -304,12 +322,12 @@ void *cAlarma::detection(void)
 				return 0;
 			}
 			diff_cont = compare_depth_frame_to_reference_depth_image();
-		}while(diff_cont < DETECTION_THRESHOLD && detection_running);
+		}while(diff_cont < DETECTION_THRESHOLD && det_conf.is_active);
 
 
 		// Detection occurs
 
-		if(detection_running)
+		if(det_conf.is_active)
 		{
 			kinect.change_led_color(LED_RED);
 			LOG(LOG_ALERT,"DETECTION\n");
@@ -328,7 +346,7 @@ void *cAlarma::detection(void)
 			}
 
 			char temp[PATH_MAX];
-			sprintf(temp,"%s/%d",PATH,num_detections);
+			sprintf(temp,"%s/%d",PATH,det_conf.curr_det_num);
 			create_dir(temp);
 
 
@@ -346,7 +364,8 @@ void *cAlarma::detection(void)
 
 			//save_video_frames_to_gif(video_frames,NUM_DETECTIONS_FRAMES,(1/0.2),(char *)"asd");
 
-			num_detections++;
+			//det_conf.curr_det_num++;
+			change_det_status(CURR_DET_NUM,det_conf.curr_det_num+1);
 		}
 	}
 	return 0;
@@ -360,11 +379,11 @@ void *cAlarma::detection_thread_helper(void *context)
 
 void cAlarma::update_led()
 {
-	if(liveview_running && detection_running)
+	if(lvw_conf.is_active && det_conf.is_active)
 		kinect.change_led_color((freenect_led_options)4);
-	else if(detection_running)
+	else if(det_conf.is_active)
 		kinect.change_led_color(LED_YELLOW);
-	else if(liveview_running)
+	else if(lvw_conf.is_active)
 		kinect.change_led_color((freenect_led_options)5);
 	else
 		kinect.change_led_color(LED_OFF);
@@ -373,7 +392,7 @@ void cAlarma::update_led()
 
 bool cAlarma::is_detection_running()
 {
-	if(detection_running)
+	if(det_conf.is_active)
 		return true;
 	else
 		return false;
@@ -381,7 +400,7 @@ bool cAlarma::is_detection_running()
 
 bool cAlarma::is_liveview_running()
 {
-	if(liveview_running)
+	if(lvw_conf.is_active)
 		return true;
 	else
 		return false;
@@ -389,7 +408,7 @@ bool cAlarma::is_liveview_running()
 
 int cAlarma::get_num_detections()
 {
-	return num_detections;
+	return det_conf.curr_det_num;
 }
 
 bool cAlarma::delete_detections()
@@ -400,11 +419,40 @@ bool cAlarma::delete_detections()
 
 int cAlarma::reset_detection()
 {
-	int det_was_running = detection_running;
+	int det_was_running = det_conf.is_active;
 	if(det_was_running)
 		stop_detection();
-	num_detections = 0;
+	change_det_status(CURR_DET_NUM,0);
 	if(det_was_running)
 		start_detection();
 	return 0;
 }
+
+template <typename T>
+int cAlarma::change_det_status(enum enumDet_conf conf_name, T value)
+{
+	switch(conf_name)
+	{
+		case IS_ACTIVE:
+			det_conf.is_active = value;
+			break;
+		case THRESHOLD:
+			det_conf.threshold = value;
+			break;
+		case TOLERANCE:
+			det_conf.tolerance = value;
+			break;
+		case DET_NUM_SHOTS:
+			det_conf.det_num_shots = value;
+			break;
+		case FRAME_INTERVAL:
+			det_conf.frame_interval = value;
+			break;
+		case CURR_DET_NUM:
+			det_conf.curr_det_num = value;
+			break;
+	}
+	write_conf_file(det_conf,CONF_PATH);
+	return 0;
+}
+
