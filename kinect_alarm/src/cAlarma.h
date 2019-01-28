@@ -16,6 +16,9 @@
 #include <limits.h>
 #include <pthread.h>
 #include <syslog.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include <iostream>
 
@@ -29,6 +32,7 @@
 
 #define PATH					"detections"
 #define CONF_PATH				"config.xml"
+#define PIPE_PATH				"liveview_frames_pipe"
 
 #define DETECTION_THRESHOLD 	2000
 #define DEPTH_CHANGE_TOLERANCE 	10
@@ -112,16 +116,24 @@ private:
 
 	//// Variables ////
 
-	uint16_t* video_frames[NUM_DETECTIONS_FRAMES];
+	class cKinect kinect;
+
+	// Frame pointer for detection
 	uint16_t* reff_depth_frame;
 	uint16_t* depth_frame;
 	uint16_t* diff_depth_frame;
+	uint16_t* video_frames[NUM_DETECTIONS_FRAMES];
+
+	// Frame pointer for detection
+	uint16_t* liveview_frame;
 
 	pthread_t detection_thread;
-	class cKinect kinect;
+	pthread_t liveview_thread;
+
 	volatile bool detection_running; // Flag to control detection logic
 	volatile bool liveview_running;// Flag to control liveview logic
 
+	// State/config structs
 	struct sDet_conf det_conf;
 	struct sLvw_conf lvw_conf;
 
@@ -137,10 +149,14 @@ private:
 	bool init_num_detection();
 	bool delete_detections();
 	static void *detection_thread_helper(void *context);
+	static void *liveview_thread_helper(void *context);
 	void *detection(void);
+	void *liveview(void);
 
 	template <typename T>
 	int change_det_status(enum enumDet_conf, T value);
 };
+
+extern int pipe_fd[2];
 
 #endif /* CALARMA_H_ */

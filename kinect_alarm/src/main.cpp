@@ -87,11 +87,8 @@ closing_alarm:
 	return retvalue;
 }
 
-int process_request(class cAlarma *alarma, char *buff_in,int buff_in_len, char *buff_out, int buff_out_size)//BUFF int lengh conten//BUFFout total size
+int process_request(class cAlarma *alarma, char *buff_in,int buff_in_len, char *buff_out, int buff_out_size)
 {
-	// Prototype TODO
-	// digest_request()//perform_request()//response_request()
-
 	if(buff_in_len >= 3 && !strncmp(buff_in,"com",3))
 	{
 		if(!strncmp(buff_in+4,"det",3))
@@ -118,7 +115,20 @@ int process_request(class cAlarma *alarma, char *buff_in,int buff_in_len, char *
 		}
 		else if(!strncmp(buff_in+4,"lvw",3))
 		{
-			strncpy(buff_out,"Command not implemented",buff_out_size);
+			if(!strncmp(buff_in+8,"start",4))
+			{
+				alarma->start_liveview();
+				strncpy(buff_out,"Liveview started",buff_out_size);
+			}
+			else if(!strncmp(buff_in+8,"stop",4))
+			{
+				alarma->stop_liveview();
+				strncpy(buff_out,"Liveview stopped",buff_out_size);
+			}
+			else
+			{
+				strncpy(buff_out,"Liveview command not recognized",buff_out_size);
+			}
 		}
 		else
 		{

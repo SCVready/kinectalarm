@@ -38,80 +38,81 @@ int cKinect::init()
 {
 	int ret = 0;
 
-	// Check initialization flag
-	if(!is_kinect_initialize)
+	// Check if it's already initialize
+	if(is_kinect_initialize)
+		return 0;
+
+	//Mutex init
+	pthread_mutex_init(&cKinect::depth_lock, NULL);
+	pthread_mutex_init(&cKinect::video_lock, NULL);
+
+	//new frame Mutex init
+	pthread_cond_init(&cKinect::depth_ready, NULL);
+	pthread_cond_init(&cKinect::video_ready, NULL);
+
+	// Library freenect init
+	ret = freenect_init(&kinect_ctx, NULL);
+	if (ret < 0)
+		return -1;
+
+	// Set log level
+	freenect_set_log_level(kinect_ctx, FREENECT_LOG_FATAL);// FREENECT_LOG_DEBUG|FREENECT_LOG_FATAL|
+
+	// Select only subdevice (not used)
+	//freenect_select_subdevices(fn_ctx, FREENECT_DEVICE_CAMERA);
+	//freenect_select_subdevices(fn_ctx, FREENECT_DEVICE_MOTOR);
+	//freenect_select_subdevices(fn_ctx, FREENECT_DEVICE_AUDIO);
+
+	// Find out how many devices are connected.
+	int num_devices = ret = freenect_num_devices(kinect_ctx);
+	if (ret < 0)
+		return -1;
+
+	else if (num_devices == 0)
 	{
-		//Mutex init
-		pthread_mutex_init(&cKinect::depth_lock, NULL);
-		pthread_mutex_init(&cKinect::video_lock, NULL);
-
-		//new frame Mutex init
-		pthread_cond_init(&cKinect::depth_ready, NULL);
-		pthread_cond_init(&cKinect::video_ready, NULL);
-
-		// Library freenect init
-		ret = freenect_init(&kinect_ctx, NULL);
-		if (ret < 0)
-			return -1;
-
-		// Set log level
-		freenect_set_log_level(kinect_ctx, FREENECT_LOG_FATAL);// FREENECT_LOG_DEBUG|FREENECT_LOG_FATAL|
-
-		// Select only subdevice (not used)
-		//freenect_select_subdevices(fn_ctx, FREENECT_DEVICE_CAMERA);
-		//freenect_select_subdevices(fn_ctx, FREENECT_DEVICE_MOTOR);
-		//freenect_select_subdevices(fn_ctx, FREENECT_DEVICE_AUDIO);
-
-		// Find out how many devices are connected.
-		int num_devices = ret = freenect_num_devices(kinect_ctx);
-		if (ret < 0)
-			return -1;
-
-		else if (num_devices == 0)
-		{
-			LOG(LOG_ERR,"No kinect device found\n");
-			freenect_shutdown(kinect_ctx);
-			return -1;
-		}
-
-		// Open the first device.
-		ret = freenect_open_device(kinect_ctx, &kinect_dev, 0);
-		if (ret < 0)
-		{
-			freenect_shutdown(kinect_ctx);
-			return -1;
-		}
-
-		// Configure depth and video mode
-		ret = freenect_set_depth_mode(kinect_dev, freenect_find_depth_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_DEPTH_11BIT));
-		if (ret < 0)
-		{
-			freenect_shutdown(kinect_ctx);
-			return -1;
-		}
-
-		ret = freenect_set_video_mode(kinect_dev, freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_IR_10BIT));
-		if (ret < 0)
-		{
-			freenect_shutdown(kinect_ctx);
-			return -1;
-		}
-
-		// Set frame callbacks.
-		freenect_set_depth_callback(kinect_dev, depth_cb);
-		freenect_set_video_callback(kinect_dev, video_cb);
-
-		// Set buffers
-		//freenect_set_depth_buffer(kinect_dev, (void*) buffer_depth);
-		//freenect_set_video_buffer(kinect_dev, (void*) buffer_video);
-
-		//Malloc for frames
-		temp_depth_frame_raw = (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
-		temp_video_frame_raw = (uint16_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint16_t));
-
-		// Set kinect init flag to true
-		is_kinect_initialize = true;
+		LOG(LOG_ERR,"No kinect device found\n");
+		freenect_shutdown(kinect_ctx);
+		return -1;
 	}
+
+	// Open the first device.
+	ret = freenect_open_device(kinect_ctx, &kinect_dev, 0);
+	if (ret < 0)
+	{
+		freenect_shutdown(kinect_ctx);
+		return -1;
+	}
+
+	// Configure depth and video mode
+	ret = freenect_set_depth_mode(kinect_dev, freenect_find_depth_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_DEPTH_11BIT));
+	if (ret < 0)
+	{
+		freenect_shutdown(kinect_ctx);
+		return -1;
+	}
+
+	ret = freenect_set_video_mode(kinect_dev, freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM, FREENECT_VIDEO_IR_10BIT));
+	if (ret < 0)
+	{
+		freenect_shutdown(kinect_ctx);
+		return -1;
+	}
+
+	// Set frame callbacks.
+	freenect_set_depth_callback(kinect_dev, depth_cb);
+	freenect_set_video_callback(kinect_dev, video_cb);
+
+	// Set buffers
+	//freenect_set_depth_buffer(kinect_dev, (void*) buffer_depth);
+	//freenect_set_video_buffer(kinect_dev, (void*) buffer_video);
+
+	//Malloc for frames
+	temp_depth_frame_raw = (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
+	temp_video_frame_raw = (uint16_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint16_t));
+
+	// Set kinect init flag to true
+	is_kinect_initialize = true;
+
 	return 0;
 }
 

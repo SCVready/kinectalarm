@@ -40,7 +40,7 @@ int init_server()
 	}
 
 	// Set socket option reuseaddr, no needed
-	if( setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&socket_option, sizeof(socket_option)) < 0 )
+	if(setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&socket_option, sizeof(socket_option)) < 0 )
 	{
 		LOG(LOG_ERR,"Error on setsockopt\n");
 		return -1;
@@ -80,6 +80,7 @@ int init_server()
 	timeout.tv_nsec = 500000000;
 
 	addrlen = sizeof(address);
+
 	return 0;
 }
 
@@ -88,6 +89,7 @@ int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,c
 	int activity, i , valread , sd;
 	fd_set readfds;
 	int max_fd;
+	int out_param;
 
 	// Clear the fd_set
 	FD_ZERO(&readfds);
@@ -159,7 +161,7 @@ int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,c
 	for (i = 0; i < MAX_CONNECTIONS; i++)
 	{
 		sd = client_socket[i];
-
+		out_param = 0;
 		if (sd > 0 && FD_ISSET( sd , &readfds))
 		{
 			// Read socket
@@ -176,6 +178,9 @@ int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,c
 				buffer_in[valread] = '\0';
 				callback_function(alarma,buffer_in,valread,buffer_out,BUFFER_SIZE);
 				send(sd , buffer_out , strlen(buffer_out) , 0 );
+
+				// Treat out_parameters
+				//TODO
 			}
 		}
 	}

@@ -30,5 +30,6 @@ int init_server();
 int server_loop(class cAlarma *alarma,int (*callback_function)(class cAlarma *,char *, int, char *, int));
 int deinit_server();
 
+void lvw_frame_send();
 
 #endif /* SRC_SERVER_H_ */

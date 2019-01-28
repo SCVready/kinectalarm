@@ -11,9 +11,11 @@ cAlarma::cAlarma()
 	reff_depth_frame	= NULL;
 	depth_frame			= NULL;
 	diff_depth_frame	= NULL;
+	liveview_frame		= NULL;
 
 	// Detection Thread ID
 	detection_thread	= 0;
+	liveview_thread	= 0;
 
 	// Running flags
 	detection_running	= false;
@@ -24,7 +26,7 @@ cAlarma::cAlarma()
 	det_conf.threshold		= DETECTION_THRESHOLD;
 	det_conf.tolerance		= DEPTH_CHANGE_TOLERANCE;
 	det_conf.det_num_shots	= NUM_DETECTIONS_FRAMES;
-	det_conf.frame_interval	= NUM_DETECTIONS_FRAMES;
+	det_conf.frame_interval	= FRAME_INTERVAL_US/1000000;
 	det_conf.curr_det_num	= 0;
 
 	// LiveView config
@@ -77,7 +79,7 @@ int cAlarma::init()
 		return -1;
 	}
 */
-	// Memory allocation for frames
+	// Memory allocation for detection frames ponters
 	reff_depth_frame	= (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
 	depth_frame			= (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
 	diff_depth_frame	= (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
@@ -98,6 +100,9 @@ int cAlarma::init()
 		}
 	}
 
+	// Memory allocation for liveview frames ponters
+	liveview_frame = (uint16_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint16_t));
+
 	// Apply XML config TODO
 	if(det_conf.is_active)
 		start_detection();
@@ -116,7 +121,7 @@ int cAlarma::deinit()
 	if(liveview_running)
 	{
 		liveview_running = false;
-		//TODO
+		pthread_join(liveview_thread,NULL);
 		update_led();
 	}
 	if(kinect.is_kinect_running())
@@ -160,13 +165,33 @@ int cAlarma::stop_detection()
 
 int cAlarma::start_liveview()
 {
-	// TODO
+	if(!kinect.is_kinect_running())
+		kinect.start();
+
+	if(!liveview_running)
+	{
+		liveview_running = true;
+		//change_det_status(IS_ACTIVE,true); //TODO
+		update_led();
+		pthread_create(&liveview_thread, 0, liveview_thread_helper, this);
+		return 0;
+	}
+
 	return 0;
 }
 
 int cAlarma::stop_liveview()
 {
-	// TODO
+	if(liveview_running)
+	{
+		liveview_running = false;
+		//change_det_status(IS_ACTIVE,false); //TODO
+		pthread_join(liveview_thread,NULL);
+		update_led();
+
+		if(!detection_running && !liveview_running)
+			kinect.stop();
+	}
 	return 0;
 }
 
@@ -396,6 +421,63 @@ void *cAlarma::detection_thread_helper(void *context)
 	return ((cAlarma *)context)->detection();
 }
 
+
+void *cAlarma::liveview(void)
+{
+	int pipe_fd;
+
+	// Prepare signal mask to avoid SIGPIPE
+	sigset_t sigpipe_mask;
+	sigemptyset(&sigpipe_mask);
+	sigaddset(&sigpipe_mask, SIGPIPE);
+	sigset_t saved_mask;
+	pthread_sigmask(SIG_BLOCK, &sigpipe_mask, &saved_mask);
+
+	while(liveview_running)
+	{
+		// Creating Named Pipe for live frames
+		if(mkfifo(PIPE_PATH, 0666))
+		{
+			if(errno != EEXIST)
+			{
+				LOG(LOG_ERR,"Error creating fifo for live frames\n");
+				sleep(1);
+				continue;
+			}
+
+		}
+
+		// Opening Named Pipe for live frames
+		pipe_fd = open(PIPE_PATH, O_WRONLY | O_NONBLOCK);
+		if(pipe_fd == -1)
+		{
+			LOG(LOG_ERR,"Error opening fifo for live frames\n");
+			sleep(1);
+			continue;
+		}
+
+		while(liveview_running)
+		{
+			kinect.get_video_frame(liveview_frame);
+			if(-1 == write(pipe_fd, liveview_frame, VIDEO_WIDTH*VIDEO_HEIGHT*2))
+			{
+				LOG(LOG_NOTICE,"Error writing to fifo for live frames\n");
+				close(pipe_fd);
+				break;
+			}
+			LOG(LOG_DEBUG,"Send live frame to pipe\n");
+			usleep(500000);//TODO parametric
+		}
+	}
+	close(pipe_fd);
+	return 0;
+}
+
+void *cAlarma::liveview_thread_helper(void *context)
+{
+	return ((cAlarma *)context)->liveview();
+}
+
 void cAlarma::update_led()
 {
 	if(liveview_running && detection_running)
@@ -406,7 +488,6 @@ void cAlarma::update_led()
 		kinect.change_led_color((freenect_led_options)5);
 	else
 		kinect.change_led_color(LED_OFF);
-
 }
 
 bool cAlarma::is_detection_running()
@@ -432,7 +513,7 @@ int cAlarma::get_num_detections()
 
 bool cAlarma::delete_detections()
 {
-
+	//TODO
 	return true;
 }
 
