@@ -19,6 +19,8 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
+#include <errno.h>
 
 #include <iostream>
 
@@ -126,6 +128,10 @@ private:
 
 	// Frame pointer for detection
 	uint16_t* liveview_frame;
+	uint8_t* liveview_jpeg;
+
+	// Frame jpeg buffer out
+	uint8_t* liveview_buffer_out;
 
 	pthread_t detection_thread;
 	pthread_t liveview_thread;
@@ -140,8 +146,9 @@ private:
 	//// Functions ////
 
 	void update_led();
-	bool save_depth_frame_to_bmp(uint16_t* depth_frame,char *filename);
-	bool save_video_frame_to_bmp(uint16_t* video_frame,char *filename);
+	bool save_depth_frame_to_jpeg(uint16_t* depth_frame,char *filename);
+	bool save_video_frame_to_jpeg(uint16_t* video_frame,char *filename);
+	bool save_video_frame_to_jpeg_inmemory(uint16_t* video_frame, uint8_t* video_jpeg, uint32_t *size_bytes);
 	bool save_video_frames_to_gif(uint16_t** video_frames_array, int num_frames, float frame_interval, char *filename);
 	void set_reference_depth_image();
 	void set_capture_video_image(int num);

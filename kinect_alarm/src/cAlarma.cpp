@@ -12,6 +12,8 @@ cAlarma::cAlarma()
 	depth_frame			= NULL;
 	diff_depth_frame	= NULL;
 	liveview_frame		= NULL;
+	liveview_jpeg		= NULL;
+	liveview_buffer_out = NULL;
 
 	// Detection Thread ID
 	detection_thread	= 0;
@@ -102,6 +104,8 @@ int cAlarma::init()
 
 	// Memory allocation for liveview frames ponters
 	liveview_frame = (uint16_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint16_t));
+	liveview_jpeg = (uint8_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint8_t)*2);
+	liveview_buffer_out = (uint8_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint8_t)*2);
 
 	// Apply XML config TODO
 	if(det_conf.is_active)
@@ -234,7 +238,7 @@ bool cAlarma::init_num_detection()
 	return true;
 }
 
-bool cAlarma::save_depth_frame_to_bmp(uint16_t* depth_frame,char *filename)
+bool cAlarma::save_depth_frame_to_jpeg(uint16_t* depth_frame,char *filename)
 {
 	FIBITMAP *depth_bitmap;
 	char filepath[PATH_MAX];
@@ -250,7 +254,7 @@ bool cAlarma::save_depth_frame_to_bmp(uint16_t* depth_frame,char *filename)
 	return retval;
 }
 
-bool cAlarma::save_video_frame_to_bmp(uint16_t* video_frame,char *filename)
+bool cAlarma::save_video_frame_to_jpeg(uint16_t* video_frame,char *filename)
 {
 	FIBITMAP *video_bitmap;
 	uint8_t bmap[VIDEO_WIDTH*VIDEO_HEIGHT*3];
@@ -268,10 +272,47 @@ bool cAlarma::save_video_frame_to_bmp(uint16_t* video_frame,char *filename)
 	}
 
 	video_bitmap = FreeImage_ConvertFromRawBits((BYTE *) bmap, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_WIDTH*3, 24, 0xFF0000,  0x00FF00, 0x0000FF, TRUE);
-	FreeImage_AdjustBrightness(video_bitmap, 80); //TODO not working
+	FreeImage_AdjustBrightness(video_bitmap, 80); //TODO Parametric brightness
 	if(!FreeImage_Save(FIF_JPEG, video_bitmap, filepath, 0))
 		retval = true;
 
+	FreeImage_Unload(video_bitmap);
+	return retval;
+}
+
+bool cAlarma::save_video_frame_to_jpeg_inmemory(uint16_t* video_frame, uint8_t* video_jpeg, uint32_t *size_bytes)
+{
+	FIBITMAP *video_bitmap;
+	uint8_t bmap[VIDEO_WIDTH*VIDEO_HEIGHT*3];
+	bool retval = false;
+
+	FIMEMORY *hmem = NULL;
+	hmem = FreeImage_OpenMemory();
+
+	// get the buffer from the memory stream
+	BYTE *mem_buffer = NULL;
+	DWORD size_in_bytes = 0;
+
+
+	//TODO TEMPORAL
+	for(int i = 0;i <  VIDEO_WIDTH * VIDEO_HEIGHT; i++)
+	{
+		bmap[3*i]   = video_frame[i];
+		bmap[3*i+1] = video_frame[i];
+		bmap[3*i+2] = video_frame[i];
+	}
+
+	video_bitmap = FreeImage_ConvertFromRawBits((BYTE *) bmap, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_WIDTH*3, 24, 0xFF0000,  0x00FF00, 0x0000FF, TRUE);
+	FreeImage_AdjustBrightness(video_bitmap, 80); //TODO Parametric brightness
+
+	if(!FreeImage_SaveToMemory(FIF_JPEG, video_bitmap, hmem, 0))
+		retval = true;
+
+	FreeImage_AcquireMemory(hmem, &mem_buffer, &size_in_bytes);
+	memcpy(video_jpeg,mem_buffer,size_in_bytes);
+	*size_bytes = size_in_bytes;
+
+	FreeImage_CloseMemory(hmem);
 	FreeImage_Unload(video_bitmap);
 	return retval;
 }
@@ -309,7 +350,7 @@ bool cAlarma::save_video_frames_to_gif(uint16_t** video_frames_array, int num_fr
 	DWORD dwFrameTime = (DWORD)((1000.0f / fps) + 0.5f);
 	for(int i = 0; i < num_frames; i++ )
 	{
-		// clear any animation metadata used by this dib as we’ll adding our own ones
+		// clear any animation metadata used by this dib as weï¿½ll adding our own ones
 		FreeImage_SetMetadata(FIMD_ANIMATION, video_bitmap_tmp[i], NULL, NULL);
 		// add animation tags to dib[i]
 		FITAG *tag = FreeImage_CreateTag();
@@ -394,15 +435,15 @@ void *cAlarma::detection(void)
 			create_dir(temp);
 
 
-			if(save_depth_frame_to_bmp(reff_depth_frame,(char *)"ref_depth.bmp"))
+			if(save_depth_frame_to_jpeg(reff_depth_frame,(char *)"ref_depth.bmp"))
 				LOG(LOG_ERR,"Error saving depth frame\n");
-			if(save_depth_frame_to_bmp(diff_depth_frame,(char *)"diff.bmp"))
+			if(save_depth_frame_to_jpeg(diff_depth_frame,(char *)"diff.bmp"))
 				LOG(LOG_ERR,"Error saving depth frame\n");
 
 			for(int i = 0; i < NUM_DETECTIONS_FRAMES; i++)
 			{
 				sprintf(temp,"capture_%d.jpeg",i);
-				if(save_video_frame_to_bmp(video_frames[i],temp))
+				if(save_video_frame_to_jpeg(video_frames[i],temp))
 					LOG(LOG_ERR,"Error saving video frame\n");
 			}
 
@@ -425,6 +466,10 @@ void *cAlarma::detection_thread_helper(void *context)
 void *cAlarma::liveview(void)
 {
 	int pipe_fd;
+	unsigned int size = 0;
+
+	// Log booleans
+	bool log_notice_once_0 = false, log_notice_once_1 = false;
 
 	// Prepare signal mask to avoid SIGPIPE
 	sigset_t sigpipe_mask;
@@ -440,7 +485,7 @@ void *cAlarma::liveview(void)
 		{
 			if(errno != EEXIST)
 			{
-				LOG(LOG_ERR,"Error creating fifo for live frames\n");
+				LOG(LOG_ERR,"Error creating PIPE for live frames\n");
 				sleep(1);
 				continue;
 			}
@@ -451,22 +496,64 @@ void *cAlarma::liveview(void)
 		pipe_fd = open(PIPE_PATH, O_WRONLY | O_NONBLOCK);
 		if(pipe_fd == -1)
 		{
-			LOG(LOG_ERR,"Error opening fifo for live frames\n");
+			if(!log_notice_once_0)
+			{
+				LOG(LOG_ERR,"Error opening PIPE for live frames. Trying every second\n");
+				log_notice_once_0 = true;
+			}
 			sleep(1);
 			continue;
 		}
 
+		LOG(LOG_NOTICE,"PIPE opened correctly\n");
+		log_notice_once_0 = false;
+		log_notice_once_1 = false;
+
 		while(liveview_running)
 		{
+			// Get new video frame and convert it to jpeg
 			kinect.get_video_frame(liveview_frame);
-			if(-1 == write(pipe_fd, liveview_frame, VIDEO_WIDTH*VIDEO_HEIGHT*2))
+			save_video_frame_to_jpeg_inmemory(liveview_frame, liveview_jpeg,&size);
+
+			// Compose Message
+			memcpy(liveview_buffer_out,"INI FRAME",9);
+			memcpy(liveview_buffer_out+9,&size,4);
+			memcpy(liveview_buffer_out+9+4,liveview_jpeg,size);
+			memcpy(liveview_buffer_out+9+4+size,"END FRAME",9);
+
+			// Send message
+			ssize_t num_bytes_written 	= 0;
+			uint32_t frame_size 		= +9+4+size+9;
+			uint32_t bytes_written 		= 0;
+			while((bytes_written < frame_size) & liveview_running)
 			{
-				LOG(LOG_NOTICE,"Error writing to fifo for live frames\n");
+				num_bytes_written = write(pipe_fd, &liveview_buffer_out[bytes_written], frame_size-bytes_written);
+				if(num_bytes_written == -1)
+				{
+					if(errno == EAGAIN)
+					{
+						continue;
+					}
+					LOG(LOG_NOTICE,"Error writing to PIPE for live frames %d errno %s\n",num_bytes_written, strerror(errno));
+					close(pipe_fd);
+					break;
+				}
+				bytes_written += num_bytes_written;
+			}
+			if(bytes_written != frame_size)
+			{
+				LOG(LOG_NOTICE,"Error sending live frame to PIPE\n");
 				close(pipe_fd);
+				usleep(500000);//TODO parameter
 				break;
 			}
-			LOG(LOG_DEBUG,"Send live frame to pipe\n");
-			usleep(500000);//TODO parametric
+
+			if(!log_notice_once_1)
+			{
+				LOG(LOG_DEBUG,"Send live frame to PIPE\n");
+				log_notice_once_1 = true;
+			}
+			usleep(200000);//TODO parameter
 		}
 	}
 	close(pipe_fd);
