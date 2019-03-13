@@ -22,11 +22,6 @@ extern "C" {
 
 #define SCALE_FLAGS SWS_BICUBIC
 
-struct timespec timeAdd(struct timespec t1, struct timespec t2);
-struct timespec timeSub(struct timespec t1, struct timespec t2);
-
-
-
 // a wrapper around a single output AVStream
 typedef struct OutputStream {
     AVStream *st;
