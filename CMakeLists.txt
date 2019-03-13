@@ -1,10 +1,11 @@
 cmake_minimum_required (VERSION 2.8.1)
 
 ######## Project settings ########
-PROJECT(kinect_alarm)
+PROJECT(kinectalarm)
 SET(LICENSE "TBD")
 
 ######## Build and include settings ########
+
 add_definitions(-DDEBUG_ALARM)
 add_definitions(-D__STDC_CONSTANT_MACROS)
 
@@ -12,7 +13,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpoison-system-directories ")
 
 include_directories(
-	inc
 	/usr/include/libxml2
 )
 
@@ -26,13 +26,13 @@ file(GLOB SOURCES
 )
 
 add_executable(
-	kinect_alarm
+	kinectalarm
 
 	${SOURCES}
 )
 
 TARGET_LINK_LIBRARIES(
-	kinect_alarm
+	kinectalarm
 	freenect
 	freeimage
 	pthread
@@ -47,6 +47,6 @@ TARGET_LINK_LIBRARIES(
 )
 
 ######## Install targets ########
-INSTALL(TARGETS kinect_alarm
+INSTALL(TARGETS kinectalarm
 	RUNTIME DESTINATION bin
 )
