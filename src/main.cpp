@@ -71,7 +71,6 @@ int main(int argc, char** argv)
 		LOG(LOG_NOTICE, "Server initialize successful\n");
 
 	// Loop reading commands
-	alarma.start_detection();
 	while(kinect_alarm_running)
 	{
 		if(server_loop(&alarma,&process_request))
