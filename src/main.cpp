@@ -80,7 +80,8 @@ int main(int argc, char** argv)
 {
 	int retvalue = 0;
 
-#ifdef NDEBUG
+
+#ifndef DEBUG_ALARM
 	printf("RELEASE BUILD\n");
 #else
 	printf("DEBUG BUILD\n");
