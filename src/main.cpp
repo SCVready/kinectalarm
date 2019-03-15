@@ -80,6 +80,12 @@ int main(int argc, char** argv)
 {
 	int retvalue = 0;
 
+#ifdef NDEBUG
+	printf("RELEASE BUILD\n");
+#else
+	printf("DEBUG BUILD\n");
+#endif
+
 	// Handle signals
 	signal(SIGINT, signalHandler);
 	signal(SIGTERM, signalHandler);
