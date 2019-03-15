@@ -24,6 +24,8 @@
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
 #include <signal.h>
 #include <syslog.h>
+
+#include "global_parameters.h"
 #include "log.h"
 
 int init_server();

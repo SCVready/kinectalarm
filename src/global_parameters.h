@@ -9,6 +9,11 @@
 #define GLOBAL_PARAMETERS_H_
 
 
+#ifndef NDEBUG
+ #define DEBUG_ALARM
+#endif
+
+
 #define DEPTH_WIDTH		640 // Depth image's width resolution
 #define DEPTH_HEIGHT 	480 // Depth image's height resolution
 #define VIDEO_WIDTH		640 // Video image's width resolution

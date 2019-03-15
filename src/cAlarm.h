@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <iostream>
 
+#include "global_parameters.h"
 #include "cKinect.h"
 #include "log.h"
 #include "config.h"

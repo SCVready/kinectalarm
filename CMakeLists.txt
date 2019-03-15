@@ -6,7 +6,6 @@ SET(LICENSE "TBD")
 
 ######## Build and include settings ########
 
-add_definitions(-DDEBUG_ALARM)
 add_definitions(-D__STDC_CONSTANT_MACROS)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations ")
@@ -19,7 +18,6 @@ include_directories(
 link_directories(
 	${LINK_DIRECTORIES}
 )
-
 
 file(GLOB SOURCES
 	"src/*.cpp"

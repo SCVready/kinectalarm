@@ -16,13 +16,14 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
-//#include <FreeImage.h>
+
+#include "global_parameters.h"
 #include <libfreenect/libfreenect.h>
 #include <libfreenect/libfreenect_sync.h>
 #include <syslog.h>
 #include "log.h"
 #include "common.h"
-#include "global_parameters.h"
+
 
 //// Defines ////
 

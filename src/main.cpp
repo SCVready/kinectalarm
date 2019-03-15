@@ -15,10 +15,12 @@
 #include <errno.h>
 #include <syslog.h>
 
+#include "global_parameters.h"
 #include "cAlarm.h"
 #include "server.h"
 #include "log.h"
 #include "config.h"
+
 
 volatile bool kinect_alarm_running = true;
 
@@ -34,6 +36,46 @@ void signalHandler(int signal)
 	}
 }
 
+void make_deamon()
+{
+	pid_t pid, sid;
+
+	/* Fork off the parent process */
+	pid = fork();
+	if (pid < 0) {
+			exit(EXIT_FAILURE);
+	}
+	/* If we got a good PID, then
+	   we can exit the parent process. */
+	if (pid > 0) {
+			exit(EXIT_SUCCESS);
+	}
+
+	/* Change the file mode mask */
+	umask(0);
+
+	/* Open any logs here */
+
+	/* Create a new SID for the child process */
+	sid = setsid();
+	if (sid < 0) {
+			/* Log any failures here */
+			exit(EXIT_FAILURE);
+	}
+
+	/* Change the current working directory */
+	if ((chdir("/")) < 0) {
+			/* Log any failures here */
+			exit(EXIT_FAILURE);
+	}
+
+	/* Close out the standard file descriptors */
+	close(STDIN_FILENO);
+	close(STDOUT_FILENO);
+	close(STDERR_FILENO);
+	return;
+}
+
 int main(int argc, char** argv)
 {
 	int retvalue = 0;
@@ -46,6 +88,10 @@ int main(int argc, char** argv)
 	// Set up syslog
 	setlogmask(LOG_UPTO(LOG_DEBUG));
 	openlog ("kinect_alarm", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+
+#ifndef DEBUG_ALARM
+	make_deamon();
+#endif
 
 	// Alarma Class creation
 	class cAlarm alarma;

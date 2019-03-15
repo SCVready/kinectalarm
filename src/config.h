@@ -14,6 +14,7 @@
 #include <libxml/encoding.h>
 #include <libxml/xmlwriter.h>
 
+#include "global_parameters.h"
 #include "cAlarm.h"
 
 #define MY_ENCODING "UTF-8"
