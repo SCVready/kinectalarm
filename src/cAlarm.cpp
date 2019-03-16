@@ -48,10 +48,10 @@ cAlarm::~cAlarm()
 int cAlarm::init()
 {
 	// Parse config file
-	if(parse_conf_file(&det_conf,CONF_PATH))
+	if(parse_conf_file(&det_conf,CONFIG_PATH))
 	{
 		// Generate new config file with default values
-		write_conf_file(det_conf,CONF_PATH);
+		write_conf_file(det_conf,CONFIG_PATH);
 	}
 
 	// Kinect initialization
@@ -74,7 +74,7 @@ int cAlarm::init()
 	update_led();
 
 	// Create base directory to save detection images
-	create_dir((char *)PATH);
+	create_dir((char *)DETECTION_PATH);
 
 /*	//TODO
 	if(init_num_detection())
@@ -244,7 +244,7 @@ bool cAlarm::init_num_detection()
 
 	for(int i = 0; i < MAX_NUM_DETECTIONS; i++)
 	{
-		sprintf(path,"%s/%d",PATH,det_conf.curr_det_num);
+		sprintf(path,"%s/%d",DETECTION_PATH,det_conf.curr_det_num);
 		if(!check_dir_exist(path))
 			return false;
 		else
@@ -308,21 +308,21 @@ void *cAlarm::detection(void)
 			}
 
 			char temp[PATH_MAX];
-			sprintf(temp,"%s/%d",PATH,det_conf.curr_det_num);
+			sprintf(temp,"%s/%d",DETECTION_PATH,det_conf.curr_det_num);
 			create_dir(temp);
 
 			char filepath[PATH_MAX];
-			sprintf(filepath,"%s/%d/%s",PATH,det_conf.curr_det_num,"ref_depth.jpeg");
+			sprintf(filepath,"%s/%d/%s",DETECTION_PATH,det_conf.curr_det_num,"ref_depth.jpeg");
 			if(save_video_frame_to_jpeg(reff_depth_frame,filepath))
 				LOG(LOG_ERR,"Error saving depth frame\n");
 
-			sprintf(filepath,"%s/%d/%s",PATH,det_conf.curr_det_num,"diff.jpeg");
+			sprintf(filepath,"%s/%d/%s",DETECTION_PATH,det_conf.curr_det_num,"diff.jpeg");
 			if(save_video_frame_to_jpeg(diff_depth_frame,filepath))
 				LOG(LOG_ERR,"Error saving depth frame\n");
 
 			for(int i = 0; i < NUM_DETECTIONS_FRAMES; i++)
 			{
-				sprintf(filepath,"%s/%d/capture_%d.jpeg",PATH,det_conf.curr_det_num,i);
+				sprintf(filepath,"%s/%d/capture_%d.jpeg",DETECTION_PATH,det_conf.curr_det_num,i);
 				if(save_video_frame_to_jpeg(video_frames[i],filepath))
 					LOG(LOG_ERR,"Error saving video frame\n");
 			}
@@ -552,6 +552,6 @@ int cAlarm::change_det_status(enum enumDet_conf conf_name, T value)
 			det_conf.curr_det_num = value;
 			break;
 	}
-	write_conf_file(det_conf,CONF_PATH);
+	write_conf_file(det_conf,CONFIG_PATH);
 	return 0;
 }

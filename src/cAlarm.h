@@ -32,10 +32,6 @@
 
 //// Defines ////
 
-#define PATH					"detections"
-#define CONF_PATH				"config.xml"
-#define PIPE_PATH				"liveview_frames_pipe"
-
 #define DETECTION_THRESHOLD 	2000
 #define DEPTH_CHANGE_TOLERANCE 	10
 #define MAX_NUM_DETECTIONS 		100

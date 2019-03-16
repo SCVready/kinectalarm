@@ -12,7 +12,7 @@
 #define PORT 8888
 #define MAX_CONNECTIONS 10
 #define MAX_PENDING_CONNECTIONS 5
-#define SOCKET_PATH "kinect_alarm_socket"
+
 #define BUFFER_SIZE 1024
 
 // Global variables
