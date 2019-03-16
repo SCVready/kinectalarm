@@ -11,7 +11,7 @@
 // Paths
 
 #define SOCKET_PATH 		"/etc/kinectalarm/kinect_alarm_socket"
-#define DETECTION_PATH		"/etc/kinectalarm/detections"
+#define DETECTION_PATH		"/var/detections"
 #define CONFIG_PATH			"/etc/kinectalarm/kinectalarm.conf"
 #define PIPE_PATH			"/etc/kinectalarm/liveview_frames_pipe"
 
