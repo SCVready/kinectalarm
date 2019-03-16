@@ -10,10 +10,11 @@
 
 // Paths
 
-#define SOCKET_PATH 		"/etc/kinectalarm/kinect_alarm_socket"
+#define SOCKET_PATH 		"/run/kinectalarm/kinect_alarm_socket"
+#define PIPE_PATH			"/run/kinectalarm/liveview_frames_pipe"
 #define DETECTION_PATH		"/var/detections"
 #define CONFIG_PATH			"/etc/kinectalarm/kinectalarm.conf"
-#define PIPE_PATH			"/etc/kinectalarm/liveview_frames_pipe"
+
 
 // Resolution
 #define DEPTH_WIDTH		640 // Depth image's width resolution
