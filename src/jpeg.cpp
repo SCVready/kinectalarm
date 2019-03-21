@@ -32,15 +32,10 @@ bool save_video_frame_to_jpeg(uint16_t* video_frame,char *filepath)
 
 	bool retval = false;
 
-	//TODO TEMPORAL
 	for(int i = 0;i <  VIDEO_WIDTH * VIDEO_HEIGHT; i++)
-	{
-		bmap[3*i]   = video_frame[i];
-		bmap[3*i+1] = video_frame[i];
-		bmap[3*i+2] = video_frame[i];
-	}
+		bmap[i]		= (video_frame[i]>>2);
 
-	video_bitmap = FreeImage_ConvertFromRawBits((BYTE *) bmap, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_WIDTH*3, 24, 0xFF0000,  0x00FF00, 0x0000FF, TRUE);
+	video_bitmap = FreeImage_ConvertFromRawBits((BYTE *) bmap, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_WIDTH, 8, 0xFF, 0xFF, 0xFF, TRUE);
 	FreeImage_AdjustBrightness(video_bitmap, 80); //TODO Parametric brightness
 	if(!FreeImage_Save(FIF_JPEG, video_bitmap, filepath, 0))
 		retval = true;
@@ -52,7 +47,7 @@ bool save_video_frame_to_jpeg(uint16_t* video_frame,char *filepath)
 bool save_video_frame_to_jpeg_inmemory(uint16_t* video_frame, uint8_t* video_jpeg, uint32_t *size_bytes)
 {
 	FIBITMAP *video_bitmap;
-	uint8_t bmap[VIDEO_WIDTH*VIDEO_HEIGHT*3];
+	uint8_t bmap[VIDEO_WIDTH*VIDEO_HEIGHT];
 	bool retval = false;
 
 	FIMEMORY *hmem = NULL;
@@ -63,16 +58,11 @@ bool save_video_frame_to_jpeg_inmemory(uint16_t* video_frame, uint8_t* video_jpe
 	DWORD size_in_bytes = 0;
 
 
-	//TODO TEMPORAL
 	for(int i = 0;i <  VIDEO_WIDTH * VIDEO_HEIGHT; i++)
-	{
-		bmap[3*i]   = video_frame[i];
-		bmap[3*i+1] = video_frame[i];
-		bmap[3*i+2] = video_frame[i];
-	}
+		bmap[i]		= (video_frame[i]>>2);
 
-	video_bitmap = FreeImage_ConvertFromRawBits((BYTE *) bmap, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_WIDTH*3, 24, 0xFF0000,  0x00FF00, 0x0000FF, TRUE);
-	FreeImage_AdjustBrightness(video_bitmap, 80); //TODO Parametric brightness
+	video_bitmap = FreeImage_ConvertFromRawBits((BYTE *) bmap, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_WIDTH, 8, 0xFF, 0xFF, 0xFF, TRUE);
+	FreeImage_AdjustBrightness(video_bitmap, 100); //TODO Parametric brightness
 
 	if(!FreeImage_SaveToMemory(FIF_JPEG, video_bitmap, hmem, 0))
 		retval = true;

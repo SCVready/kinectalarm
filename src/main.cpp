@@ -97,7 +97,7 @@ int main(int argc, char** argv)
 	openlog ("kinect_alarm", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
 #ifndef DEBUG_ALARM
-	make_deamon();
+	//make_deamon();
 #endif
 
 	// Alarma Class creation

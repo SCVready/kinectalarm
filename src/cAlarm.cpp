@@ -215,7 +215,7 @@ int cAlarm::stop_liveview()
 	return 0;
 }
 
-uint32_t cAlarm::compare_depth_frame_to_reference_depth_image()
+uint32_t cAlarm::compare_depth_frame_to_reference_depth_frame()
 {
 	uint32_t cont = 0;
 	static uint32_t max_cont = 0;
@@ -283,7 +283,7 @@ void *cAlarm::detection(void)
 				kinect.deinit();
 				return 0;
 			}
-			diff_cont = compare_depth_frame_to_reference_depth_image();
+			diff_cont = compare_depth_frame_to_reference_depth_frame();
 		}while(diff_cont < DETECTION_THRESHOLD && detection_running);
 
 

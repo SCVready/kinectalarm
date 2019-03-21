@@ -144,7 +144,7 @@ private:
 	void update_led();
 	void set_reference_depth_image();
 	void set_capture_video_image(int num);
-	uint32_t compare_depth_frame_to_reference_depth_image();
+	uint32_t compare_depth_frame_to_reference_depth_frame();
 	bool init_num_detection();
 	bool delete_detections();
 
