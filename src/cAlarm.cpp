@@ -17,6 +17,11 @@ cAlarm::cAlarm()
 	for(int i = 0; i< NUM_DETECTIONS_FRAMES ; i++)
 		video_frames[i]	= NULL;
 
+	reff_depth_timestamp	= 0;
+	depth_timestamp			= 0;
+	video_timestamp			= 0;
+	liveview_timestamp		= 0;
+
 	// Threads ID
 	detection_thread	= 0;
 	liveview_thread		= 0;
@@ -104,7 +109,7 @@ int cAlarm::init()
 		}
 	}
 
-	// Memory allocation for liveview frames ponters
+	// Memory allocation for liveview frames pointers
 	liveview_frame = (uint16_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint16_t));
 	liveview_jpeg = (uint8_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint8_t)*2);
 	liveview_buffer_out = (uint8_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint8_t)*2);
@@ -263,7 +268,7 @@ void *cAlarm::detection(void)
 
 		// Get Reference frame
 
-		if(kinect.get_depth_frame(reff_depth_frame))
+		if(kinect.get_depth_frame(reff_depth_frame,&reff_depth_timestamp))
 		{
 			LOG(LOG_ERR,"Failed to capture depth frame\n");
 			kinect.deinit();
@@ -277,7 +282,7 @@ void *cAlarm::detection(void)
 		do
 		{
 			// get depth image to compare
-			if(kinect.get_depth_frame(depth_frame))
+			if(kinect.get_depth_frame(depth_frame,&depth_timestamp))
 			{
 				LOG(LOG_ERR,"Failed to capture depth frame\n");
 				kinect.deinit();
@@ -296,7 +301,7 @@ void *cAlarm::detection(void)
 
 			for(int i = 0; i < NUM_DETECTIONS_FRAMES; i++)
 			{
-				if(kinect.get_video_frame(video_frames[i]))
+				if(kinect.get_video_frame(video_frames[i],&video_timestamp))
 				{
 					LOG(LOG_ERR,"Failed to capture video frame\n");
 					kinect.deinit();
@@ -425,7 +430,7 @@ void *cAlarm::liveview(void)
 		while(liveview_running)
 		{
 			// Get new video frame and convert it to jpeg
-			kinect.get_video_frame(liveview_frame);
+			kinect.get_video_frame(liveview_frame,&liveview_timestamp);
 			save_video_frame_to_jpeg_inmemory(liveview_frame, liveview_jpeg,&size);
 
 			// Compose Message
@@ -466,7 +471,7 @@ void *cAlarm::liveview(void)
 				LOG(LOG_DEBUG,"Send live frame to PIPE\n");
 				log_notice_once_1 = true;
 			}
-			usleep(200000);//TODO parameter
+			usleep(100000);//TODO parameter
 		}
 	}
 	close(pipe_fd);

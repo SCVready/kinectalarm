@@ -2,7 +2,7 @@
   * @file cKinect.h
   * @author Alejandro Solozabal
   * @title cKinect class
-  * @brief Class for initialize, configurre and gather photos from kinect
+  * @brief Class for initialize, configure and gather frames from kinect
   */
 
 #ifndef CKINECT_H_
@@ -55,10 +55,10 @@ public:
 	int stop();
 
 	/** @brief To get depth frame */
-	int get_depth_frame(uint16_t *depth_frame);
+	int get_depth_frame(uint16_t *depth_frame, uint32_t *timestamp);
 
 	/** @brief To get video frame */
-	int get_video_frame(uint16_t *video_frame);
+	int get_video_frame(uint16_t *video_frame, uint32_t *timestamp);
 
 	/**
 	  * @brief To get change kinect's tilt
@@ -88,8 +88,13 @@ private:
 	static volatile bool done_depth;
 	static volatile bool done_video;
 	volatile bool running;
+
 	static uint16_t* temp_depth_frame_raw;
 	static uint16_t* temp_video_frame_raw;
+
+	static uint32_t temp_depth_frame_timestamp;
+	static uint32_t temp_video_frame_timestamp;
+
 	static pthread_mutex_t depth_lock;
 	static pthread_mutex_t video_lock;
 	static pthread_cond_t depth_ready;
@@ -102,5 +107,10 @@ private:
 	void *kinect_process_events(void);
 	static void *kinect_process_events_helper(void *context);
 };
+
+struct frame{
+
+};
+
 
 #endif /* CKINECT_H_ */

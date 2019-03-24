@@ -122,9 +122,17 @@ private:
 	uint16_t* diff_depth_frame;
 	uint16_t* video_frames[NUM_DETECTIONS_FRAMES];
 
+	// Frame's timestamp for detection
+	uint32_t reff_depth_timestamp;
+	uint32_t depth_timestamp;
+	uint32_t video_timestamp;
+
 	// Frame pointer for detection
 	uint16_t* liveview_frame;
 	uint8_t* liveview_jpeg;
+
+	// Frame pointer for detection
+	uint32_t liveview_timestamp;
 
 	// Frame jpeg buffer out
 	uint8_t* liveview_buffer_out;

@@ -7,6 +7,10 @@
 
 uint16_t* cKinect::temp_depth_frame_raw;
 uint16_t* cKinect::temp_video_frame_raw;
+
+uint32_t cKinect::temp_depth_frame_timestamp;
+uint32_t cKinect::temp_video_frame_timestamp;
+
 volatile bool cKinect::done_depth;
 volatile bool cKinect::done_video;
 pthread_mutex_t cKinect::depth_lock;
@@ -158,20 +162,33 @@ int cKinect::stop()
 	return 0;
 }
 
-int cKinect::get_depth_frame(uint16_t *depth_frame)
+int cKinect::get_depth_frame(uint16_t *depth_frame, uint32_t *timestamp)
 {
 	pthread_mutex_lock(&cKinect::depth_lock);
-	pthread_cond_wait(&cKinect::depth_ready, &cKinect::depth_lock);
+
+	// Compare the given timestamp with the current, if it's the same must wait to the next frame
+	if(*timestamp != cKinect::temp_depth_frame_timestamp)
+		pthread_cond_wait(&cKinect::depth_ready, &cKinect::depth_lock);
+
 	memcpy (depth_frame, cKinect::temp_depth_frame_raw, (DEPTH_WIDTH*DEPTH_HEIGHT)*sizeof(uint16_t));
+	*timestamp = cKinect::temp_depth_frame_timestamp;
+
 	pthread_mutex_unlock(&cKinect::depth_lock);
 	return 0;
 }
 
-int cKinect::get_video_frame(uint16_t *video_frame)
+int cKinect::get_video_frame(uint16_t *video_frame, uint32_t *timestamp)
 {
+
 	pthread_mutex_lock(&cKinect::video_lock);
-	pthread_cond_wait(&cKinect::video_ready, &cKinect::video_lock);
+
+	// Compare the given timestamp with the current, if it's the same must wait to the next frame
+	if(*timestamp == cKinect::temp_video_frame_timestamp)
+		pthread_cond_wait(&cKinect::video_ready, &cKinect::video_lock);
+
 	memcpy (video_frame, cKinect::temp_video_frame_raw, (VIDEO_WIDTH*VIDEO_HEIGHT)*sizeof(uint16_t));
+	*timestamp = cKinect::temp_video_frame_timestamp;
+
 	pthread_mutex_unlock(&cKinect::video_lock);
 	return 0;
 }
@@ -181,7 +198,8 @@ void cKinect::depth_cb(freenect_device* dev, void* data, uint32_t timestamp)
 {
 	pthread_mutex_lock(&cKinect::depth_lock);
 	memcpy (cKinect::temp_depth_frame_raw, data, (DEPTH_WIDTH*DEPTH_HEIGHT)*sizeof(uint16_t));
-	pthread_cond_signal(&cKinect::depth_ready);
+	cKinect::temp_depth_frame_timestamp = timestamp;
+	pthread_cond_broadcast(&cKinect::depth_ready);//pthread_cond_signal
 	pthread_mutex_unlock(&cKinect::depth_lock);
 	return;
 }
@@ -190,7 +208,8 @@ void cKinect::video_cb(freenect_device* dev, void* data, uint32_t timestamp)
 {
 	pthread_mutex_lock(&cKinect::video_lock);
 	memcpy (cKinect::temp_video_frame_raw, data, (VIDEO_WIDTH*VIDEO_HEIGHT)*sizeof(uint16_t));
-	pthread_cond_signal(&cKinect::video_ready);
+	cKinect::temp_video_frame_timestamp = timestamp;
+	pthread_cond_broadcast(&cKinect::video_ready);
 	pthread_mutex_unlock(&cKinect::video_lock);
 	return;
 }
