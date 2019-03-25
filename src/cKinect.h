@@ -79,22 +79,26 @@ private:
 
 	//// Variables ////
 
+	// Freenect context strucutres
 	freenect_context* kinect_ctx;
 	freenect_device* kinect_dev;
+
+	// Thread
 	pthread_t process_event_thread;
+
+	// Flags
 	bool is_kinect_initialize;
-	uint16_t buffer_depth[DEPTH_WIDTH*DEPTH_HEIGHT];
-	uint16_t buffer_video[VIDEO_WIDTH*VIDEO_HEIGHT];
-	static volatile bool done_depth;
-	static volatile bool done_video;
 	volatile bool running;
 
+	// Frame pointers
 	static uint16_t* temp_depth_frame_raw;
 	static uint16_t* temp_video_frame_raw;
 
+	// Frame timestamp
 	static uint32_t temp_depth_frame_timestamp;
 	static uint32_t temp_video_frame_timestamp;
 
+	// Thread sinc
 	static pthread_mutex_t depth_lock;
 	static pthread_mutex_t video_lock;
 	static pthread_cond_t depth_ready;
@@ -107,10 +111,5 @@ private:
 	void *kinect_process_events(void);
 	static void *kinect_process_events_helper(void *context);
 };
-
-struct frame{
-
-};
-
 
 #endif /* CKINECT_H_ */

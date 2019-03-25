@@ -5,16 +5,18 @@
 
 #include "cKinect.h"
 
+
+//Static cKinect variables declaration
+
 uint16_t* cKinect::temp_depth_frame_raw;
 uint16_t* cKinect::temp_video_frame_raw;
 
 uint32_t cKinect::temp_depth_frame_timestamp;
 uint32_t cKinect::temp_video_frame_timestamp;
 
-volatile bool cKinect::done_depth;
-volatile bool cKinect::done_video;
 pthread_mutex_t cKinect::depth_lock;
 pthread_mutex_t cKinect::video_lock;
+
 pthread_cond_t  cKinect::depth_ready;
 pthread_cond_t  cKinect::video_ready;
 
@@ -24,8 +26,6 @@ cKinect::cKinect()
 	is_kinect_initialize	= false;
 	kinect_ctx				= NULL;
 	kinect_dev				= NULL;
-	done_depth				= false;
-	done_video				= false;
 	running					= false;
 	process_event_thread	= 0;
 
@@ -108,10 +108,6 @@ int cKinect::init()
 	// Set frame callbacks.
 	freenect_set_depth_callback(kinect_dev, depth_cb);
 	freenect_set_video_callback(kinect_dev, video_cb);
-
-	// Set buffers
-	//freenect_set_depth_buffer(kinect_dev, (void*) buffer_depth);
-	//freenect_set_video_buffer(kinect_dev, (void*) buffer_video);
 
 	//Malloc for frames
 	temp_depth_frame_raw = (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));

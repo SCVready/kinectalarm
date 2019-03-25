@@ -8,14 +8,14 @@
 cAlarm::cAlarm()
 {
 	// Frame pointers
-	reff_depth_frame	= NULL;
-	depth_frame			= NULL;
-	diff_depth_frame	= NULL;
-	liveview_frame		= NULL;
-	liveview_jpeg		= NULL;
-	liveview_buffer_out = NULL;
+	reff_depth_frame		= NULL;
+	depth_frame				= NULL;
+	diff_depth_frame		= NULL;
+	liveview_frame			= NULL;
+	liveview_jpeg			= NULL;
+	liveview_buffer_out 	= NULL;
 	for(int i = 0; i< NUM_DETECTIONS_FRAMES ; i++)
-		video_frames[i]	= NULL;
+		video_frames[i]		= NULL;
 
 	reff_depth_timestamp	= 0;
 	depth_timestamp			= 0;
@@ -23,12 +23,12 @@ cAlarm::cAlarm()
 	liveview_timestamp		= 0;
 
 	// Threads ID
-	detection_thread	= 0;
-	liveview_thread		= 0;
+	detection_thread		= 0;
+	liveview_thread			= 0;
 
 	// Running flags
-	detection_running	= false;
-	liveview_running	= false;
+	detection_running		= false;
+	liveview_running		= false;
 
 	// Detection config
 	det_conf.is_active		= false;
@@ -81,8 +81,8 @@ int cAlarm::init()
 	// Create base directory to save detection images
 	create_dir((char *)DETECTION_PATH);
 
-/*	//TODO
-	if(init_num_detection())
+/*
+	if(init_num_detection()) //TODO: delete function
 	{
 		LOG(LOG_ERR,"Num detection exedded\n");
 		return -1;
@@ -407,7 +407,6 @@ void *cAlarm::liveview(void)
 				sleep(1);
 				continue;
 			}
-
 		}
 
 		// Opening Named Pipe for live frames

@@ -21,7 +21,6 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <errno.h>
-#include <iostream>
 
 #include "global_parameters.h"
 #include "cKinect.h"
@@ -137,6 +136,7 @@ private:
 	// Frame jpeg buffer out
 	uint8_t* liveview_buffer_out;
 
+	// Threads
 	pthread_t detection_thread;
 	pthread_t liveview_thread;
 
