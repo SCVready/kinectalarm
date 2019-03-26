@@ -113,6 +113,10 @@ int cKinect::init()
 	temp_depth_frame_raw = (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
 	temp_video_frame_raw = (uint16_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint16_t));
 
+	// Initialize frame time-stamps
+	cKinect::temp_depth_frame_timestamp = 0;
+	cKinect::temp_video_frame_timestamp = 0;
+
 	// Set kinect init flag to true
 	is_kinect_initialize = true;
 
@@ -163,7 +167,7 @@ int cKinect::get_depth_frame(uint16_t *depth_frame, uint32_t *timestamp)
 	pthread_mutex_lock(&cKinect::depth_lock);
 
 	// Compare the given timestamp with the current, if it's the same must wait to the next frame
-	if(*timestamp != cKinect::temp_depth_frame_timestamp)
+	if(*timestamp == cKinect::temp_depth_frame_timestamp)
 		pthread_cond_wait(&cKinect::depth_ready, &cKinect::depth_lock);
 
 	memcpy (depth_frame, cKinect::temp_depth_frame_raw, (DEPTH_WIDTH*DEPTH_HEIGHT)*sizeof(uint16_t));
