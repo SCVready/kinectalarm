@@ -138,6 +138,9 @@ int cKinect::deinit()
 	free(temp_depth_frame_raw);
 	free(temp_video_frame_raw);
 
+	// Initialize flag to false
+	is_kinect_initialize = false;
+
 	return 0;
 }
 

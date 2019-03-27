@@ -112,8 +112,7 @@ int server_loop(class cAlarm *alarma,int (*callback_function)(class cAlarm *,cha
 			max_fd = sd;
 	}
 
-	//wait for an activity on one of the sockets , timeout is NULL ,
-	//so wait indefinitely
+	//wait for an activity on one of the sockets , timeout is 0.5s ,
 	activity = pselect( max_fd + 1 , &readfds , NULL , NULL , &timeout,&signal_mask);
 
 	if ((activity < 0) && (errno!=EINTR))

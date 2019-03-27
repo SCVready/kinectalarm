@@ -9,16 +9,15 @@ SET(LICENSE "TBD")
 add_definitions(-D__STDC_CONSTANT_MACROS)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations ")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wpoison-system-directories ")
+
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG_ALARM")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_DEBUG}")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ")
 
 find_package(LibXml2 REQUIRED)
 
 include_directories(
 	${LIBXML2_INCLUDE_DIR}
 )
-
 
 link_directories(
 	${LINK_DIRECTORIES}
