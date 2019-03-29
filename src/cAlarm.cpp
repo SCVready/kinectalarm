@@ -262,6 +262,11 @@ bool cAlarm::init_num_detection()
 
 void *cAlarm::detection(void)
 {
+	// Variable initialization
+	reff_depth_timestamp	= 0;
+	depth_timestamp			= 0;
+	video_timestamp			= 0;
+
 	while(det_conf.curr_det_num < MAX_NUM_DETECTIONS && detection_running)
 	{
 		update_led();
@@ -385,6 +390,9 @@ void *cAlarm::liveview(void)
 {
 	int pipe_fd;
 	unsigned int size = 0;
+
+	// Variable initialization
+	liveview_timestamp		= 0;
 
 	// Log booleans
 	bool log_notice_once_0 = false, log_notice_once_1 = false;

@@ -146,6 +146,10 @@ int cKinect::deinit()
 
 int cKinect::start()
 {
+	// Initialize frame time-stamps
+	cKinect::temp_depth_frame_timestamp = 0;
+	cKinect::temp_video_frame_timestamp = 0;
+
 	running = true;
 	freenect_start_video(kinect_dev);
 	freenect_start_depth(kinect_dev);
