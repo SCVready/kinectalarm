@@ -46,6 +46,8 @@ TARGET_LINK_LIBRARIES(
 	swresample
 	m
 	dl
+	hiredis
+	event
 )
 
 ######## Install targets ########

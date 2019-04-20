@@ -20,9 +20,7 @@
 							<tool id="org.yocto.cmake.managedbuilder.compiler.gnu.exe.debug.1397724461" name="GCC C++ Compiler" superClass="org.yocto.cmake.managedbuilder.compiler.gnu.exe.debug">
 								<option id="gnu.cpp.compiler.option.optimization.level.1686876824" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.debugging.level.2007635339" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
-								<option id="gnu.cpp.compiler.option.include.paths.605115457" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="/home/scvready/workspace/eclipse_oxigen/kinectalarm/inc"/>
-								</option>
+								<option id="gnu.cpp.compiler.option.include.paths.605115457" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.16016160" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="org.yocto.cmake.managedbuilder.linker.gnu.exe.debug.1138832828" name="GCC C++ Linker" superClass="org.yocto.cmake.managedbuilder.linker.gnu.exe.debug">
@@ -64,15 +62,13 @@
 							<targetPlatform id="org.yocto.cmake.managedbuilder.target.gnu.exe.debug.1489776092" isAbstract="false" name="Debug Platform" superClass="org.yocto.cmake.managedbuilder.target.gnu.exe.debug"/>
 							<builder buildPath="${workspace_loc:/kinectalarm}/Debug" id="org.yocto.cmake.managedbuilder.builder.gnu.exe.debug.1899077321" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Yocto CMake Environment Builder" superClass="org.yocto.cmake.managedbuilder.builder.gnu.exe.debug"/>
 							<tool id="org.yocto.cmake.managedbuilder.cmakeconfigure.gnu.exe.debug.896949456" name="CMake configure" superClass="org.yocto.cmake.managedbuilder.cmakeconfigure.gnu.exe.debug">
-								<option id="org.yocto.cmake.managedbuilder.cmakeconfigure.options.debugsymbols.gnu.exe.debug.1745768625" superClass="org.yocto.cmake.managedbuilder.cmakeconfigure.options.debugsymbols.gnu.exe.debug" useByScannerDiscovery="false" value="org.yocto.cmake.managedbuilder.cmakeconfigure.options.debugsymbols.eOV2" valueType="enumerated"/>
-								<option id="org.yocto.cmake.managedbuilder.cmakeconfigure.options.verbosemakefile.gnu.exe.debug.464753063" superClass="org.yocto.cmake.managedbuilder.cmakeconfigure.options.verbosemakefile.gnu.exe.debug" useByScannerDiscovery="false" value="org.yocto.cmake.managedbuilder.cmakeconfigure.options.verbosemakefile.eOV2" valueType="enumerated"/>
+								<option id="org.yocto.cmake.managedbuilder.cmakeconfigure.options.debugsymbols.gnu.exe.debug.1745768625" name="Compile with debug symbols" superClass="org.yocto.cmake.managedbuilder.cmakeconfigure.options.debugsymbols.gnu.exe.debug" useByScannerDiscovery="false" value="org.yocto.cmake.managedbuilder.cmakeconfigure.options.debugsymbols.eOV2" valueType="enumerated"/>
+								<option id="org.yocto.cmake.managedbuilder.cmakeconfigure.options.verbosemakefile.gnu.exe.debug.464753063" name="Generate verbose Makefiles" superClass="org.yocto.cmake.managedbuilder.cmakeconfigure.options.verbosemakefile.gnu.exe.debug" useByScannerDiscovery="false" value="org.yocto.cmake.managedbuilder.cmakeconfigure.options.verbosemakefile.eOV2" valueType="enumerated"/>
 							</tool>
 							<tool id="org.yocto.cmake.managedbuilder.compiler.gnu.exe.debug.368170264" name="GCC C++ Compiler" superClass="org.yocto.cmake.managedbuilder.compiler.gnu.exe.debug">
 								<option id="gnu.cpp.compiler.option.optimization.level.2046441022" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.debugging.level.1696995685" name="Debug Level" superClass="gnu.cpp.compiler.option.debugging.level" useByScannerDiscovery="false" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
-								<option id="gnu.cpp.compiler.option.include.paths.1949914286" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
-									<listOptionValue builtIn="false" value="/home/scvready/workspace/eclipse_oxigen/kinectalarm/inc"/>
-								</option>
+								<option id="gnu.cpp.compiler.option.include.paths.1949914286" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1249051477" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="org.yocto.cmake.managedbuilder.linker.gnu.exe.debug.1424675932" name="GCC C++ Linker" superClass="org.yocto.cmake.managedbuilder.linker.gnu.exe.debug">
@@ -102,14 +98,24 @@
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
 		<project id="kinectalarm.org.yocto.sdk.ide.projectTypeCMake.1072522199" name="Yocto Project SDK CMake Project" projectType="org.yocto.sdk.ide.projectTypeCMake"/>
 	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
+	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Debug">
+			<resource resourceType="PROJECT" workspacePath="/kinectalarm"/>
+		</configuration>
+		<configuration configurationName="Release">
+			<resource resourceType="PROJECT" workspacePath="/kinectalarm"/>
+		</configuration>
+	</storageModule>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		<scannerConfigBuildInfo instanceId="org.yocto.cmake.managedbuilder.configuration.gnu.exe.debug.999404818;org.yocto.cmake.managedbuilder.configuration.gnu.exe.debug.999404818.;org.yocto.cmake.managedbuilder.compiler.gnu.exe.debug.1397724461;cdt.managedbuild.tool.gnu.cpp.compiler.input.16016160">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="org.yocto.cmake.managedbuilder.configuration.gnu.exe.debug.999404818.1266437531;org.yocto.cmake.managedbuilder.configuration.gnu.exe.debug.999404818.1266437531.;org.yocto.cmake.managedbuilder.compiler.gnu.exe.debug.368170264;cdt.managedbuild.tool.gnu.cpp.compiler.input.1249051477">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
 	</storageModule>
-	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
-	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
-	<storageModule moduleId="refreshScope"/>
 </cproject>

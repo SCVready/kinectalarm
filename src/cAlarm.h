@@ -28,6 +28,7 @@
 #include "config.h"
 #include "jpeg.h"
 #include "video.h"
+#include "redis_db.h"
 
 //// Defines ////
 
@@ -54,7 +55,7 @@ struct sDet_conf
 
 enum enumDet_conf
 {
-	IS_ACTIVE,
+	DET_ACTIVE,
 	THRESHOLD,
 	TOLERANCE,
 	DET_NUM_SHOTS,
@@ -65,6 +66,11 @@ enum enumDet_conf
 struct sLvw_conf //TODO
 {
 	bool				is_active;
+};
+
+enum enumLvw_conf
+{
+	LVW_ACTIVE,
 };
 
 //// Class ////
@@ -118,7 +124,7 @@ private:
 	// Frame pointer for detection
 	uint16_t* reff_depth_frame;
 	uint16_t* depth_frame;
-	uint16_t* diff_depth_frame;
+	uint16_t* diff_depth_frame; pthread_mutex_t diff_depth_frame_lock;
 	uint16_t* video_frames[NUM_DETECTIONS_FRAMES];
 
 	// Frame's timestamp for detection
@@ -136,6 +142,9 @@ private:
 	// Frame jpeg buffer out
 	uint8_t* liveview_buffer_out;
 
+	// Frame used on get_diff_depth_frame
+	uint16_t* temp_depth_frame;uint32_t temp_depth_frame_timestamp;
+
 	// Threads
 	pthread_t detection_thread;
 	pthread_t liveview_thread;
@@ -152,9 +161,12 @@ private:
 	void update_led();
 	void set_reference_depth_image();
 	void set_capture_video_image(int num);
+	int get_diff_depth_frame(uint16_t *diff_depth_frame, uint32_t *timestamp);
 	uint32_t compare_depth_frame_to_reference_depth_frame();
 	bool init_num_detection();
 	bool delete_detections();
+
+	int init_vars_redis();
 
 	static void *detection_thread_helper(void *context);
 	static void *liveview_thread_helper(void *context);
@@ -164,6 +176,9 @@ private:
 
 	template <typename T>
 	int change_det_status(enum enumDet_conf, T value);
+
+	template <typename T>
+	int change_lvw_status(enum enumLvw_conf, T value);
 };
 
 extern int pipe_fd[2];

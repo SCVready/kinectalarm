@@ -57,9 +57,8 @@ bool save_video_frame_to_jpeg_inmemory(uint16_t* video_frame, uint8_t* video_jpe
 	BYTE *mem_buffer = NULL;
 	DWORD size_in_bytes = 0;
 
-
 	for(int i = 0;i <  VIDEO_WIDTH * VIDEO_HEIGHT; i++)
-		bmap[i]		= (video_frame[i]>>2);
+		bmap[i]		= (video_frame[i]>>2);//todo <<5
 
 	video_bitmap = FreeImage_ConvertFromRawBits((BYTE *) bmap, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_WIDTH, 8, 0xFF, 0xFF, 0xFF, TRUE);
 	FreeImage_AdjustBrightness(video_bitmap, 100); //TODO Parametric brightness

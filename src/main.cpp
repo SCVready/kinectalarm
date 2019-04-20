@@ -15,16 +15,29 @@
 #include <errno.h>
 #include <syslog.h>
 
+#include <iostream>
+#include <algorithm>
+#include <vector>
+#include <string>
+#include <cctype>
+#include <sstream>
+#include <iterator>
+
 #include "global_parameters.h"
 #include "cAlarm.h"
 #include "server.h"
 #include "log.h"
 #include "config.h"
+#include "redis_db.h"
 
+#include "hiredis/hiredis.h"
+#include "hiredis/async.h"
+#include "hiredis/adapters/libevent.h"
 
 volatile bool kinect_alarm_running = true;
+struct event_base *base;
 
-int process_request(class cAlarm *alarma, char *buff_in,int buff_in_len, char *buff_out, int buff_out_size);
+int process_request(class cAlarm *alarm, char *command);
 
 void signalHandler(int signal)
 {
@@ -33,12 +46,42 @@ void signalHandler(int signal)
 	 || signal == SIGQUIT)
 	{
 		kinect_alarm_running = false;
+		event_base_loopbreak(base);
 	}
+}
+
+void onMessage(redisAsyncContext *c, void *reply, void *privdata) {
+
+	class cAlarm *alarm = (class cAlarm*) privdata;
+    redisReply *r = (redisReply*) reply;
+    if (reply == NULL) return;
+
+    if (r->type == REDIS_REPLY_ARRAY)
+    {
+    	// Check publication
+    	if(r->elements != 3)
+    		return;
+
+		if(strncmp(r->element[0]->str,"message",strlen("message")))
+			return;
+		if(strncmp(r->element[1]->str,"kinectalarm",strlen("kinectalarm")))
+			return;
+
+		process_request(alarm, r->element[2]->str);
+    }
 }
 
 int main(int argc, char** argv)
 {
-	int retvalue = 0;
+
+	signal(SIGPIPE, SIG_IGN);
+	base = event_base_new();
+
+	redisAsyncContext *c = redisAsyncConnect("127.0.0.1", 6379);
+	if (c->err) {
+		printf("error: %s\n", c->errstr);
+		return 1;
+	}
 
 
 #ifndef DEBUG_ALARM
@@ -46,6 +89,8 @@ int main(int argc, char** argv)
 #else
 	printf("DEBUG BUILD\n");
 #endif
+
+	int retvalue = 0;
 
 	// Handle signals
 	signal(SIGINT, signalHandler);
@@ -69,6 +114,7 @@ int main(int argc, char** argv)
 	else
 		LOG(LOG_NOTICE, "Alarm initialize successful\n");
 
+/*
 	// Initialize server on Unix socket
 	if(init_server())
 	{
@@ -88,6 +134,12 @@ int main(int argc, char** argv)
 			break;
 		}
 	}
+*/
+
+	redisLibeventAttach(c, base);
+	redisAsyncCommand(c, onMessage, (void*) &alarma, "SUBSCRIBE kinectalarm");
+	event_base_dispatch(base);
+
 	LOG(LOG_NOTICE, "Closing alarm\n");
 closing_server:
 	deinit_server();
@@ -96,97 +148,70 @@ closing_alarm:
 	return retvalue;
 }
 
-int process_request(class cAlarm *alarma, char *buff_in,int buff_in_len, char *buff_out, int buff_out_size)
+bool BothAreSpaces(char lhs, char rhs)
 {
-	if(buff_in_len >= 3 && !strncmp(buff_in,"com",3))
-	{
-		if(!strncmp(buff_in+4,"det",3))
-		{
-			if(!strncmp(buff_in+8,"start",4))
-			{
-				alarma->start_detection();
-				strncpy(buff_out,"Detection started",buff_out_size);
-			}
-			else if(!strncmp(buff_in+8,"stop",4))
-			{
-				alarma->stop_detection();
-				strncpy(buff_out,"Detection stopped",buff_out_size);
-			}
-			else if(!strncmp(buff_in+8,"rst",3))
-			{
-				alarma->reset_detection();
-				strncpy(buff_out,"Number of detection to 0",buff_out_size);
-			}
-			else
-			{
-				strncpy(buff_out,"Detection command not recognized",buff_out_size);
-			}
-		}
-		else if(!strncmp(buff_in+4,"lvw",3))
-		{
-			if(!strncmp(buff_in+8,"start",4))
-			{
-				alarma->start_liveview();
-				strncpy(buff_out,"Liveview started",buff_out_size);
-			}
-			else if(!strncmp(buff_in+8,"stop",4))
-			{
-				alarma->stop_liveview();
-				strncpy(buff_out,"Liveview stopped",buff_out_size);
-			}
-			else
-			{
-				strncpy(buff_out,"Liveview command not recognized",buff_out_size);
-			}
-		}
-		else
-		{
-			strncpy(buff_out,"Command not recognized",buff_out_size);
-		}
-	}
-	else if (buff_in_len >= 3 && !strncmp(buff_in,"req",3))
-	{
-		if(!strncmp(buff_in+4,"det",3))
-		{
-			if(!strncmp(buff_in+8,"status",6))
-			{
-				if(alarma->is_detection_running())
-					strncpy(buff_out,"yes",buff_out_size);
-				else
-					strncpy(buff_out,"no",buff_out_size);
-			}
-			else if(!strncmp(buff_in+8,"num",3))
-			{
-				snprintf(buff_out,buff_in_len,"%d",alarma->get_num_detections());
-			}
-			else
-			{
-				strncpy(buff_out,"Detection Request not recognized",buff_out_size);
-			}
-		}
-		else if(!strncmp(buff_in+4,"lvw",3))
-		{
-			if(!strncmp(buff_in+8,"status",6))
-			{
-				if(alarma->is_liveview_running())
-					strncpy(buff_out,"yes",buff_out_size);
-				else
-					strncpy(buff_out,"no",buff_out_size);
-			}
-			else
-			{
-				strncpy(buff_out,"Liveview Request not recognized",buff_out_size);
-			}
-		}
-		else
-		{
-			strncpy(buff_out,"Request not recognized",buff_out_size);
-		}
-	}
-	else
-	{
-		strncpy(buff_out,"Action not recognized",buff_out_size);
-	}
+	return (lhs == rhs) && (lhs == ' ');
+}
 
+bool my_predicate(char c)
+{
+	if(c >= '0' && c <= '9')
+		return false;
+	if(c >= 'a' && c <= 'z')
+		return false;
+	if(c >= 'A' && c <= 'Z')
+		return false;
+	if(c == '-' || c == '+' || c == ' ')
+		return false;
+
+	return true;
+}
+
+
+
+int process_request(class cAlarm *alarm, char *command)
+{
+
+	std::string str(command);
+
+	// Remove non wanted characters
+	str.erase(std::remove_if(str.begin(), str.end(), my_predicate), str.end());
+
+	// Remove consecutive spaces
+	std::string::iterator new_end = std::unique(str.begin(), str.end(), BothAreSpaces);
+	str.erase(new_end, str.end());
+
+	// Lower cases
+	std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+
+	// Remove leading and trailing spaces
+	if(str.front() == ' ')
+		str.erase(0,1);
+	if(str.back() == ' ')
+		str.erase(str.length()-1,1);
+
+	std::istringstream iss(str);
+	std::vector<std::string> words((std::istream_iterator<std::string>(iss)), std::istream_iterator<std::string>());
+
+
+	if(words.size() >=2)
+	{
+		if(words[0].compare("det") == 0)
+		{
+			if(words[1].compare("start") == 0)
+				alarm->start_detection();
+			else if(words[1].compare("stop") == 0)
+				alarm->stop_detection();
+			else if(words[1].compare("rst") == 0)
+				alarm->reset_detection();
+		}
+		else if(words[0].compare("lvw") == 0)
+		{
+			if(words[1].compare("start") == 0)
+				alarm->start_liveview();
+			else if(words[1].compare("stop") == 0)
+				alarm->stop_liveview();
+		}
+	}
 	return 0;
 }

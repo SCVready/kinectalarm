@@ -19,7 +19,12 @@
 
 #define MY_ENCODING "UTF-8"
 
-int write_conf_file(struct sDet_conf det_conf,const char *path);
-int parse_conf_file(struct sDet_conf *det_conf,const char *path);
+
+//Structs
+
+
+
+int write_conf_file(struct sDet_conf det_conf,struct sLvw_conf lvw_conf,const char *path);
+int parse_conf_file(struct sDet_conf *det_conf,struct sLvw_conf *lvw_conf,const char *path);
 
 #endif /* SRC_CONFIG_H_ */

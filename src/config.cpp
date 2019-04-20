@@ -7,7 +7,7 @@
 
 #include "config.h"
 
-int write_conf_file(struct sDet_conf det_conf, const char *path)
+int write_conf_file(struct sDet_conf det_conf,struct sLvw_conf lvw_conf,const char *path)
 {
 	int rc;
 	xmlTextWriterPtr writer;
@@ -82,6 +82,21 @@ int write_conf_file(struct sDet_conf det_conf, const char *path)
 	if (rc < 0)
 		goto cleanup;
 
+	// Element child
+	rc = xmlTextWriterStartElement(writer, BAD_CAST "liveview");
+	if (rc < 0)
+		goto cleanup;
+
+	// Element with value
+	rc = xmlTextWriterWriteFormatElement(writer, BAD_CAST "active", "%d", lvw_conf.is_active);
+	if (rc < 0)
+		goto cleanup;
+
+	// Close the element named "liveview"
+	rc = xmlTextWriterEndElement(writer);
+	if (rc < 0)
+		goto cleanup;
+
 	// Close the element named "config"
 	rc = xmlTextWriterEndElement(writer);
 	if (rc < 0)
@@ -98,17 +113,20 @@ cleanup:
 	return retvalue;
 }
 
-int parse_conf_file(struct sDet_conf *det_conf, const char *path)
+int parse_conf_file(struct sDet_conf *det_conf,struct sLvw_conf *lvw_conf,const char *path)
 {
     xmlDoc *doc = NULL;
     xmlNode *root_node = NULL;
     xmlNode *child_node = NULL;
     xmlNode *detection_node = NULL;
     xmlNode *detection_child_node = NULL;
+    xmlNode *liveview_node = NULL;
+    xmlNode *liveview_child_node = NULL;
+
     std::string value;
 
-    bool parse_elements_check[NUM_DET_PARAMETERS] = {false}; // Boolean array to check if all config value are parsed
-
+    bool parse_det_elements_check[NUM_DET_PARAMETERS] = {false}; // Boolean array to check if all config value are parsed
+    bool parse_lvw_elements_check[NUM_LVW_PARAMETERS] = {false}; // Boolean array to check if all config value are parsed
 
     int retvalue = -1;
 	LIBXML_TEST_VERSION
@@ -132,6 +150,11 @@ int parse_conf_file(struct sDet_conf *det_conf, const char *path)
     		detection_node = child_node;
     	}
 
+    	if(!strncmp((const char *)child_node->name,"liveview",strlen("liveview")))
+    	{
+    		liveview_node = child_node;
+    	}
+
     }
 
     // Parse detection config
@@ -144,47 +167,67 @@ int parse_conf_file(struct sDet_conf *det_conf, const char *path)
 		{
     		value = (char *) xmlNodeListGetString(doc, detection_child_node->xmlChildrenNode, 1);
 			det_conf->is_active = std::stoi(value,nullptr);
-			parse_elements_check[0] = true;
+			parse_det_elements_check[0] = true;
 		}
     	else if(!strncmp((const char *)detection_child_node->name,"threshold",strlen("threshold")))
 		{
 			value = (char *) xmlNodeListGetString(doc, detection_child_node->xmlChildrenNode, 1);
 			det_conf->threshold = std::stoi(value,nullptr);
-			parse_elements_check[1] = true;
+			parse_det_elements_check[1] = true;
 		}
     	else if(!strncmp((const char *)detection_child_node->name,"tolerance",strlen("tolerance")))
 		{
 			value = (char *) xmlNodeListGetString(doc, detection_child_node->xmlChildrenNode, 1);
 			det_conf->tolerance = std::stoi(value,nullptr);
-			parse_elements_check[2] = true;
+			parse_det_elements_check[2] = true;
 		}
     	else if(!strncmp((const char *)detection_child_node->name,"det_num_shots",strlen("det_num_shots")))
 		{
 			value = (char *) xmlNodeListGetString(doc, detection_child_node->xmlChildrenNode, 1);
 			det_conf->det_num_shots = std::stoi(value,nullptr);
-			parse_elements_check[3] = true;
+			parse_det_elements_check[3] = true;
 		}
     	else if(!strncmp((const char *)detection_child_node->name,"frame_interval",strlen("frame_interval")))
 		{
 			value = (char *) xmlNodeListGetString(doc, detection_child_node->xmlChildrenNode, 1);
 			det_conf->frame_interval = std::stof(value,nullptr);
-			parse_elements_check[4] = true;
+			parse_det_elements_check[4] = true;
 		}
     	else if(!strncmp((const char *)detection_child_node->name,"curr_det_num",strlen("curr_det_num")))
 		{
 			value = (char *) xmlNodeListGetString(doc, detection_child_node->xmlChildrenNode, 1);
 			det_conf->curr_det_num = std::stoi(value,nullptr);
-			parse_elements_check[5] = true;
+			parse_det_elements_check[5] = true;
 		}
     }
 
-    // Validate XML parse values
-    for(int i = 0; i<NUM_DET_PARAMETERS;i++)
+    // Parse detection config
+    if(!liveview_node)
+    	goto cleanup;
+
+    for (liveview_child_node = liveview_node->children; liveview_child_node; liveview_child_node = liveview_child_node->next)
     {
-    	if(!parse_elements_check[i])
-        	goto cleanup;
+    	if(!strncmp((const char *)liveview_child_node->name,"active",strlen("active")))
+		{
+    		value = (char *) xmlNodeListGetString(doc, liveview_child_node->xmlChildrenNode, 1);
+    		lvw_conf->is_active = std::stoi(value,nullptr);
+			parse_lvw_elements_check[0] = true;
+		}
     }
 
+
+    // Validate XML det parse values
+    for(int i = 0; i<NUM_DET_PARAMETERS;i++)
+    {
+    	if(!parse_det_elements_check[i])
+        	goto cleanup;
+    }
+    // Validate XML lvw parse values
+    for(int i = 0; i<NUM_LVW_PARAMETERS;i++)
+    {
+    	if(!parse_lvw_elements_check[i])
+        	goto cleanup;
+    }
 
 
     retvalue = 0;

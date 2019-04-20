@@ -11,6 +11,7 @@ cAlarm::cAlarm()
 	reff_depth_frame		= NULL;
 	depth_frame				= NULL;
 	diff_depth_frame		= NULL;
+	temp_depth_frame		= NULL;
 	liveview_frame			= NULL;
 	liveview_jpeg			= NULL;
 	liveview_buffer_out 	= NULL;
@@ -21,6 +22,8 @@ cAlarm::cAlarm()
 	depth_timestamp			= 0;
 	video_timestamp			= 0;
 	liveview_timestamp		= 0;
+
+	temp_depth_frame_timestamp = 0;
 
 	// Threads ID
 	detection_thread		= 0;
@@ -53,10 +56,26 @@ cAlarm::~cAlarm()
 int cAlarm::init()
 {
 	// Parse config file
-	if(parse_conf_file(&det_conf,CONFIG_PATH))
+	if(parse_conf_file(&det_conf,&lvw_conf,CONFIG_PATH))
 	{
 		// Generate new config file with default values
-		write_conf_file(det_conf,CONFIG_PATH);
+		write_conf_file(det_conf,lvw_conf,CONFIG_PATH);
+	}
+
+	// Redis db initialization
+	if(init_redis_db())
+	{
+		LOG(LOG_ERR,"Fallo en la inicializacion de Redis\n");
+		kinect.deinit();
+		return -1;
+	}
+
+	// Initialize redis vars
+	if(init_vars_redis())
+	{
+		LOG(LOG_ERR,"Fallo en la inicializacion de variables de Redis\n");
+		kinect.deinit();
+		return -1;
 	}
 
 	// Kinect initialization
@@ -93,6 +112,13 @@ int cAlarm::init()
 	depth_frame			= (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
 	diff_depth_frame	= (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
 
+	temp_depth_frame	= (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
+
+	if (pthread_mutex_init(&diff_depth_frame_lock, NULL) != 0)
+	{
+		return -1;
+	}
+
 	if(!reff_depth_frame || !depth_frame || !diff_depth_frame)
 	{
 		LOG(LOG_ERR,"Memory allocation for frames\n");
@@ -117,6 +143,8 @@ int cAlarm::init()
 	// Apply XML config TODO
 	if(det_conf.is_active)
 		start_detection();
+	if(lvw_conf.is_active)
+		start_liveview();
 
 	return 0;
 }
@@ -139,11 +167,15 @@ int cAlarm::deinit()
 		kinect.stop();
 	kinect.deinit();
 
+	// Deinit redis_db
+	deinit_redis_db();
 
 	// Free memory pointers
 	free(reff_depth_frame);
 	free(depth_frame);
 	free(diff_depth_frame);
+
+	free(temp_depth_frame);
 
 	for(int i = 0; i< NUM_DETECTIONS_FRAMES ; i++)
 		free(video_frames[i]);
@@ -163,7 +195,8 @@ int cAlarm::start_detection()
 	if(!detection_running)
 	{
 		detection_running = true;
-		change_det_status(IS_ACTIVE,true);
+		change_det_status(DET_ACTIVE,true);
+		redis_set_int((char *) "det_status", 1);
 		update_led();
 		pthread_create(&detection_thread, 0, detection_thread_helper, this);
 		return 0;
@@ -176,7 +209,8 @@ int cAlarm::stop_detection()
 	if(detection_running)
 	{
 		detection_running = false;
-		change_det_status(IS_ACTIVE,false);
+		change_det_status(DET_ACTIVE,false);
+		redis_set_int((char *) "det_status", 0);
 		pthread_join(detection_thread,NULL);
 		update_led();
 
@@ -196,7 +230,8 @@ int cAlarm::start_liveview()
 	if(!liveview_running)
 	{
 		liveview_running = true;
-		//change_det_status(IS_ACTIVE,true); //TODO
+		change_lvw_status(LVW_ACTIVE,true);
+		redis_set_int((char *) "lvw_status", 1);
 		update_led();
 		pthread_create(&liveview_thread, 0, liveview_thread_helper, this);
 		return 0;
@@ -210,7 +245,8 @@ int cAlarm::stop_liveview()
 	if(liveview_running)
 	{
 		liveview_running = false;
-		//change_det_status(IS_ACTIVE,false); //TODO
+		change_lvw_status(LVW_ACTIVE,false);
+		redis_set_int((char *) "lvw_status", 0);
 		pthread_join(liveview_thread,NULL);
 		update_led();
 
@@ -224,17 +260,22 @@ uint32_t cAlarm::compare_depth_frame_to_reference_depth_frame()
 {
 	uint32_t cont = 0;
 	static uint32_t max_cont = 0;
+	pthread_mutex_lock(&diff_depth_frame_lock);
 	for(int i = 0; i <(DEPTH_WIDTH*DEPTH_HEIGHT);i++)
 	{
 
 		if(depth_frame[i] == 0x07FF || reff_depth_frame[i] == 0x07FF)
 			diff_depth_frame[i] = 0;
 		else
+		{
 			diff_depth_frame[i] =abs(depth_frame[i] - reff_depth_frame[i]);
-
-		if(diff_depth_frame[i] > DEPTH_CHANGE_TOLERANCE)
-			cont++;
+			if(diff_depth_frame[i] > DEPTH_CHANGE_TOLERANCE)
+				cont++;
+			else
+				diff_depth_frame[i] = 0;
+		}
 	}
+	pthread_mutex_unlock(&diff_depth_frame_lock);
 	if(cont > max_cont)
 		max_cont = cont;
 	//printf("DIFF %u\t MAX DIFF %u\n",cont,max_cont);
@@ -257,6 +298,14 @@ bool cAlarm::init_num_detection()
 	}
 
 	return true;
+}
+
+int cAlarm::get_diff_depth_frame(uint16_t *diff_depth_frame, uint32_t *timestamp)
+{
+
+	kinect.get_depth_frame(temp_depth_frame,&temp_depth_frame_timestamp);
+
+	return 0;
 }
 
 
@@ -341,6 +390,7 @@ void *cAlarm::detection(void)
 
 			//det_conf.curr_det_num++;
 			change_det_status(CURR_DET_NUM,det_conf.curr_det_num+1);
+			redis_set_int((char *) "det_numdet", det_conf.curr_det_num);
 		}
 	}
 	return 0;
@@ -437,7 +487,18 @@ void *cAlarm::liveview(void)
 		while(liveview_running)
 		{
 			// Get new video frame and convert it to jpeg
-			kinect.get_video_frame(liveview_frame,&liveview_timestamp);
+			kinect.get_video_frame(liveview_frame,&liveview_timestamp);//get_depth_frame
+
+/*
+			//TODO temporal test
+			pthread_mutex_lock(&diff_depth_frame_lock);
+			for(int i = 0; i <(DEPTH_WIDTH*DEPTH_HEIGHT);i++)
+			{
+				if(diff_depth_frame[i] != 0)
+					liveview_frame[i] = diff_depth_frame[i];
+			}
+			pthread_mutex_unlock(&diff_depth_frame_lock);
+*/
 			save_video_frame_to_jpeg_inmemory(liveview_frame, liveview_jpeg,&size);
 
 			// Compose Message
@@ -535,6 +596,7 @@ int cAlarm::reset_detection()
 	if(det_was_running)
 		stop_detection();
 	change_det_status(CURR_DET_NUM,0);
+	redis_set_int((char *) "det_numdet", 0);
 	if(det_was_running)
 		start_detection();
 	return 0;
@@ -545,7 +607,7 @@ int cAlarm::change_det_status(enum enumDet_conf conf_name, T value)
 {
 	switch(conf_name)
 	{
-		case IS_ACTIVE:
+		case DET_ACTIVE:
 			det_conf.is_active = value;
 			break;
 		case THRESHOLD:
@@ -564,6 +626,31 @@ int cAlarm::change_det_status(enum enumDet_conf conf_name, T value)
 			det_conf.curr_det_num = value;
 			break;
 	}
-	write_conf_file(det_conf,CONFIG_PATH);
+	write_conf_file(det_conf,lvw_conf,CONFIG_PATH);
+	return 0;
+}
+
+template <typename T>
+int cAlarm::change_lvw_status(enum enumLvw_conf conf_name, T value)
+{
+	switch(conf_name)
+	{
+		case LVW_ACTIVE:
+			lvw_conf.is_active = value;
+			break;
+	}
+	write_conf_file(det_conf,lvw_conf,CONFIG_PATH);
+	return 0;
+}
+
+int cAlarm::init_vars_redis()
+{
+	if(redis_set_int((char *) "det_status", det_conf.is_active))
+		return -1;
+	if(redis_set_int((char *) "lvw_status", lvw_conf.is_active))
+		return -1;
+	if(redis_set_int((char *) "det_numdet", det_conf.curr_det_num-1))
+		return -1;
+
 	return 0;
 }
