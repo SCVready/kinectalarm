@@ -25,10 +25,10 @@
 
 #include "global_parameters.h"
 #include "cAlarm.h"
-#include "server.h"
 #include "log.h"
 #include "config.h"
 #include "redis_db.h"
+#include "common.h"
 
 #include "hiredis/hiredis.h"
 #include "hiredis/async.h"
@@ -37,7 +37,7 @@
 volatile bool kinect_alarm_running = true;
 struct event_base *base;
 
-int process_request(class cAlarm *alarm, char *command);
+int message_process(class cAlarm *alarm, char *command);
 
 void signalHandler(int signal)
 {
@@ -58,26 +58,29 @@ void onMessage(redisAsyncContext *c, void *reply, void *privdata) {
 
     if (r->type == REDIS_REPLY_ARRAY)
     {
-    	// Check publication
+    	// Check number of elements
     	if(r->elements != 3)
     		return;
 
+    	// Check channel
 		if(strncmp(r->element[0]->str,"message",strlen("message")))
 			return;
 		if(strncmp(r->element[1]->str,"kinectalarm",strlen("kinectalarm")))
 			return;
 
-		process_request(alarm, r->element[2]->str);
+		// Process the message
+		message_process(alarm, r->element[2]->str);
     }
 }
 
 int main(int argc, char** argv)
 {
 
+	// INIT REDIS
 	signal(SIGPIPE, SIG_IGN);
 	base = event_base_new();
 
-	redisAsyncContext *c = redisAsyncConnect("127.0.0.1", 6379);
+	redisAsyncContext *c = redisAsyncConnectUnix("/tmp/redis.sock");
 	if (c->err) {
 		printf("error: %s\n", c->errstr);
 		return 1;
@@ -114,71 +117,28 @@ int main(int argc, char** argv)
 	else
 		LOG(LOG_NOTICE, "Alarm initialize successful\n");
 
-/*
-	// Initialize server on Unix socket
-	if(init_server())
-	{
-		LOG(LOG_ERR, "Server initialization error\n");
-		retvalue = -1;
-		goto closing_server;
-	}
-	else
-		LOG(LOG_NOTICE, "Server initialize successful\n");
-
-	// Loop reading commands
-	while(kinect_alarm_running)
-	{
-		if(server_loop(&alarma,&process_request))
-		{
-			LOG(LOG_ERR, "Server error\n");
-			break;
-		}
-	}
-*/
-
+	// Listen to publishes
 	redisLibeventAttach(c, base);
 	redisAsyncCommand(c, onMessage, (void*) &alarma, "SUBSCRIBE kinectalarm");
 	event_base_dispatch(base);
 
 	LOG(LOG_NOTICE, "Closing alarm\n");
-closing_server:
-	deinit_server();
+
 closing_alarm:
 	alarma.deinit();
 	return retvalue;
 }
 
-bool BothAreSpaces(char lhs, char rhs)
-{
-	return (lhs == rhs) && (lhs == ' ');
-}
-
-bool my_predicate(char c)
-{
-	if(c >= '0' && c <= '9')
-		return false;
-	if(c >= 'a' && c <= 'z')
-		return false;
-	if(c >= 'A' && c <= 'Z')
-		return false;
-	if(c == '-' || c == '+' || c == ' ')
-		return false;
-
-	return true;
-}
-
-
-
-int process_request(class cAlarm *alarm, char *command)
+int message_process(class cAlarm *alarm, char *command)
 {
 
 	std::string str(command);
 
 	// Remove non wanted characters
-	str.erase(std::remove_if(str.begin(), str.end(), my_predicate), str.end());
+	str.erase(std::remove_if(str.begin(), str.end(), allowed_characters), str.end());
 
 	// Remove consecutive spaces
-	std::string::iterator new_end = std::unique(str.begin(), str.end(), BothAreSpaces);
+	std::string::iterator new_end = std::unique(str.begin(), str.end(), both_are_spaces);
 	str.erase(new_end, str.end());
 
 	// Lower cases

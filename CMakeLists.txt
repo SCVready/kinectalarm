@@ -48,6 +48,8 @@ TARGET_LINK_LIBRARIES(
 	dl
 	hiredis
 	event
+	ssl
+	crypto
 )
 
 ######## Install targets ########

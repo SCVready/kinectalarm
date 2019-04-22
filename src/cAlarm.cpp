@@ -438,111 +438,29 @@ void *cAlarm::liveview(void)
 
 void *cAlarm::liveview(void)
 {
-	int pipe_fd;
 	unsigned int size = 0;
 
 	// Variable initialization
 	liveview_timestamp		= 0;
 
-	// Log booleans
-	bool log_notice_once_0 = false, log_notice_once_1 = false;
-
-	// Prepare signal mask to avoid SIGPIPE
-	sigset_t sigpipe_mask;
-	sigemptyset(&sigpipe_mask);
-	sigaddset(&sigpipe_mask, SIGPIPE);
-	sigset_t saved_mask;
-	pthread_sigmask(SIG_BLOCK, &sigpipe_mask, &saved_mask);
-
 	while(liveview_running)
 	{
-		// Creating Named Pipe for live frames
-		if(mkfifo(PIPE_PATH, 0666))
-		{
-			if(errno != EEXIST)
-			{
-				LOG(LOG_ERR,"Error creating PIPE for live frames\n");
-				sleep(1);
-				continue;
-			}
-		}
+		// Get new video frame and convert it to jpeg
+		kinect.get_video_frame(liveview_frame,&liveview_timestamp);
 
-		// Opening Named Pipe for live frames
-		pipe_fd = open(PIPE_PATH, O_WRONLY | O_NONBLOCK);
-		if(pipe_fd == -1)
-		{
-			if(!log_notice_once_0)
-			{
-				LOG(LOG_ERR,"Error opening PIPE for live frames. Trying every second\n");
-				log_notice_once_0 = true;
-			}
-			sleep(1);
-			continue;
-		}
+		// Convert to jpeg
+		save_video_frame_to_jpeg_inmemory(liveview_frame, liveview_jpeg,&size);
 
-		LOG(LOG_NOTICE,"PIPE opened correctly\n");
-		log_notice_once_0 = false;
-		log_notice_once_1 = false;
+		// Convert to base64
+		char *base64_encoded = base64encode(liveview_jpeg, size);
 
-		while(liveview_running)
-		{
-			// Get new video frame and convert it to jpeg
-			kinect.get_video_frame(liveview_frame,&liveview_timestamp);//get_depth_frame
+		// Publish in redis channel
+		redis_publish("liveview", base64_encoded);
 
-/*
-			//TODO temporal test
-			pthread_mutex_lock(&diff_depth_frame_lock);
-			for(int i = 0; i <(DEPTH_WIDTH*DEPTH_HEIGHT);i++)
-			{
-				if(diff_depth_frame[i] != 0)
-					liveview_frame[i] = diff_depth_frame[i];
-			}
-			pthread_mutex_unlock(&diff_depth_frame_lock);
-*/
-			save_video_frame_to_jpeg_inmemory(liveview_frame, liveview_jpeg,&size);
+		free(base64_encoded);
 
-			// Compose Message
-			memcpy(liveview_buffer_out,"INI FRAME",9);
-			memcpy(liveview_buffer_out+9,&size,4);
-			memcpy(liveview_buffer_out+9+4,liveview_jpeg,size);
-			memcpy(liveview_buffer_out+9+4+size,"END FRAME",9);
-
-			// Send message
-			ssize_t num_bytes_written 	= 0;
-			uint32_t frame_size 		= +9+4+size+9;
-			uint32_t bytes_written 		= 0;
-			while((bytes_written < frame_size) & liveview_running)
-			{
-				num_bytes_written = write(pipe_fd, &liveview_buffer_out[bytes_written], frame_size-bytes_written);
-				if(num_bytes_written == -1)
-				{
-					if(errno == EAGAIN)
-					{
-						continue;
-					}
-					LOG(LOG_NOTICE,"Error writing to PIPE for live frames %d errno %s\n",num_bytes_written, strerror(errno));
-					close(pipe_fd);
-					break;
-				}
-				bytes_written += num_bytes_written;
-			}
-			if(bytes_written != frame_size)
-			{
-				LOG(LOG_NOTICE,"Error sending live frame to PIPE\n");
-				close(pipe_fd);
-				usleep(500000);//TODO parameter
-				break;
-			}
-
-			if(!log_notice_once_1)
-			{
-				LOG(LOG_DEBUG,"Send live frame to PIPE\n");
-				log_notice_once_1 = true;
-			}
-			usleep(100000);//TODO parameter
-		}
+		usleep(100000);//TODO parameter
 	}
-	close(pipe_fd);
 	return 0;
 }
 

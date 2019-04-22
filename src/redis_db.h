@@ -30,4 +30,7 @@ int redis_get_char(char *key, char **value);
 int redis_set_int(char *key, int value);
 int redis_set_char(char *key, char *value);
 
+// PUBLISH
+int redis_publish(char *channel, char *message);
+
 #endif /* REDIS_DB_H_ */

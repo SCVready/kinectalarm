@@ -15,7 +15,7 @@ pthread_mutex_t redis_context_mutex;
 int init_redis_db()
 {
 	// Connect to the redis DB
-	c = redisConnect(REDIS_IP, REDIS_PORT);
+	c = redisConnectUnix("/tmp/redis.sock");
 	if (c == NULL || c->err)
 	{
 	    if (c)
@@ -37,7 +37,6 @@ int deinit_redis_db()
 	redisFree(c);
 	return 0;
 }
-
 
 // GET functions
 int redis_get_int(char *key, int *value)
@@ -103,7 +102,6 @@ int redis_set_int(char *key, int value)
     	goto clean;
     }
 
-
 clean:
     freeReplyObject(reply);
     pthread_mutex_unlock(&redis_context_mutex);
@@ -124,9 +122,33 @@ int redis_set_char(char *key, char *value)
     	goto clean;
     }
 
-
 clean:
     freeReplyObject(reply);
     pthread_mutex_unlock(&redis_context_mutex);
     return 0;
 }
+
+// Publish
+
+int redis_publish(char *channel, char *message)
+{
+	int retval = 0;
+	redisReply *reply;
+
+	pthread_mutex_lock(&redis_context_mutex);
+
+    reply = (redisReply *) redisCommand(c,"PUBLISH %s %s",channel,message);
+    if(reply->type == REDIS_REPLY_ERROR)
+    {
+    	retval = -1;
+    	goto clean;
+    }
+
+clean:
+    freeReplyObject(reply);
+    pthread_mutex_unlock(&redis_context_mutex);
+	return 0;
+}
+
+
+
