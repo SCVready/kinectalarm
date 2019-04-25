@@ -30,14 +30,10 @@
 #include "redis_db.h"
 #include "common.h"
 
-#include "hiredis/hiredis.h"
-#include "hiredis/async.h"
-#include "hiredis/adapters/libevent.h"
-
 volatile bool kinect_alarm_running = true;
-struct event_base *base;
 
 int message_process(class cAlarm *alarm, char *command);
+void onMessage(redisAsyncContext *c, void *reply, void *privdata);
 
 void signalHandler(int signal)
 {
@@ -46,47 +42,12 @@ void signalHandler(int signal)
 	 || signal == SIGQUIT)
 	{
 		kinect_alarm_running = false;
-		event_base_loopbreak(base);
+		async_redis_event_loopbreak();
 	}
-}
-
-void onMessage(redisAsyncContext *c, void *reply, void *privdata) {
-
-	class cAlarm *alarm = (class cAlarm*) privdata;
-    redisReply *r = (redisReply*) reply;
-    if (reply == NULL) return;
-
-    if (r->type == REDIS_REPLY_ARRAY)
-    {
-    	// Check number of elements
-    	if(r->elements != 3)
-    		return;
-
-    	// Check channel
-		if(strncmp(r->element[0]->str,"message",strlen("message")))
-			return;
-		if(strncmp(r->element[1]->str,"kinectalarm",strlen("kinectalarm")))
-			return;
-
-		// Process the message
-		message_process(alarm, r->element[2]->str);
-    }
 }
 
 int main(int argc, char** argv)
 {
-
-	// INIT REDIS
-	signal(SIGPIPE, SIG_IGN);
-	base = event_base_new();
-
-	redisAsyncContext *c = redisAsyncConnectUnix("/tmp/redis.sock");
-	if (c->err) {
-		printf("error: %s\n", c->errstr);
-		return 1;
-	}
-
-
 #ifndef DEBUG_ALARM
 	printf("RELEASE BUILD\n");
 #else
@@ -117,10 +78,15 @@ int main(int argc, char** argv)
 	else
 		LOG(LOG_NOTICE, "Alarm initialize successful\n");
 
+	// INIT REDIS
+	if(init_async_redis_db())
+		goto closing_alarm;
+
+	// Subscribe to redis channel
+	async_redis_subscribe("kinectalarm",onMessage,&alarma);
+
 	// Listen to publishes
-	redisLibeventAttach(c, base);
-	redisAsyncCommand(c, onMessage, (void*) &alarma, "SUBSCRIBE kinectalarm");
-	event_base_dispatch(base);
+	async_redis_event_dispatch();
 
 	LOG(LOG_NOTICE, "Closing alarm\n");
 
@@ -129,9 +95,32 @@ closing_alarm:
 	return retvalue;
 }
 
+
+void onMessage(redisAsyncContext *c, void *reply, void *privdata) {
+
+	class cAlarm *alarm = (class cAlarm*) privdata;
+    redisReply *r = (redisReply*) reply;
+    if (reply == NULL) return;
+
+    if (r->type == REDIS_REPLY_ARRAY)
+    {
+    	// Check number of elements
+    	if(r->elements != 3)
+    		return;
+
+    	// Check channel
+		if(strncmp(r->element[0]->str,"message",strlen("message")))
+			return;
+		if(strncmp(r->element[1]->str,"kinectalarm",strlen("kinectalarm")))
+			return;
+
+		// Process the message
+		message_process(alarm, r->element[2]->str);
+    }
+}
+
 int message_process(class cAlarm *alarm, char *command)
 {
-
 	std::string str(command);
 
 	// Remove non wanted characters
@@ -152,7 +141,6 @@ int message_process(class cAlarm *alarm, char *command)
 
 	std::istringstream iss(str);
 	std::vector<std::string> words((std::istream_iterator<std::string>(iss)), std::istream_iterator<std::string>());
-
 
 	if(words.size() >=2)
 	{

@@ -347,9 +347,12 @@ void *cAlarm::detection(void)
 
 
 		// Detection occurs
-
 		if(detection_running)
 		{
+			char message[100];
+			sprintf(message, "newdet %d",det_conf.curr_det_num);
+			redis_publish("kinectalarm_event",message);
+
 			kinect.change_led_color(LED_RED);
 			LOG(LOG_ALERT,"DETECTION\n");
 
@@ -441,7 +444,11 @@ void *cAlarm::liveview(void)
 	unsigned int size = 0;
 
 	// Variable initialization
-	liveview_timestamp		= 0;
+	liveview_timestamp				= 0;
+	struct sBase64encode_context c	={0};
+
+
+	init_base64encode(&c);
 
 	while(liveview_running)
 	{
@@ -452,15 +459,16 @@ void *cAlarm::liveview(void)
 		save_video_frame_to_jpeg_inmemory(liveview_frame, liveview_jpeg,&size);
 
 		// Convert to base64
-		char *base64_encoded = base64encode(liveview_jpeg, size);
+		char *base64_encoded = base64encode(&c, liveview_jpeg, size);
 
 		// Publish in redis channel
 		redis_publish("liveview", base64_encoded);
 
-		free(base64_encoded);
-
 		usleep(100000);//TODO parameter
 	}
+
+	deinit_base64encode(&c);
+
 	return 0;
 }
 
