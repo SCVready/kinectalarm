@@ -9,9 +9,13 @@
 #include "redis_db.h"
 
 //Global variables
-redisContext *c = NULL;
+redisContext *c				= NULL;
+redisAsyncContext *c_async	= NULL;
 pthread_mutex_t redis_context_mutex;
+struct event_base *base;
 
+
+// Sync functions
 int init_redis_db()
 {
 	// Connect to the redis DB
@@ -147,6 +151,38 @@ int redis_publish(char *channel, char *message)
 clean:
     freeReplyObject(reply);
     pthread_mutex_unlock(&redis_context_mutex);
+	return 0;
+}
+
+// Async functions
+int init_async_redis_db()
+{
+	signal(SIGPIPE, SIG_IGN);
+	base = event_base_new();
+
+	c_async = redisAsyncConnectUnix(REDIS_UNIXSOC);
+	if (c_async->err) {
+		printf("error: %s\n", c->errstr);
+		return 1;
+	}
+	redisLibeventAttach(c_async, base);
+	return 0;
+}
+
+int async_redis_subscribe(char * channel, void callback(redisAsyncContext *c, void *reply, void *privdata),void * data)
+{
+	redisAsyncCommand(c_async, callback, data, "SUBSCRIBE %s",channel);
+	return 0;
+}
+
+int async_redis_event_dispatch()
+{
+	event_base_dispatch(base);
+	return 0;
+}
+int async_redis_event_loopbreak()
+{
+	event_base_loopbreak(base);
 	return 0;
 }
 

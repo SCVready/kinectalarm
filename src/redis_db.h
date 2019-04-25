@@ -8,14 +8,17 @@
 #ifndef REDIS_DB_H_
 #define REDIS_DB_H_
 
-#include <hiredis/hiredis.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 
-#define REDIS_IP			"127.0.0.1"
-#define REDIS_PORT			6379
+#include <hiredis/hiredis.h>
+#include <hiredis/async.h>
+#include <hiredis/adapters/libevent.h>
+
+#define REDIS_UNIXSOC		"/tmp/redis.sock"
 #define REDIS_MAX_STRING	200
 
 
@@ -32,5 +35,11 @@ int redis_set_char(char *key, char *value);
 
 // PUBLISH
 int redis_publish(char *channel, char *message);
+
+// Async functions
+int init_async_redis_db();
+int async_redis_subscribe(char * channel, void callback(redisAsyncContext *c, void *reply, void *privdata),void * data);
+int async_redis_event_dispatch();
+int async_redis_event_loopbreak();
 
 #endif /* REDIS_DB_H_ */
