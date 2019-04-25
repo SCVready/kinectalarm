@@ -22,7 +22,14 @@ bool allowed_characters(char c);
 #include <openssl/pem.h>
 #include <string.h>
 
-char *base64encode (const void *b64_encode_this, int encode_this_many_bytes);
-char *base64decode (const void *b64_decode_this, int decode_this_many_bytes);
+
+struct sBase64encode_context{
+	BIO *b64_bio, *mem_bio;
+	BUF_MEM *mem_bio_mem_ptr;
+};
+int init_base64encode(struct sBase64encode_context *c);
+int deinit_base64encode(struct sBase64encode_context *c);
+char* base64encode(struct sBase64encode_context *c, const void *data, int length);
+char* base64decode (const void *b64_decode_this, int decode_this_many_bytes);
 
 #endif /* COMMON_H_ */
