@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <errno.h>
+#include <time.h>
 
 #include "global_parameters.h"
 #include "cKinect.h"
@@ -29,6 +30,7 @@
 #include "jpeg.h"
 #include "video.h"
 #include "redis_db.h"
+#include "sqlite_db.h"
 
 //// Defines ////
 

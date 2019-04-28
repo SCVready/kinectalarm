@@ -50,6 +50,7 @@ TARGET_LINK_LIBRARIES(
 	event
 	ssl
 	crypto
+	sqlite3
 )
 
 ######## Install targets ########

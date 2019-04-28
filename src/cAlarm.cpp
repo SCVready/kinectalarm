@@ -78,6 +78,26 @@ int cAlarm::init()
 		return -1;
 	}
 
+	// SQLite initialization
+	if(init_sqlite_db())
+	{
+		LOG(LOG_ERR,"Fallo en la inicializacion de SQLite\n");
+		kinect.deinit();
+		return -1;
+	}
+
+	// Gen detection table on SQLite
+	if(create_det_table_sqlite_db())
+	{
+		LOG(LOG_ERR,"Error: generation detection table on SQLite\n");
+		kinect.deinit();
+		return -1;
+	}
+
+	// Init number of entries in detection table
+	int num_det;
+	number_entries_det_table_sqlite_db(&num_det);
+
 	// Kinect initialization
 	if(kinect.init())
 	{
@@ -167,8 +187,11 @@ int cAlarm::deinit()
 		kinect.stop();
 	kinect.deinit();
 
-	// Deinit redis_db
+	// Deinit Redis
 	deinit_redis_db();
+
+	// Deinit SQLite
+	deinit_sqlite_db();
 
 	// Free memory pointers
 	free(reff_depth_frame);
@@ -315,8 +338,9 @@ void *cAlarm::detection(void)
 	reff_depth_timestamp	= 0;
 	depth_timestamp			= 0;
 	video_timestamp			= 0;
+	time_t t;
 
-	while(det_conf.curr_det_num < MAX_NUM_DETECTIONS && detection_running)
+	while(detection_running)
 	{
 		update_led();
 
@@ -349,6 +373,9 @@ void *cAlarm::detection(void)
 		// Detection occurs
 		if(detection_running)
 		{
+			time(&t);
+
+			// Publish event
 			char message[100];
 			sprintf(message, "newdet %d",det_conf.curr_det_num);
 			redis_publish("kinectalarm_event",message);
@@ -368,32 +395,37 @@ void *cAlarm::detection(void)
 				if(i != (NUM_DETECTIONS_FRAMES-1))
 					usleep(FRAME_INTERVAL_US);
 			}
-
+/*
 			char temp[PATH_MAX];
 			sprintf(temp,"%s/%d",DETECTION_PATH,det_conf.curr_det_num);
 			create_dir(temp);
-
+*/
 			char filepath[PATH_MAX];
-			sprintf(filepath,"%s/%d/%s",DETECTION_PATH,det_conf.curr_det_num,"ref_depth.jpeg");
+			sprintf(filepath,"%s/%u_%s",DETECTION_PATH,t,"ref_depth.jpeg");
 			if(save_video_frame_to_jpeg(reff_depth_frame,filepath))
 				LOG(LOG_ERR,"Error saving depth frame\n");
 
-			sprintf(filepath,"%s/%d/%s",DETECTION_PATH,det_conf.curr_det_num,"diff.jpeg");
+			sprintf(filepath,"%s/%u_%s",DETECTION_PATH,t,"diff.jpeg");
 			if(save_video_frame_to_jpeg(diff_depth_frame,filepath))
 				LOG(LOG_ERR,"Error saving depth frame\n");
 
 			for(int i = 0; i < NUM_DETECTIONS_FRAMES; i++)
 			{
-				sprintf(filepath,"%s/%d/capture_%d.jpeg",DETECTION_PATH,det_conf.curr_det_num,i);
+				sprintf(filepath,"%s/%u_capture_%d.jpeg",DETECTION_PATH,t,i);
 				if(save_video_frame_to_jpeg(video_frames[i],filepath))
 					LOG(LOG_ERR,"Error saving video frame\n");
 			}
 
 			//save_video_frames_to_gif(video_frames,NUM_DETECTIONS_FRAMES,(1/0.2),(char *)"asd");
 
-			//det_conf.curr_det_num++;
+
+			// Update SQLite db
+			insert_entry_det_table_sqlite_db(det_conf.curr_det_num,t,5,filepath); //TODO check if it fails
+
+			// Update Redis db
+			redis_set_int((char *) "det_numdet", det_conf.curr_det_num); //TODO check if it fails
+
 			change_det_status(CURR_DET_NUM,det_conf.curr_det_num+1);
-			redis_set_int((char *) "det_numdet", det_conf.curr_det_num);
 		}
 	}
 	return 0;
@@ -521,8 +553,8 @@ int cAlarm::reset_detection()
 	int det_was_running = detection_running;
 	if(det_was_running)
 		stop_detection();
-	change_det_status(CURR_DET_NUM,0);
-	redis_set_int((char *) "det_numdet", 0);
+	delete_all_entries_det_table_sqlite_db();
+
 	if(det_was_running)
 		start_detection();
 	return 0;

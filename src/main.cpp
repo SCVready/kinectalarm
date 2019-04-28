@@ -48,6 +48,7 @@ void signalHandler(int signal)
 
 int main(int argc, char** argv)
 {
+
 #ifndef DEBUG_ALARM
 	printf("RELEASE BUILD\n");
 #else
