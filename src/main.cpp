@@ -161,6 +161,11 @@ int message_process(class cAlarm *alarm, char *command)
 			else if(words[1].compare("stop") == 0)
 				alarm->stop_liveview();
 		}
+		else if(words[0].compare("tilt") == 0)
+		{
+			int tilt = std::stoi(words[1]);
+			alarm->change_tilt(tilt);
+		}
 	}
 	return 0;
 }

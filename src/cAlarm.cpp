@@ -43,6 +43,8 @@ cAlarm::cAlarm()
 
 	// LiveView config
 	lvw_conf.is_active		= false;
+	lvw_conf.tilt			= 0;
+	lvw_conf.brightness		= 0;
 
 	// Syslog initialization
 	openlog ("kinect_alarm::cAlarm", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
@@ -55,11 +57,35 @@ cAlarm::~cAlarm()
 
 int cAlarm::init()
 {
-	// Parse config file
-	if(parse_conf_file(&det_conf,&lvw_conf,CONFIG_PATH))
+	// SQLite initialization
+	if(init_sqlite_db())
 	{
-		// Generate new config file with default values
-		write_conf_file(det_conf,lvw_conf,CONFIG_PATH);
+		LOG(LOG_ERR,"Fallo en la inicializacion de SQLite\n");
+		kinect.deinit();
+		return -1;
+	}
+
+	// Creation detection table on SQLite
+	if(create_det_table_sqlite_db())
+	{
+		LOG(LOG_ERR,"Error: creating detection table on SQLite\n");
+		kinect.deinit();
+		return -1;
+	}
+
+	// Creation status table on SQLite
+	if(create_status_table_sqlite_db())
+	{
+		LOG(LOG_ERR,"Error: creating status table on SQLite\n");
+		kinect.deinit();
+		return -1;
+	}
+
+	// Parse status
+	if(read_status(&det_conf,&lvw_conf))
+	{
+		// Write new status entry on sqlite status table
+		write_status(det_conf,lvw_conf);
 	}
 
 	// Redis db initialization
@@ -78,38 +104,10 @@ int cAlarm::init()
 		return -1;
 	}
 
-	// SQLite initialization
-	if(init_sqlite_db())
-	{
-		LOG(LOG_ERR,"Fallo en la inicializacion de SQLite\n");
-		kinect.deinit();
-		return -1;
-	}
-
-	// Gen detection table on SQLite
-	if(create_det_table_sqlite_db())
-	{
-		LOG(LOG_ERR,"Error: generation detection table on SQLite\n");
-		kinect.deinit();
-		return -1;
-	}
-
-	// Init number of entries in detection table
-	int num_det;
-	number_entries_det_table_sqlite_db(&num_det);
-
 	// Kinect initialization
 	if(kinect.init())
 	{
 		LOG(LOG_ERR,"Fallo en la inicializacion de kinect\n");
-		kinect.deinit();
-		return -1;
-	}
-
-	// Adjust kinect's tilt
-	if(kinect.change_tilt(0))
-	{
-		LOG(LOG_ERR,"Fallo al cambiar la inclinacion de kinect\n");
 		kinect.deinit();
 		return -1;
 	}
@@ -120,18 +118,10 @@ int cAlarm::init()
 	// Create base directory to save detection images
 	create_dir((char *)DETECTION_PATH);
 
-/*
-	if(init_num_detection()) //TODO: delete function
-	{
-		LOG(LOG_ERR,"Num detection exedded\n");
-		return -1;
-	}
-*/
 	// Memory allocation for detection frames ponters
 	reff_depth_frame	= (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
 	depth_frame			= (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
 	diff_depth_frame	= (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
-
 	temp_depth_frame	= (uint16_t*) malloc (DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
 
 	if (pthread_mutex_init(&diff_depth_frame_lock, NULL) != 0)
@@ -160,11 +150,21 @@ int cAlarm::init()
 	liveview_jpeg = (uint8_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint8_t)*2);
 	liveview_buffer_out = (uint8_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint8_t)*2);
 
-	// Apply XML config TODO
+	// Apply status
+
 	if(det_conf.is_active)
 		start_detection();
+
 	if(lvw_conf.is_active)
 		start_liveview();
+
+	// Adjust kinect's tilt
+	if(kinect.change_tilt(lvw_conf.tilt))
+	{
+		LOG(LOG_ERR,"Fallo al cambiar la inclinacion de kinect\n");
+		kinect.deinit();
+		return -1;
+	}
 
 	return 0;
 }
@@ -305,23 +305,6 @@ uint32_t cAlarm::compare_depth_frame_to_reference_depth_frame()
 	return cont;
 }
 
-bool cAlarm::init_num_detection()
-{
-	char path[PATH_MAX];
-
-	det_conf.curr_det_num = 0;
-
-	for(int i = 0; i < MAX_NUM_DETECTIONS; i++)
-	{
-		sprintf(path,"%s/%d",DETECTION_PATH,det_conf.curr_det_num);
-		if(!check_dir_exist(path))
-			return false;
-		else
-			det_conf.curr_det_num++;
-	}
-
-	return true;
-}
 
 int cAlarm::get_diff_depth_frame(uint16_t *diff_depth_frame, uint32_t *timestamp)
 {
@@ -377,7 +360,7 @@ void *cAlarm::detection(void)
 
 			// Publish event
 			char message[100];
-			sprintf(message, "newdet %d",det_conf.curr_det_num);
+			sprintf(message, "newdet %u %u",det_conf.curr_det_num,t);
 			redis_publish("kinectalarm_event",message);
 
 			kinect.change_led_color(LED_RED);
@@ -584,7 +567,7 @@ int cAlarm::change_det_status(enum enumDet_conf conf_name, T value)
 			det_conf.curr_det_num = value;
 			break;
 	}
-	write_conf_file(det_conf,lvw_conf,CONFIG_PATH);
+	write_status(det_conf,lvw_conf);
 	return 0;
 }
 
@@ -596,8 +579,14 @@ int cAlarm::change_lvw_status(enum enumLvw_conf conf_name, T value)
 		case LVW_ACTIVE:
 			lvw_conf.is_active = value;
 			break;
+		case TILT:
+			lvw_conf.tilt = value;
+			break;
+		case BRIGHTNESS:
+			lvw_conf.brightness = value;
+			break;
 	}
-	write_conf_file(det_conf,lvw_conf,CONFIG_PATH);
+	write_status(det_conf,lvw_conf);
 	return 0;
 }
 
@@ -609,6 +598,16 @@ int cAlarm::init_vars_redis()
 		return -1;
 	if(redis_set_int((char *) "det_numdet", det_conf.curr_det_num-1))
 		return -1;
+	if(redis_set_int((char *) "tilt", lvw_conf.tilt))
+		return -1;
 
+	return 0;
+}
+
+int cAlarm::change_tilt(double tilt)
+{
+	kinect.change_tilt(tilt);
+	redis_set_int((char *) "tilt", (int) tilt);
+	change_lvw_status(TILT,tilt);
 	return 0;
 }

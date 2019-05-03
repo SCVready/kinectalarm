@@ -68,11 +68,15 @@ enum enumDet_conf
 struct sLvw_conf //TODO
 {
 	bool				is_active;
+	int16_t			tilt;
+	uint16_t			brightness;
 };
 
 enum enumLvw_conf
 {
 	LVW_ACTIVE,
+	TILT,
+	BRIGHTNESS,
 };
 
 //// Class ////
@@ -116,6 +120,9 @@ public:
 
 	/** @brief Reset number of detection */
 	int reset_detection();
+
+	/** @brief Change Kinect's tilt */
+	int change_tilt(double tilt);
 
 private:
 
