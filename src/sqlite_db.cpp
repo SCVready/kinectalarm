@@ -145,9 +145,9 @@ int get_entry_det_table_sqlite_db(uint32_t id, uint32_t *timestamp, uint32_t *du
 			*duration = sqlite3_column_int(pStmt, 2);
 
 		if(filename) {
-			const char *text = sqlite3_column_text(pStmt, 3);
-			size_t len = strlen(text);
-			strncpy(filename,text,len);
+			const unsigned char *text = sqlite3_column_text(pStmt, 3);
+			size_t len = strlen((char*)text);
+			strncpy(filename,(const char*)text,len);
 			filename[len] = '\0';
 		}
 
