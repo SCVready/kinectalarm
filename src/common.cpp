@@ -25,6 +25,14 @@ bool check_dir_exist(char *path)
 		return false;
 }
 
+int delete_all_files_from_dir(char *path)
+{
+	char command[50];
+	sprintf(command, "rm -rf %s/*",path);
+	system(command);
+	return 0;
+}
+
 #define BILLION 1000000000
 struct timespec timeAdd(struct timespec t1, struct timespec t2)
 {

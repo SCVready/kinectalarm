@@ -13,6 +13,7 @@ int write_status(struct sDet_conf det_conf,struct sLvw_conf lvw_conf)
 	status.id					= 0;
 	status.tilt					= lvw_conf.tilt;
 	status.brightness			= lvw_conf.brightness;
+	status.contrast				= lvw_conf.contrast;
 	status.det_active			= det_conf.is_active;
 	status.lvw_active			= lvw_conf.is_active;
 	status.det_threshold		= det_conf.threshold;
@@ -57,6 +58,7 @@ int read_status(struct sDet_conf *det_conf,struct sLvw_conf *lvw_conf)
 	lvw_conf->is_active			= status.lvw_active;
 	lvw_conf->tilt				= status.tilt;
 	lvw_conf->brightness		= status.brightness;
+	lvw_conf->contrast			= status.contrast;
 
 	return 0;
 }

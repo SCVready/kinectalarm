@@ -147,24 +147,42 @@ int message_process(class cAlarm *alarm, char *command)
 	{
 		if(words[0].compare("det") == 0)
 		{
-			if(words[1].compare("start") == 0)
+			if(!words[1].compare("start"))
 				alarm->start_detection();
-			else if(words[1].compare("stop") == 0)
+			else if(!words[1].compare("stop"))
 				alarm->stop_detection();
-			else if(words[1].compare("rst") == 0)
+			else if(!words[1].compare("rst"))
 				alarm->reset_detection();
+			else if(!words[1].compare("del")){
+				if(words.size() >=3)
+				{
+					int value = std::stoi(words[2]);;
+					alarm->delete_detection(value);
+				}
+
+			}
 		}
-		else if(words[0].compare("lvw") == 0)
+		else if(!words[0].compare("lvw"))
 		{
-			if(words[1].compare("start") == 0)
+			if(!words[1].compare("start"))
 				alarm->start_liveview();
-			else if(words[1].compare("stop") == 0)
+			else if(!words[1].compare("stop"))
 				alarm->stop_liveview();
 		}
-		else if(words[0].compare("tilt") == 0)
+		else if(!words[0].compare("tilt"))
 		{
 			int tilt = std::stoi(words[1]);
 			alarm->change_tilt(tilt);
+		}
+		else if(!words[0].compare("brightness"))
+		{
+			int value = std::stoi(words[1]);
+			alarm->change_brightness(value);
+		}
+		else if(!words[0].compare("contrast"))
+		{
+			int value = std::stoi(words[1]);
+			alarm->change_contrast(value);
 		}
 	}
 	return 0;

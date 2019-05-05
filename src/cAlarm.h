@@ -68,8 +68,9 @@ enum enumDet_conf
 struct sLvw_conf //TODO
 {
 	bool				is_active;
-	int16_t			tilt;
-	uint16_t			brightness;
+	int16_t				tilt;
+	int32_t			brightness;
+	int32_t			contrast;
 };
 
 enum enumLvw_conf
@@ -77,6 +78,7 @@ enum enumLvw_conf
 	LVW_ACTIVE,
 	TILT,
 	BRIGHTNESS,
+	CONTRAST,
 };
 
 //// Class ////
@@ -121,8 +123,17 @@ public:
 	/** @brief Reset number of detection */
 	int reset_detection();
 
+	/** @brief Reset number of detection */
+	int delete_detection(int id);
+
 	/** @brief Change Kinect's tilt */
 	int change_tilt(double tilt);
+
+	/** @brief Change Kinect's contrast */
+	int change_contrast(int32_t brightness);
+
+	/** @brief Change Kinect's brightness */
+	int change_brightness(int32_t brightness);
 
 private:
 
@@ -172,8 +183,6 @@ private:
 	void set_capture_video_image(int num);
 	int get_diff_depth_frame(uint16_t *diff_depth_frame, uint32_t *timestamp);
 	uint32_t compare_depth_frame_to_reference_depth_frame();
-	bool init_num_detection();
-	bool delete_detections();
 
 	int init_vars_redis();
 

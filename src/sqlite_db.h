@@ -38,7 +38,8 @@ int delete_all_entries_det_table_sqlite_db();
 struct status_table{
 	uint32_t id;
 	int32_t tilt;
-	uint32_t brightness;
+	int32_t brightness;
+	int32_t contrast;
 	uint32_t det_active;
 	uint32_t lvw_active;
 	uint32_t det_threshold;

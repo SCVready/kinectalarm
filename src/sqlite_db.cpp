@@ -211,6 +211,7 @@ int create_status_table_sqlite_db()
 		"ID					INTEGER		PRIMARY KEY," \
 		"TILT				INTEGER		NOT NULL," \
 		"BRIGHTNESS			INTEGER		NOT NULL," \
+		"CONTRAST			INTEGER		NOT NULL," \
 		"DET_ACTIVE			INTEGER		NOT NULL," \
 		"LVW_ACTIVE			INTEGER		NOT NULL," \
 		"DET_THRESHOLD		INTEGER		NOT NULL," \
@@ -267,9 +268,10 @@ int insert_entry_status_table_sqlite_db(struct status_table *status)
 	/* Create SQL statement */
 
 	char sql[512];
-	sprintf(sql,"INSERT INTO STATUS (ID,TILT,BRIGHTNESS,DET_ACTIVE,LVW_ACTIVE,DET_THRESHOLD," \
+	sprintf(sql,"INSERT INTO STATUS (ID,TILT,BRIGHTNESS,CONTRAST,DET_ACTIVE,LVW_ACTIVE,DET_THRESHOLD," \
 			"DET_SENSITIVITY,DET_NUM_SHOTS,DET_FPS,DET_CURR_DET_ID,LVW_FPS) "  \
-		"VALUES (%u, %u, %u, %u, %u, %u, %u, %u, %u, %u, %u);",status->id,status->tilt,status->brightness,status->det_active, \
+		"VALUES (%u, %d, %d, %d, %u, %u, %u, %u, %u, %u, %u, %u);",status->id,status->tilt,status->contrast, \
+														status->brightness,status->det_active, \
 														status->lvw_active,status->det_threshold, \
 														status->det_sensitivity,status->det_num_shots, \
 														status->det_fps,status->det_curr_det_id, \
@@ -313,14 +315,15 @@ int get_entry_status_table_sqlite_db(struct status_table *status)
 	if (rc == SQLITE_ROW) {
 		status->tilt				= sqlite3_column_int(pStmt, 1);
 		status->brightness			= sqlite3_column_int(pStmt, 2);
-		status->det_active			= sqlite3_column_int(pStmt, 3);
-		status->lvw_active			= sqlite3_column_int(pStmt, 4);
-		status->det_threshold		= sqlite3_column_int(pStmt, 5);
-		status->det_sensitivity		= sqlite3_column_int(pStmt, 6);
-		status->det_num_shots		= sqlite3_column_int(pStmt, 7);
-		status->det_fps				= sqlite3_column_int(pStmt, 8);
-		status->det_curr_det_id		= sqlite3_column_int(pStmt, 9);
-		status->lvw_fps				= sqlite3_column_int(pStmt, 10);
+		status->contrast			= sqlite3_column_int(pStmt, 3);
+		status->det_active			= sqlite3_column_int(pStmt, 4);
+		status->lvw_active			= sqlite3_column_int(pStmt, 5);
+		status->det_threshold		= sqlite3_column_int(pStmt, 6);
+		status->det_sensitivity		= sqlite3_column_int(pStmt, 7);
+		status->det_num_shots		= sqlite3_column_int(pStmt, 8);
+		status->det_fps				= sqlite3_column_int(pStmt, 9);
+		status->det_curr_det_id		= sqlite3_column_int(pStmt, 10);
+		status->lvw_fps				= sqlite3_column_int(pStmt, 11);
 	}
 	else
 		return -1;
@@ -336,9 +339,10 @@ int update_entry_status_table_sqlite_db(struct status_table *status)
 
 		char sql[512];
 		sprintf(sql,"UPDATE STATUS SET " \
-				"TILT=%d,BRIGHTNESS=%u,DET_ACTIVE=%u,LVW_ACTIVE=%u,DET_THRESHOLD=%u," \
+				"TILT=%d,BRIGHTNESS=%d,CONTRAST=%d,DET_ACTIVE=%u,LVW_ACTIVE=%u,DET_THRESHOLD=%u," \
 				"DET_SENSITIVITY=%u,DET_NUM_SHOTS=%u,DET_FPS=%u,DET_CURR_DET_ID=%u,LVW_FPS=%u "  \
-				"WHERE ID=0;",	status->tilt,status->brightness,status->det_active, \
+				"WHERE ID=0;",	status->tilt,status->brightness, \
+								status->contrast,status->det_active, \
 								status->lvw_active,status->det_threshold, \
 								status->det_sensitivity,status->det_num_shots, \
 								status->det_fps,status->det_curr_det_id, \

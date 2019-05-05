@@ -45,6 +45,7 @@ cAlarm::cAlarm()
 	lvw_conf.is_active		= false;
 	lvw_conf.tilt			= 0;
 	lvw_conf.brightness		= 0;
+	lvw_conf.contrast		= 0;
 
 	// Syslog initialization
 	openlog ("kinect_alarm::cAlarm", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
@@ -384,18 +385,18 @@ void *cAlarm::detection(void)
 			create_dir(temp);
 */
 			char filepath[PATH_MAX];
-			sprintf(filepath,"%s/%u_%s",DETECTION_PATH,t,"ref_depth.jpeg");
-			if(save_video_frame_to_jpeg(reff_depth_frame,filepath))
+			sprintf(filepath,"%s/%u_%s",DETECTION_PATH,det_conf.curr_det_num,"ref_depth.jpeg");
+			if(save_video_frame_to_jpeg(reff_depth_frame,filepath,lvw_conf.brightness,lvw_conf.contrast))
 				LOG(LOG_ERR,"Error saving depth frame\n");
 
-			sprintf(filepath,"%s/%u_%s",DETECTION_PATH,t,"diff.jpeg");
-			if(save_video_frame_to_jpeg(diff_depth_frame,filepath))
+			sprintf(filepath,"%s/%u_%s",DETECTION_PATH,det_conf.curr_det_num,"diff.jpeg");
+			if(save_video_frame_to_jpeg(diff_depth_frame,filepath,lvw_conf.brightness,lvw_conf.contrast))
 				LOG(LOG_ERR,"Error saving depth frame\n");
 
 			for(int i = 0; i < NUM_DETECTIONS_FRAMES; i++)
 			{
-				sprintf(filepath,"%s/%u_capture_%d.jpeg",DETECTION_PATH,t,i);
-				if(save_video_frame_to_jpeg(video_frames[i],filepath))
+				sprintf(filepath,"%s/%u_capture_%d.jpeg",DETECTION_PATH,det_conf.curr_det_num,i);
+				if(save_video_frame_to_jpeg(video_frames[i],filepath,lvw_conf.brightness,lvw_conf.contrast))
 					LOG(LOG_ERR,"Error saving video frame\n");
 			}
 
@@ -471,7 +472,7 @@ void *cAlarm::liveview(void)
 		kinect.get_video_frame(liveview_frame,&liveview_timestamp);
 
 		// Convert to jpeg
-		save_video_frame_to_jpeg_inmemory(liveview_frame, liveview_jpeg,&size);
+		save_video_frame_to_jpeg_inmemory(liveview_frame, liveview_jpeg,&size,lvw_conf.brightness,lvw_conf.contrast);
 
 		// Convert to base64
 		char *base64_encoded = base64encode(&c, liveview_jpeg, size);
@@ -525,21 +526,22 @@ int cAlarm::get_num_detections()
 	return det_conf.curr_det_num;
 }
 
-bool cAlarm::delete_detections()
-{
-	//TODO
-	return true;
-}
-
 int cAlarm::reset_detection()
 {
-	int det_was_running = detection_running;
-	if(det_was_running)
-		stop_detection();
 	delete_all_entries_det_table_sqlite_db();
+	delete_all_files_from_dir(DETECTION_PATH);
+	return 0;
+}
 
-	if(det_was_running)
-		start_detection();
+int cAlarm::delete_detection(int id)
+{
+
+	char command[50];
+	sprintf(command, "rm -rf %s/%d_*",DETECTION_PATH,id);
+	system(command);
+
+	delete_entry_det_table_sqlite_db(id);
+
 	return 0;
 }
 
@@ -585,6 +587,9 @@ int cAlarm::change_lvw_status(enum enumLvw_conf conf_name, T value)
 		case BRIGHTNESS:
 			lvw_conf.brightness = value;
 			break;
+		case CONTRAST:
+			lvw_conf.contrast = value;
+			break;
 	}
 	write_status(det_conf,lvw_conf);
 	return 0;
@@ -600,7 +605,10 @@ int cAlarm::init_vars_redis()
 		return -1;
 	if(redis_set_int((char *) "tilt", lvw_conf.tilt))
 		return -1;
-
+	if(redis_set_int((char *) "brightness", lvw_conf.brightness))
+		return -1;
+	if(redis_set_int((char *) "contrast", lvw_conf.contrast))
+		return -1;
 	return 0;
 }
 
@@ -609,5 +617,19 @@ int cAlarm::change_tilt(double tilt)
 	kinect.change_tilt(tilt);
 	redis_set_int((char *) "tilt", (int) tilt);
 	change_lvw_status(TILT,tilt);
+	return 0;
+}
+
+int cAlarm::change_brightness(int32_t brightness)
+{
+	redis_set_int((char *) "brightness", brightness);
+	change_lvw_status(BRIGHTNESS,brightness);
+	return 0;
+}
+
+int cAlarm::change_contrast(int32_t contrast)
+{
+	redis_set_int((char *) "contrast", contrast);
+	change_lvw_status(CONTRAST,contrast);
 	return 0;
 }
