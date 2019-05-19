@@ -28,9 +28,6 @@ cKinect::cKinect()
 	kinect_dev				= NULL;
 	running					= false;
 	process_event_thread	= 0;
-
-	// Syslog initialization
-	openlog ("kinect_alarm::cKinect", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 }
 
 cKinect::~cKinect()

@@ -13,6 +13,9 @@
 #include <sqlite3.h>
 #include <stdint.h>
 #include <string.h>
+#include <syslog.h>
+
+#include "log.h"
 
 int init_sqlite_db();
 int deinit_sqlite_db();
@@ -27,7 +30,7 @@ struct det_table{
 };
 
 int create_det_table_sqlite_db();
-int insert_entry_det_table_sqlite_db(unsigned int id, unsigned int datetime, unsigned int duration, char *filename);
+int insert_entry_det_table_sqlite_db(unsigned int id, unsigned int datetime, unsigned int duration, char *filename_img, char *filename_vid);
 int get_entry_det_table_sqlite_db(uint32_t id, uint32_t *timestamp, uint32_t *duration, char *filename);
 int number_entries_det_table_sqlite_db(int *number_entries);
 int delete_entry_det_table_sqlite_db(int id);

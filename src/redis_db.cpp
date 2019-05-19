@@ -23,9 +23,9 @@ int init_redis_db()
 	if (c == NULL || c->err)
 	{
 	    if (c)
-	        printf("Error: %s\n", c->errstr);
+	    	LOG(LOG_ERR,"init_redis_db(): %s\n", c->errstr);
 	    else
-	        printf("Can't allocate redis context\n");
+	    	LOG(LOG_ERR,"init_redis_db(): Can't allocate redis context\n");
 
 	    return -1;
 	}
@@ -162,7 +162,7 @@ int init_async_redis_db()
 
 	c_async = redisAsyncConnectUnix(REDIS_UNIXSOC);
 	if (c_async->err) {
-		printf("error: %s\n", c->errstr);
+		LOG(LOG_ERR,"init_async_redis_db(): %s\n", c->errstr);
 		return 1;
 	}
 	redisLibeventAttach(c_async, base);

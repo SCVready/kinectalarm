@@ -28,9 +28,10 @@
 #include "log.h"
 #include "config.h"
 #include "jpeg.h"
-#include "video.h"
 #include "redis_db.h"
 #include "sqlite_db.h"
+#include "video_stream.h"
+#include "video.h"
 
 //// Defines ////
 
@@ -130,10 +131,16 @@ public:
 	int change_tilt(double tilt);
 
 	/** @brief Change Kinect's contrast */
-	int change_contrast(int32_t brightness);
+	int change_contrast(int32_t value);
 
 	/** @brief Change Kinect's brightness */
-	int change_brightness(int32_t brightness);
+	int change_brightness(int32_t value);
+
+	/** @brief Change detection's threshold */
+	int change_threshold(int32_t value);
+
+	/** @brief Change detection's sensitivity */
+	int change_sensitivity(int32_t value);
 
 private:
 

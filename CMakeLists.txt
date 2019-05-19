@@ -44,6 +44,9 @@ TARGET_LINK_LIBRARIES(
 	ssl
 	crypto
 	sqlite3
+	avcodec
+	avutil
+	avformat
 )
 
 ######## Install targets ########

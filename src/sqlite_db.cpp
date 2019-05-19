@@ -20,7 +20,7 @@ int init_sqlite_db()
 		rc = sqlite3_open("/etc/kinectalarm/detections.db", &db);
 
 		if (rc != SQLITE_OK) {
-			fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+			LOG(LOG_ERR,"Cannot open database: %s\n", sqlite3_errmsg(db));
 			sqlite3_close(db);
 			return -1;
 		}
@@ -48,13 +48,14 @@ int create_det_table_sqlite_db()
 	  "ID			INTEGER		PRIMARY KEY," \
 	  "DATE			DATETIME	NOT NULL," \
 	  "DURATION		INTEGER		NOT NULL," \
-	  "FILENAME		CHAR(50) );";
+	  "FILENAME_IMG	CHAR(50)	NOT NULL," \
+	  "FILENAME_VID	CHAR(50)	NOT NULL);";
 
 	/* Execute SQL statement */
 	int rc = sqlite3_exec(db, sql, NULL, 0, &err_msg);
 
 	if(rc != SQLITE_OK) {
-		fprintf(stderr, "SQL error: %s\n", err_msg);
+		LOG(LOG_ERR,"SQL error: %s\n", err_msg);
 		sqlite3_free(err_msg);
 		return -1;
 	}
@@ -62,25 +63,23 @@ int create_det_table_sqlite_db()
 	return 0;
 }
 
-int insert_entry_det_table_sqlite_db(unsigned int id, unsigned int datetime, unsigned int duration, char *filename)
+int insert_entry_det_table_sqlite_db(unsigned int id, unsigned int datetime, unsigned int duration, char *filename_img, char *filename_vid)
 {
 	char *err_msg = 0;
 	/* Create SQL statement */
 
 	char sql[255];
-	sprintf(sql,"INSERT INTO DETECTIONS (ID,DATE,DURATION,FILENAME) "  \
-		"VALUES (%u, %u, %u, '%s'); ",id,datetime,duration,filename);
+	sprintf(sql,"INSERT INTO DETECTIONS (ID,DATE,DURATION,FILENAME_IMG,FILENAME_VID) "  \
+		"VALUES (%u, %u, %u, '%s', '%s'); ",id,datetime,duration,filename_img,filename_vid);
 
 
 	/* Execute SQL statement */
 	int rc = sqlite3_exec(db, sql, NULL, 0, &err_msg);
 
 	if( rc != SQLITE_OK ) {
-		fprintf(stderr, "SQL error: %s\n", err_msg);
+		LOG(LOG_ERR,"SQL error: %s\n", err_msg);
 		sqlite3_free(err_msg);
 		return -1;
-	} else {
-		fprintf(stdout, "Record created successfully\n");
 	}
 	return 0;
 }
@@ -105,16 +104,14 @@ int number_entries_det_table_sqlite_db(int *number_entries)
 	int rc = sqlite3_exec(db, sql, number_entries_det_table_sqlite_db_cb, number_entries, &err_msg);
 
 	if( rc != SQLITE_OK ) {
-		fprintf(stderr, "SQL error: %s\n", err_msg);
+		LOG(LOG_ERR,"SQL error: %s\n", err_msg);
 		sqlite3_free(err_msg);
 		return -1;
-	} else {
-		fprintf(stdout, "List entry successfully\n");
 	}
 	return 0;
 }
 
-int get_entry_det_table_sqlite_db(uint32_t id, uint32_t *timestamp, uint32_t *duration, char *filename)
+int get_entry_det_table_sqlite_db(uint32_t id, uint32_t *timestamp, uint32_t *duration, char *filename_img, char *filename_vid)
 {
 	char sql[255];
 	sprintf(sql,"SELECT * FROM DETECTIONS WHERE id=%d;",id);
@@ -124,11 +121,9 @@ int get_entry_det_table_sqlite_db(uint32_t id, uint32_t *timestamp, uint32_t *du
 
 	if (rc != SQLITE_OK ) {
 
-		fprintf(stderr, "Failed to prepare statement\n");
-		fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
-
+		LOG(LOG_ERR,"Failed to prepare statement\n");
+		LOG(LOG_ERR,"Cannot open database: %s\n", sqlite3_errmsg(db));
 		sqlite3_close(db);
-
 		return 1;
 	}
 
@@ -144,11 +139,18 @@ int get_entry_det_table_sqlite_db(uint32_t id, uint32_t *timestamp, uint32_t *du
 		if(duration)
 			*duration = sqlite3_column_int(pStmt, 2);
 
-		if(filename) {
+		if(filename_img) {
 			const unsigned char *text = sqlite3_column_text(pStmt, 3);
 			size_t len = strlen((char*)text);
-			strncpy(filename,(const char*)text,len);
-			filename[len] = '\0';
+			strncpy(filename_img,(const char*)text,len);
+			filename_img[len] = '\0';
+		}
+
+		if(filename_vid) {
+			const unsigned char *text = sqlite3_column_text(pStmt, 4);
+			size_t len = strlen((char*)text);
+			strncpy(filename_vid,(const char*)text,len);
+			filename_vid[len] = '\0';
 		}
 
 	}
@@ -171,11 +173,9 @@ int delete_entry_det_table_sqlite_db(int id)
 	int rc = sqlite3_exec(db, sql, NULL, 0, &err_msg);
 
 	if( rc != SQLITE_OK ) {
-		fprintf(stderr, "SQL error: %s\n", err_msg);
+		LOG(LOG_ERR,"SQL error: %s\n", err_msg);
 		sqlite3_free(err_msg);
 		return -1;
-	} else {
-		fprintf(stdout, "Delete entry successfully\n");
 	}
 	return 0;
 }
@@ -191,11 +191,9 @@ int delete_all_entries_det_table_sqlite_db()
 	int rc = sqlite3_exec(db, sql, NULL, 0, &err_msg);
 
 	if( rc != SQLITE_OK ) {
-		fprintf(stderr, "SQL error: %s\n", err_msg);
+		LOG(LOG_ERR,"SQL error: %s\n", err_msg);
 		sqlite3_free(err_msg);
 		return -1;
-	} else {
-		fprintf(stdout, "Delete all entries successfully\n");
 	}
 	return 0;
 }
@@ -225,7 +223,7 @@ int create_status_table_sqlite_db()
 	int rc = sqlite3_exec(db, sql, NULL, 0, &err_msg);
 
 	if(rc != SQLITE_OK) {
-		fprintf(stderr, "SQL error: %s\n", err_msg);
+		LOG(LOG_ERR,"SQL error: %s\n", err_msg);
 		sqlite3_free(err_msg);
 		return -1;
 	}
@@ -242,7 +240,7 @@ int number_entries_status_table_sqlite_db(int *number_entries)
 	int rc = sqlite3_prepare_v2(db, sql, -1, &pStmt, 0);
 
 	if (rc != SQLITE_OK ) {
-		fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+		LOG(LOG_ERR,"Cannot open database: %s\n", sqlite3_errmsg(db));
 		sqlite3_close(db);
 		return -1;
 	}
@@ -281,11 +279,9 @@ int insert_entry_status_table_sqlite_db(struct status_table *status)
 	int rc = sqlite3_exec(db, sql, NULL, 0, &err_msg);
 
 	if( rc != SQLITE_OK ) {
-		fprintf(stderr, "SQL error: %s\n", err_msg);
+		LOG(LOG_ERR,"SQL error: %s\n", err_msg);
 		sqlite3_free(err_msg);
 		return -1;
-	} else {
-		fprintf(stdout, "Record created successfully\n");
 	}
 	return 0;
 }
@@ -300,8 +296,8 @@ int get_entry_status_table_sqlite_db(struct status_table *status)
 
 	if (rc != SQLITE_OK ) {
 
-		fprintf(stderr, "Failed to prepare statement\n");
-		fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+		LOG(LOG_ERR,"Failed to prepare statement\n");
+		LOG(LOG_ERR,"Cannot open database: %s\n", sqlite3_errmsg(db));
 
 		sqlite3_close(db);
 
@@ -335,28 +331,26 @@ int get_entry_status_table_sqlite_db(struct status_table *status)
 int update_entry_status_table_sqlite_db(struct status_table *status)
 {
 	char *err_msg = 0;
-		/* Create SQL statement */
+	/* Create SQL statement */
 
-		char sql[512];
-		sprintf(sql,"UPDATE STATUS SET " \
-				"TILT=%d,BRIGHTNESS=%d,CONTRAST=%d,DET_ACTIVE=%u,LVW_ACTIVE=%u,DET_THRESHOLD=%u," \
-				"DET_SENSITIVITY=%u,DET_NUM_SHOTS=%u,DET_FPS=%u,DET_CURR_DET_ID=%u,LVW_FPS=%u "  \
-				"WHERE ID=0;",	status->tilt,status->brightness, \
-								status->contrast,status->det_active, \
-								status->lvw_active,status->det_threshold, \
-								status->det_sensitivity,status->det_num_shots, \
-								status->det_fps,status->det_curr_det_id, \
-								status->lvw_fps);
+	char sql[512];
+	sprintf(sql,"UPDATE STATUS SET " \
+			"TILT=%d,BRIGHTNESS=%d,CONTRAST=%d,DET_ACTIVE=%u,LVW_ACTIVE=%u,DET_THRESHOLD=%u," \
+			"DET_SENSITIVITY=%u,DET_NUM_SHOTS=%u,DET_FPS=%u,DET_CURR_DET_ID=%u,LVW_FPS=%u "  \
+			"WHERE ID=0;",	status->tilt,status->brightness, \
+							status->contrast,status->det_active, \
+							status->lvw_active,status->det_threshold, \
+							status->det_sensitivity,status->det_num_shots, \
+							status->det_fps,status->det_curr_det_id, \
+							status->lvw_fps);
 
-		/* Execute SQL statement */
-		int rc = sqlite3_exec(db, sql, NULL, 0, &err_msg);
+	/* Execute SQL statement */
+	int rc = sqlite3_exec(db, sql, NULL, 0, &err_msg);
 
-		if( rc != SQLITE_OK ) {
-			fprintf(stderr, "SQL error: %s\n", err_msg);
-			sqlite3_free(err_msg);
-			return -1;
-		} else {
-			fprintf(stdout, "Record created successfully\n");
-		}
-		return 0;
+	if( rc != SQLITE_OK ) {
+		LOG(LOG_ERR,"SQL error: %s\n", err_msg);
+		sqlite3_free(err_msg);
+		return -1;
+	}
+	return 0;
 }

@@ -184,6 +184,16 @@ int message_process(class cAlarm *alarm, char *command)
 			int value = std::stoi(words[1]);
 			alarm->change_contrast(value);
 		}
+		else if(!words[0].compare("threshold"))
+		{
+			int value = std::stoi(words[1]);
+			alarm->change_threshold(value);
+		}
+		else if(!words[0].compare("sensitivity"))
+		{
+			int value = std::stoi(words[1]);
+			alarm->change_sensitivity(value);
+		}
 	}
 	return 0;
 }

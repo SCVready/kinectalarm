@@ -13,10 +13,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
+#include <syslog.h>
 
 #include <hiredis/hiredis.h>
 #include <hiredis/async.h>
 #include <hiredis/adapters/libevent.h>
+
+#include "log.h"
 
 #define REDIS_UNIXSOC		"/tmp/redis.sock"
 #define REDIS_MAX_STRING	200

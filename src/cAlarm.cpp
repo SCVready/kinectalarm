@@ -46,9 +46,6 @@ cAlarm::cAlarm()
 	lvw_conf.tilt			= 0;
 	lvw_conf.brightness		= 0;
 	lvw_conf.contrast		= 0;
-
-	// Syslog initialization
-	openlog ("kinect_alarm::cAlarm", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 }
 
 cAlarm::~cAlarm()
@@ -152,7 +149,6 @@ int cAlarm::init()
 	liveview_buffer_out = (uint8_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint8_t)*2);
 
 	// Apply status
-
 	if(det_conf.is_active)
 		start_detection();
 
@@ -213,16 +209,28 @@ int cAlarm::deinit()
 
 int cAlarm::start_detection()
 {
+	// Start kinect
 	if(!kinect.is_kinect_running())
 		kinect.start();
 
 	if(!detection_running)
 	{
+		//Change running flag
 		detection_running = true;
+
+		//Change status
 		change_det_status(DET_ACTIVE,true);
+
+		//Update Redis DB
 		redis_set_int((char *) "det_status", 1);
+
+		//Update led
 		update_led();
+
+		//Launch detection thread
 		pthread_create(&detection_thread, 0, detection_thread_helper, this);
+
+		LOG(LOG_INFO,"Detection thread running\n");
 		return 0;
 	}
 	return 1;
@@ -232,12 +240,24 @@ int cAlarm::stop_detection()
 {
 	if(detection_running)
 	{
+		//Change running flag
 		detection_running = false;
+
+		//Change status
 		change_det_status(DET_ACTIVE,false);
+
+		//Update Redis DB
 		redis_set_int((char *) "det_status", 0);
+
+		//Wait to the thread ends
 		pthread_join(detection_thread,NULL);
+
+		//Update led
 		update_led();
 
+		LOG(LOG_INFO,"Detection thread stopped\n");
+
+		//Turn off Kinect
 		if(!detection_running && !liveview_running)
 			kinect.stop();
 
@@ -248,16 +268,28 @@ int cAlarm::stop_detection()
 
 int cAlarm::start_liveview()
 {
+	// Start kinect
 	if(!kinect.is_kinect_running())
 		kinect.start();
 
 	if(!liveview_running)
 	{
+		//Change running flag
 		liveview_running = true;
+
+		//Change status
 		change_lvw_status(LVW_ACTIVE,true);
+
+		//Update redis db
 		redis_set_int((char *) "lvw_status", 1);
+
+		//Update led
 		update_led();
+
+		//Launch Liveview thread
 		pthread_create(&liveview_thread, 0, liveview_thread_helper, this);
+
+		LOG(LOG_INFO,"Liveview thread running\n");
 		return 0;
 	}
 
@@ -268,12 +300,24 @@ int cAlarm::stop_liveview()
 {
 	if(liveview_running)
 	{
+		//Change running flag
 		liveview_running = false;
+
+		//Change status
 		change_lvw_status(LVW_ACTIVE,false);
+
+		//Update Redis DB
 		redis_set_int((char *) "lvw_status", 0);
+
+		//Wait to the thread ends
 		pthread_join(liveview_thread,NULL);
+
+		//Update led
 		update_led();
 
+		LOG(LOG_INFO,"Liveview thread stopped\n");
+
+		//Turn off Kinect
 		if(!detection_running && !liveview_running)
 			kinect.stop();
 	}
@@ -283,7 +327,7 @@ int cAlarm::stop_liveview()
 uint32_t cAlarm::compare_depth_frame_to_reference_depth_frame()
 {
 	uint32_t cont = 0;
-	static uint32_t max_cont = 0;
+
 	pthread_mutex_lock(&diff_depth_frame_lock);
 	for(int i = 0; i <(DEPTH_WIDTH*DEPTH_HEIGHT);i++)
 	{
@@ -293,20 +337,17 @@ uint32_t cAlarm::compare_depth_frame_to_reference_depth_frame()
 		else
 		{
 			diff_depth_frame[i] =abs(depth_frame[i] - reff_depth_frame[i]);
-			if(diff_depth_frame[i] > DEPTH_CHANGE_TOLERANCE)
+			if(diff_depth_frame[i] > det_conf.tolerance)
 				cont++;
 			else
 				diff_depth_frame[i] = 0;
 		}
 	}
 	pthread_mutex_unlock(&diff_depth_frame_lock);
-	if(cont > max_cont)
-		max_cont = cont;
-	//printf("DIFF %u\t MAX DIFF %u\n",cont,max_cont);
 	return cont;
 }
 
-
+//TODO NOT USED
 int cAlarm::get_diff_depth_frame(uint16_t *diff_depth_frame, uint32_t *timestamp)
 {
 
@@ -323,23 +364,26 @@ void *cAlarm::detection(void)
 	depth_timestamp			= 0;
 	video_timestamp			= 0;
 	time_t t;
+	int frame_counter = 0;
+	struct timespec sleep_time = {0,200000000}; //TODO parameter (fps)
+	struct timespec wakeup_time;
+	struct timespec current_time;
+	struct timespec sleep_remain_time = {0,0};
 
 	while(detection_running)
 	{
+		//Update led
 		update_led();
 
 		// Get Reference frame
-
 		if(kinect.get_depth_frame(reff_depth_frame,&reff_depth_timestamp))
 		{
 			LOG(LOG_ERR,"Failed to capture depth frame\n");
 			kinect.deinit();
 			return 0;
 		}
-		LOG(LOG_INFO,"Reference depth frame captured\n");
 
-		// Detection depth changes
-
+		// Detect depth changes
 		int diff_cont = 0;
 		do
 		{
@@ -350,65 +394,99 @@ void *cAlarm::detection(void)
 				kinect.deinit();
 				return 0;
 			}
+
 			diff_cont = compare_depth_frame_to_reference_depth_frame();
-		}while(diff_cont < DETECTION_THRESHOLD && detection_running);
+
+		}while(diff_cont < det_conf.threshold && detection_running);
 
 
 		// Detection occurs
 		if(detection_running)
 		{
+			LOG(LOG_ALERT,"Intrusion occurs with %u differences\n",diff_cont);
+
+			//Get timestamp of the detection
 			time(&t);
 
-			// Publish event
-			char message[100];
-			sprintf(message, "newdet %u %u",det_conf.curr_det_num,t);
-			redis_publish("kinectalarm_event",message);
-
+			//Update kinect led
 			kinect.change_led_color(LED_RED);
-			LOG(LOG_ALERT,"DETECTION\n");
 
-			for(int i = 0; i < NUM_DETECTIONS_FRAMES; i++)
+			frame_counter = 0;
+
+			//Loop getting images until the detection ceases
+			do
 			{
-				if(kinect.get_video_frame(video_frames[i],&video_timestamp))
+				//Copy last depht frame to the refference frame
+				reff_depth_timestamp = depth_timestamp;
+				memcpy(reff_depth_frame,depth_frame,DEPTH_WIDTH * DEPTH_HEIGHT * sizeof(uint16_t));
+
+				clock_gettime(CLOCK_MONOTONIC, &wakeup_time);
+
+				//Loop getting a fix nunber of frames
+				for(int i = 0; i < NUM_DETECTIONS_FRAMES; i++)
 				{
-					LOG(LOG_ERR,"Failed to capture video frame\n");
+					wakeup_time = timeAdd(wakeup_time, sleep_time);
+
+					//Getting video frame
+					if(kinect.get_video_frame(video_frames[0],&video_timestamp))
+					{
+						LOG(LOG_ERR,"Failed to capture video frame\n");
+						kinect.deinit();
+						return 0;
+					}
+
+					//Save the frame to JPEG
+					char filepath[PATH_MAX];
+					sprintf(filepath,"%s/%u_capture_%d.jpeg",DETECTION_PATH,det_conf.curr_det_num,frame_counter++);
+					if(save_video_frame_to_jpeg(video_frames[0],filepath,lvw_conf.brightness,lvw_conf.contrast))
+						LOG(LOG_ERR,"Error saving video frame\n");
+
+					clock_gettime(CLOCK_MONOTONIC, &current_time);
+					sleep_remain_time = timeSub(wakeup_time,current_time);
+
+					//Sleep until next frame
+					if(i != (NUM_DETECTIONS_FRAMES-1))
+						clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &wakeup_time, NULL);
+				}
+				//Get depth image to compare
+				if(kinect.get_depth_frame(depth_frame,&depth_timestamp))
+				{
+					LOG(LOG_ERR,"Failed to capture depth frame\n");
 					kinect.deinit();
 					return 0;
 				}
-				LOG(LOG_INFO,"Video Frame captured\n");
-				if(i != (NUM_DETECTIONS_FRAMES-1))
-					usleep(FRAME_INTERVAL_US);
-			}
-/*
-			char temp[PATH_MAX];
-			sprintf(temp,"%s/%d",DETECTION_PATH,det_conf.curr_det_num);
-			create_dir(temp);
-*/
+				diff_cont = compare_depth_frame_to_reference_depth_frame();
+			}while(diff_cont > det_conf.threshold && detection_running);
+
+
+			char filepath_vid[PATH_MAX];
 			char filepath[PATH_MAX];
-			sprintf(filepath,"%s/%u_%s",DETECTION_PATH,det_conf.curr_det_num,"ref_depth.jpeg");
-			if(save_video_frame_to_jpeg(reff_depth_frame,filepath,lvw_conf.brightness,lvw_conf.contrast))
-				LOG(LOG_ERR,"Error saving depth frame\n");
+			sprintf(filepath_vid,"%s/%u_%s",DETECTION_PATH,det_conf.curr_det_num,"capture_vid.mp4");
+			sprintf(filepath,"%s/%u_capture.tar",DETECTION_PATH,det_conf.curr_det_num);
 
-			sprintf(filepath,"%s/%u_%s",DETECTION_PATH,det_conf.curr_det_num,"diff.jpeg");
-			if(save_video_frame_to_jpeg(diff_depth_frame,filepath,lvw_conf.brightness,lvw_conf.contrast))
-				LOG(LOG_ERR,"Error saving depth frame\n");
+			//Save video //TODO
+			//encode_video_from_frames(filepath_vid,video_frames,5,VIDEO_HEIGHT,VIDEO_WIDTH,5);
 
-			for(int i = 0; i < NUM_DETECTIONS_FRAMES; i++)
-			{
-				sprintf(filepath,"%s/%u_capture_%d.jpeg",DETECTION_PATH,det_conf.curr_det_num,i);
-				if(save_video_frame_to_jpeg(video_frames[i],filepath,lvw_conf.brightness,lvw_conf.contrast))
-					LOG(LOG_ERR,"Error saving video frame\n");
-			}
-
+			//Save gif //TODO
 			//save_video_frames_to_gif(video_frames,NUM_DETECTIONS_FRAMES,(1/0.2),(char *)"asd");
 
+			// Package detections
+			char command[PATH_MAX];
+			sprintf(command,"cd %s;tar -cf %u_capture.tar %u*",DETECTION_PATH,det_conf.curr_det_num,det_conf.curr_det_num);
+			system(command);
+
+			// Publish event
+			char message[255];
+			sprintf(message, "newdet %u %u %u",det_conf.curr_det_num,t,frame_counter);
+			redis_publish("kinectalarm_event",message);
 
 			// Update SQLite db
-			insert_entry_det_table_sqlite_db(det_conf.curr_det_num,t,5,filepath); //TODO check if it fails
+			insert_entry_det_table_sqlite_db(det_conf.curr_det_num,t,frame_counter,filepath,filepath_vid); //TODO check if it fails
 
 			// Update Redis db
 			redis_set_int((char *) "det_numdet", det_conf.curr_det_num); //TODO check if it fails
 
+			// Change Status
 			change_det_status(CURR_DET_NUM,det_conf.curr_det_num+1);
 		}
 	}
@@ -421,7 +499,7 @@ void *cAlarm::detection_thread_helper(void *context)
 	return ((cAlarm *)context)->detection();
 }
 
-/*
+/*//TODO Liveview h254
 void *cAlarm::liveview(void)
 {
 
@@ -530,6 +608,7 @@ int cAlarm::reset_detection()
 {
 	delete_all_entries_det_table_sqlite_db();
 	delete_all_files_from_dir(DETECTION_PATH);
+	LOG(LOG_INFO,"Deleted all detection entries\n");
 	return 0;
 }
 
@@ -539,9 +618,9 @@ int cAlarm::delete_detection(int id)
 	char command[50];
 	sprintf(command, "rm -rf %s/%d_*",DETECTION_PATH,id);
 	system(command);
-
 	delete_entry_det_table_sqlite_db(id);
 
+	LOG(LOG_INFO,"Delete detection n°%d\n",id);
 	return 0;
 }
 
@@ -609,6 +688,10 @@ int cAlarm::init_vars_redis()
 		return -1;
 	if(redis_set_int((char *) "contrast", lvw_conf.contrast))
 		return -1;
+	if(redis_set_int((char *) "threshold", det_conf.threshold))
+		return -1;
+	if(redis_set_int((char *) "sensitivity", det_conf.tolerance))
+		return -1;
 	return 0;
 }
 
@@ -617,19 +700,38 @@ int cAlarm::change_tilt(double tilt)
 	kinect.change_tilt(tilt);
 	redis_set_int((char *) "tilt", (int) tilt);
 	change_lvw_status(TILT,tilt);
+	LOG(LOG_INFO,"Changed Kinect's titl to: %d\n",(int)tilt);
 	return 0;
 }
 
-int cAlarm::change_brightness(int32_t brightness)
+int cAlarm::change_brightness(int32_t value)
 {
-	redis_set_int((char *) "brightness", brightness);
-	change_lvw_status(BRIGHTNESS,brightness);
+	redis_set_int((char *) "brightness", value);
+	change_lvw_status(BRIGHTNESS,value);
+	LOG(LOG_INFO,"Changed Kinect's brightness to: %d\n",value);
 	return 0;
 }
 
-int cAlarm::change_contrast(int32_t contrast)
+int cAlarm::change_contrast(int32_t value)
 {
-	redis_set_int((char *) "contrast", contrast);
-	change_lvw_status(CONTRAST,contrast);
+	redis_set_int((char *) "contrast", value);
+	change_lvw_status(CONTRAST,value);
+	LOG(LOG_INFO,"Changed Kinect's contrast to: %d\n",value);
+	return 0;
+}
+
+int cAlarm::change_threshold(int32_t value)
+{
+	redis_set_int((char *) "threshold", value);
+	change_det_status(THRESHOLD,value);
+	LOG(LOG_INFO,"Changed Kinect's threshold to: %d\n",value);
+	return 0;
+}
+
+int cAlarm::change_sensitivity(int32_t value)
+{
+	redis_set_int((char *) "sensitivity", value);
+	change_det_status(TOLERANCE,value);
+	LOG(LOG_INFO,"Changed Kinect's sensitivity to: %d\n",value);
 	return 0;
 }
