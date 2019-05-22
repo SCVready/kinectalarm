@@ -230,6 +230,9 @@ int cAlarm::start_detection()
 		//Launch detection thread
 		pthread_create(&detection_thread, 0, detection_thread_helper, this);
 
+		//Publish event
+		redis_publish("event_info","Detection started");
+
 		LOG(LOG_INFO,"Detection thread running\n");
 		return 0;
 	}
@@ -254,6 +257,9 @@ int cAlarm::stop_detection()
 
 		//Update led
 		update_led();
+
+		//Publish event
+		redis_publish("event_info","Detection stopped");
 
 		LOG(LOG_INFO,"Detection thread stopped\n");
 
@@ -289,6 +295,9 @@ int cAlarm::start_liveview()
 		//Launch Liveview thread
 		pthread_create(&liveview_thread, 0, liveview_thread_helper, this);
 
+		//Publish event
+		redis_publish("event_info","Liveview started");
+
 		LOG(LOG_INFO,"Liveview thread running\n");
 		return 0;
 	}
@@ -314,6 +323,9 @@ int cAlarm::stop_liveview()
 
 		//Update led
 		update_led();
+
+		//Publish event
+		redis_publish("event_info","Liveview stopped");
 
 		LOG(LOG_INFO,"Liveview thread stopped\n");
 
@@ -370,6 +382,8 @@ void *cAlarm::detection(void)
 	struct timespec current_time;
 	struct timespec sleep_remain_time = {0,0};
 
+	char message[255];
+
 	while(detection_running)
 	{
 		//Update led
@@ -403,10 +417,15 @@ void *cAlarm::detection(void)
 		// Detection occurs
 		if(detection_running)
 		{
-			LOG(LOG_ALERT,"Intrusion occurs with %u differences\n",diff_cont);
-
 			//Get timestamp of the detection
 			time(&t);
+
+			LOG(LOG_ALERT,"Intrusion occurs with %u differences\n",diff_cont);
+
+			// Publish events
+			sprintf(message, "New Intrusion");
+			redis_publish("event_error",message);
+			redis_publish("email_send_det","");
 
 			//Update kinect led
 			kinect.change_led_color(LED_RED);
@@ -476,9 +495,8 @@ void *cAlarm::detection(void)
 			system(command);
 
 			// Publish event
-			char message[255];
 			sprintf(message, "newdet %u %u %u",det_conf.curr_det_num,t,frame_counter);
-			redis_publish("kinectalarm_event",message);
+			redis_publish("new_det",message);
 
 			// Update SQLite db
 			insert_entry_det_table_sqlite_db(det_conf.curr_det_num,t,frame_counter,filepath,filepath_vid); //TODO check if it fails
@@ -609,6 +627,8 @@ int cAlarm::reset_detection()
 	delete_all_entries_det_table_sqlite_db();
 	delete_all_files_from_dir(DETECTION_PATH);
 	LOG(LOG_INFO,"Deleted all detection entries\n");
+	// Publish events
+	redis_publish("event_success","Deleted all detections");
 	return 0;
 }
 
@@ -725,6 +745,10 @@ int cAlarm::change_threshold(int32_t value)
 	redis_set_int((char *) "threshold", value);
 	change_det_status(THRESHOLD,value);
 	LOG(LOG_INFO,"Changed Kinect's threshold to: %d\n",value);
+	// Publish events
+	char message[255];
+	sprintf(message, "Threshold changed to %d",value);
+	redis_publish("event_success",message);
 	return 0;
 }
 
@@ -733,5 +757,9 @@ int cAlarm::change_sensitivity(int32_t value)
 	redis_set_int((char *) "sensitivity", value);
 	change_det_status(TOLERANCE,value);
 	LOG(LOG_INFO,"Changed Kinect's sensitivity to: %d\n",value);
+	// Publish events
+	char message[255];
+	sprintf(message, "Sensitivity changed to %d",value);
+	redis_publish("event_success",message);
 	return 0;
 }
