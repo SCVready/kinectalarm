@@ -132,6 +132,28 @@ clean:
     return 0;
 }
 
+// SETEX functions
+int redis_setex_int(char *key, int time, int value)
+{
+	int retval = 0;
+	redisReply *reply;
+
+	pthread_mutex_lock(&redis_context_mutex);
+
+    reply = (redisReply *) redisCommand(c,"SETEX %s %d %d",key,time,value);
+    if(reply->type == REDIS_REPLY_ERROR)
+    {
+    	retval = -1;
+    	goto clean;
+    }
+
+clean:
+    freeReplyObject(reply);
+    pthread_mutex_unlock(&redis_context_mutex);
+    return retval;
+}
+
+
 // Publish
 
 int redis_publish(char *channel, char *message)

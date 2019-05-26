@@ -14,6 +14,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <syslog.h>
+#include <pthread.h>
 
 #include <iostream>
 #include <algorithm>
@@ -34,6 +35,7 @@ volatile bool kinect_alarm_running = true;
 
 int message_process(class cAlarm *alarm, char *command);
 void onMessage(redisAsyncContext *c, void *reply, void *privdata);
+void *refresh_watchdog(void *x_void_ptr);
 
 void signalHandler(int signal)
 {
@@ -56,6 +58,7 @@ int main(int argc, char** argv)
 #endif
 
 	int retvalue = 0;
+
 
 	// Handle signals
 	signal(SIGINT, signalHandler);
@@ -85,6 +88,16 @@ int main(int argc, char** argv)
 
 	// Subscribe to redis channel
 	async_redis_subscribe("kinectalarm",onMessage,&alarma);
+
+	//TODO LAUNCH THREAD
+	pthread_t watchdog_thread;
+
+	if(pthread_create(&watchdog_thread, NULL, refresh_watchdog, NULL))
+	{
+		LOG(LOG_ERR, "Error launching watchdog_thread\n");
+		return 1;
+	}
+	redis_setex_int("kinectalarm_watchdog", 5, 0);
 
 	// Listen to publishes
 	async_redis_event_dispatch();
@@ -196,4 +209,14 @@ int message_process(class cAlarm *alarm, char *command)
 		}
 	}
 	return 0;
+}
+
+
+void *refresh_watchdog(void *x_void_ptr)
+{
+	while(1){
+	redis_setex_int("kinectalarm_watchdog", 2, 0);
+	sleep(1);
+	}
+	return NULL;
 }

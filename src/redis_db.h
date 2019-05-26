@@ -36,6 +36,9 @@ int redis_get_char(char *key, char **value);
 int redis_set_int(char *key, int value);
 int redis_set_char(char *key, char *value);
 
+// SETEX functions
+int redis_setex_int(char *key, int time, int value);
+
 // PUBLISH
 int redis_publish(char *channel, char *message);
 
