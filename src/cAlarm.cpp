@@ -481,7 +481,7 @@ void *cAlarm::detection(void)
 			char filepath_vid[PATH_MAX];
 			char filepath[PATH_MAX];
 			sprintf(filepath_vid,"%s/%u_%s",DETECTION_PATH,det_conf.curr_det_num,"capture_vid.mp4");
-			sprintf(filepath,"%s/%u_capture.tar",DETECTION_PATH,det_conf.curr_det_num);
+			sprintf(filepath,"%s/%u_capture.zip",DETECTION_PATH,det_conf.curr_det_num);
 
 			//Save video //TODO
 			//encode_video_from_frames(filepath_vid,video_frames,5,VIDEO_HEIGHT,VIDEO_WIDTH,5);
@@ -491,7 +491,7 @@ void *cAlarm::detection(void)
 
 			// Package detections
 			char command[PATH_MAX];
-			sprintf(command,"cd %s;tar -cf %u_capture.tar %u*",DETECTION_PATH,det_conf.curr_det_num,det_conf.curr_det_num);
+			sprintf(command,"cd %s;zip -q %u_capture.zip %u*",DETECTION_PATH,det_conf.curr_det_num,det_conf.curr_det_num);
 			system(command);
 
 			// Publish event
