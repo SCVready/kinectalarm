@@ -184,27 +184,57 @@ int message_process(class cAlarm *alarm, char *command)
 		}
 		else if(!words[0].compare("tilt"))
 		{
-			int tilt = std::stoi(words[1]);
+			int tilt;
+			try {
+				tilt = std::stoi(words[1]);
+			}
+			catch (const std::invalid_argument& ia) {
+				tilt = 0;
+			}
 			alarm->change_tilt(tilt);
 		}
 		else if(!words[0].compare("brightness"))
 		{
-			int value = std::stoi(words[1]);
+			int value;
+			try {
+				value = std::stoi(words[1]);
+			}
+			catch (const std::invalid_argument& ia) {
+				value = 0;
+			}
 			alarm->change_brightness(value);
 		}
 		else if(!words[0].compare("contrast"))
 		{
-			int value = std::stoi(words[1]);
+			int value;
+			try {
+				value = std::stoi(words[1]);
+			}
+			catch (const std::invalid_argument& ia) {
+				value = 0;
+			}
 			alarm->change_contrast(value);
 		}
 		else if(!words[0].compare("threshold"))
 		{
-			int value = std::stoi(words[1]);
+			int value;
+			try {
+				value = std::stoi(words[1]);
+			}
+			catch (const std::invalid_argument& ia) {
+				value = 0;
+			}
 			alarm->change_threshold(value);
 		}
 		else if(!words[0].compare("sensitivity"))
 		{
-			int value = std::stoi(words[1]);
+			int value;
+			try {
+				value = std::stoi(words[1]);
+			}
+			catch (const std::invalid_argument& ia) {
+				value = 0;
+			}
 			alarm->change_sensitivity(value);
 		}
 	}
