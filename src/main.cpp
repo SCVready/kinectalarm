@@ -31,6 +31,8 @@
 #include "redis_db.h"
 #include "common.h"
 
+#define KINECTALARM_VERSION "0.1"
+
 volatile bool kinect_alarm_running = true;
 
 int message_process(class cAlarm *alarm, char *command);
@@ -88,6 +90,9 @@ int main(int argc, char** argv)
 
 	// Subscribe to redis channel
 	async_redis_subscribe("kinectalarm",onMessage,&alarma);
+
+	// Set version on redis
+	redis_set_char("kinectalarm_version",KINECTALARM_VERSION);
 
 	//TODO LAUNCH THREAD
 	pthread_t watchdog_thread;
