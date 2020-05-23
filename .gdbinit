@@ -1,1 +1,0 @@
-set sysroot /opt/poky/2.6.1/sysroots/cortexa7t2hf-neon-vfpv4-poky-linux-gnueabi
