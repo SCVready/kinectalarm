@@ -1,0 +1,14 @@
+{
+    "configurations": [
+      {
+        "name": "Linux",
+        "intelliSenseMode": "gcc-x64",
+        "includePath": ["/opt/sdks/rasp/sysroots/aarch64-poky-linux/usr/include",
+                        "/opt/sdks/rasp/sysroots/aarch64-poky-linux/usr/include/c++/9.3.0"],
+        "compilerPath": "/opt/sdks/rasp/sysroots/x86_64-pokysdk-linux/usr/bin/aarch64-poky-linux/aarch64-poky-linux-g++",
+        "cStandard": "c11",
+        "cppStandard": "c++17"
+      }
+    ],
+    "version": 4
+  }

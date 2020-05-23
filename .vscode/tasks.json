@@ -1,0 +1,29 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "type": "shell",
+        "label": "make",
+        "dependsOn" : [],
+        "command" : "source /opt/sdks/rasp/environment-setup-aarch64-poky-linux; mkdir -p build; cd build; cmake -DCMAKE_BUILD_TYPE=Debug ..; make;",
+      },
+      {
+        "type": "shell",
+        "label": "sync",
+        "dependsOn" : [],
+        "command" : "rsync -rlptzv --progress --delete --exclude=.git --exclude=.vscode ${workspaceRoot} root@192.168.0.4:/home/root/",
+      },
+      {
+        "type": "shell",
+        "label": "build",
+        "dependsOn" : ["make","sync"],
+        "dependsOrder": "sequence",
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        }
+      },
+    ]
+  }
