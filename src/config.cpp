@@ -5,7 +5,7 @@
  *
  */
 
-#include "config.h"
+#include "config.hpp"
 
 int write_status(struct sDet_conf det_conf,struct sLvw_conf lvw_conf)
 {

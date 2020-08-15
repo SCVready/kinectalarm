@@ -5,10 +5,8 @@
  *
  */
 
-#include "jpeg.h"
-#include "global_parameters.h"
-
-
+#include "jpeg.hpp"
+#include "global_parameters.hpp"
 
 bool save_depth_frame_to_jpeg(uint16_t* depth_frame,char *filepath)
 {

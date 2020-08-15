@@ -1,7 +1,7 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file sqlite_db.h
+ * @file sqlite_db.hpp
  *
  */
 
@@ -15,7 +15,7 @@
 #include <string.h>
 #include <syslog.h>
 
-#include "log.h"
+#include "log.hpp"
 
 int init_sqlite_db();
 int deinit_sqlite_db();

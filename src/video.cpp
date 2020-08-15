@@ -5,7 +5,7 @@
  *
  */
 
-#include "video.h"
+#include "video.hpp"
 
 static void encode(AVCodecContext *enc_ctx, AVFrame *frame, AVPacket *pkt,
                 FILE *outfile)

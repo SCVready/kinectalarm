@@ -5,7 +5,7 @@
  *
  */
 
-#include "sqlite_db.h"
+#include "sqlite_db.hpp"
 
 // Global variables
 sqlite3 *db = NULL;

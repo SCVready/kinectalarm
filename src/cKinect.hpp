@@ -1,7 +1,7 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file cKinect.h
+ * @file cKinect.hpp
  *
  */
 
@@ -17,12 +17,12 @@
 #include <unistd.h>
 #include <pthread.h>
 
-#include "global_parameters.h"
+#include "global_parameters.hpp"
 #include <libfreenect/libfreenect.h>
 #include <libfreenect/libfreenect_sync.h>
 #include <syslog.h>
-#include "log.h"
-#include "common.h"
+#include "log.hpp"
+#include "common.hpp"
 
 
 //// Defines ////

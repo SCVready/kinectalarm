@@ -24,12 +24,12 @@
 #include <sstream>
 #include <iterator>
 
-#include "global_parameters.h"
-#include "cAlarm.h"
-#include "log.h"
-#include "config.h"
-#include "redis_db.h"
-#include "common.h"
+#include "global_parameters.hpp"
+#include "cAlarm.hpp"
+#include "log.hpp"
+#include "config.hpp"
+#include "redis_db.hpp"
+#include "common.hpp"
 
 #define KINECTALARM_VERSION "0.1"
 

@@ -5,7 +5,7 @@
  *
  */
 
-#include "cKinect.h"
+#include "cKinect.hpp"
 
 //Static cKinect variables declaration
 

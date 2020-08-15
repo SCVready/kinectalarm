@@ -5,7 +5,7 @@
  *
  */
 
-#include "common.h"
+#include "common.hpp"
 
 int create_dir(char* path)
 {

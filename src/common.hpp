@@ -1,7 +1,7 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file common.h
+ * @file common.hpp
  *
  */
 

@@ -1,7 +1,7 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file video_stream.h
+ * @file video_stream.hpp
  *
  */
 

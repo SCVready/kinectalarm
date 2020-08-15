@@ -1,7 +1,7 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file cKinect.h
+ * @file cKinect.hpp
  *
  */
 
@@ -25,23 +25,23 @@
 #include <errno.h>
 #include <time.h>
 
-#include "global_parameters.h"
-#include "cKinect.h"
-#include "log.h"
-#include "config.h"
-#include "jpeg.h"
-#include "redis_db.h"
-#include "sqlite_db.h"
-#include "video_stream.h"
-#include "video.h"
+#include "global_parameters.hpp"
+#include "cKinect.hpp"
+#include "log.hpp"
+#include "config.hpp"
+#include "jpeg.hpp"
+#include "redis_db.hpp"
+#include "sqlite_db.hpp"
+#include "video_stream.hpp"
+#include "video.hpp"
 
 //// Defines ////
 
-#define DETECTION_THRESHOLD 	2000
-#define DEPTH_CHANGE_TOLERANCE 	10
-#define MAX_NUM_DETECTIONS 		100
-#define NUM_DETECTIONS_FRAMES 	5
-#define FRAME_INTERVAL_US		200000
+#define DETECTION_THRESHOLD    2000
+#define DEPTH_CHANGE_TOLERANCE 10
+#define MAX_NUM_DETECTIONS     100
+#define NUM_DETECTIONS_FRAMES  5
+#define FRAME_INTERVAL_US      200000
 
 #define NUM_DET_PARAMETERS 6 //TODO CHANGE LOCATION
 #define NUM_LVW_PARAMETERS 1 //TODO CHANGE LOCATION

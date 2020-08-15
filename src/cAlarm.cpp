@@ -5,7 +5,7 @@
  *
  */
 
-#include "cAlarm.h"
+#include "cAlarm.hpp"
 
 cAlarm::cAlarm()
 {

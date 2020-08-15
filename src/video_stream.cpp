@@ -5,7 +5,7 @@
  *
  */
 
-#include "video_stream.h"
+#include "video_stream.hpp"
 
 static void log_packet(const AVFormatContext *fmt_ctx, const AVPacket *pkt)
 {

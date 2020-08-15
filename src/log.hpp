@@ -8,7 +8,7 @@
 #ifndef SRC_LOG_H_
 #define SRC_LOG_H_
 
-#include "global_parameters.h"
+#include "global_parameters.hpp"
 
 #ifdef DEBUG_ALARM
     #define LOG(log_level,format, ...) printf(format, ## __VA_ARGS__)

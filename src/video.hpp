@@ -1,7 +1,7 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file video.h
+ * @file video.hpp
  *
  */
 

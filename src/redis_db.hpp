@@ -1,7 +1,7 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file redis_db.h
+ * @file redis_db.hpp
  *
  */
 
@@ -19,7 +19,7 @@
 #include <hiredis/async.h>
 #include <hiredis/adapters/libevent.h>
 
-#include "log.h"
+#include "log.hpp"
 
 #define REDIS_UNIXSOC		"/tmp/redis.sock"
 #define REDIS_MAX_STRING	200

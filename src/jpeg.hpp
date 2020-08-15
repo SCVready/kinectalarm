@@ -1,7 +1,7 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file jpeg.h
+ * @file jpeg.hpp
  *
  */
 

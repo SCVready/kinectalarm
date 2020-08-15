@@ -5,7 +5,7 @@
  *
  */
 
-#include "redis_db.h"
+#include "redis_db.hpp"
 
 //Global variables
 redisContext *c				= NULL;

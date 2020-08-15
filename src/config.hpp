@@ -1,7 +1,7 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file config.h
+ * @file config.hpp
  *
  */
 
@@ -12,9 +12,9 @@
 #include <string.h>
 #include <string>
 
-#include "global_parameters.h"
-#include "cAlarm.h"
-#include "sqlite_db.h"
+#include "global_parameters.hpp"
+#include "cAlarm.hpp"
+#include "sqlite_db.hpp"
 
 
 int write_status(struct sDet_conf det_conf,struct sLvw_conf lvw_conf);
