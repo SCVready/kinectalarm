@@ -312,7 +312,7 @@ int get_entry_status_table_sqlite_db(struct status_table *status)
         status->tilt            = sqlite3_column_int(pStmt, 1);
         status->brightness      = sqlite3_column_int(pStmt, 2);
         status->contrast        = sqlite3_column_int(pStmt, 3);
-        status->det_activ       = sqlite3_column_int(pStmt, 4);
+        status->det_active      = sqlite3_column_int(pStmt, 4);
         status->lvw_active      = sqlite3_column_int(pStmt, 5);
         status->det_threshold   = sqlite3_column_int(pStmt, 6);
         status->det_sensitivity = sqlite3_column_int(pStmt, 7);

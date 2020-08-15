@@ -24,7 +24,7 @@ pthread_cond_t  cKinect::video_ready;
 cKinect::cKinect()
 {
     // Members initialization
-    is_kinect_initializ  = false;
+    is_kinect_initialize = false;
     kinect_ctx           = NULL;
     kinect_dev           = NULL;
     running              = false;
