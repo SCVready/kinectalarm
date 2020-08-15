@@ -8,8 +8,9 @@
 #ifndef CALARM_H_
 #define CALARM_H_
 
-//// Includes ////
-
+/*******************************************************************
+ * Includes
+ *******************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
@@ -35,18 +36,21 @@
 #include "video_stream.hpp"
 #include "video.hpp"
 
-//// Defines ////
-
+/*******************************************************************
+ * Defines
+ *******************************************************************/
 #define DETECTION_THRESHOLD    2000
 #define DEPTH_CHANGE_TOLERANCE 10
 #define MAX_NUM_DETECTIONS     100
 #define NUM_DETECTIONS_FRAMES  5
 #define FRAME_INTERVAL_US      200000
 
-#define NUM_DET_PARAMETERS 6 //TODO CHANGE LOCATION
-#define NUM_LVW_PARAMETERS 1 //TODO CHANGE LOCATION
+#define NUM_DET_PARAMETERS 6 /* TODO: move to another location */
+#define NUM_LVW_PARAMETERS 1 /* TODO: move to another location */
 
-//// Structs ////
+/*******************************************************************
+ * Structures
+ *******************************************************************/
 struct sDet_conf
 {
     volatile bool is_active;
@@ -67,7 +71,7 @@ enum enumDet_conf
     CURR_DET_NUM,
 };
 
-struct sLvw_conf //TODO
+struct sLvw_conf
 {
     bool    is_active;
     int16_t tilt;
@@ -83,108 +87,160 @@ enum enumLvw_conf
     CONTRAST,
 };
 
-//// Class ////
-
+/*******************************************************************
+ * Class declaration
+ *******************************************************************/
 class cAlarm {
 public:
-    //// Functions ////
-
-    /** @brief Constructor */
+    /**
+     * @brief Contructor
+     * 
+     */
     cAlarm();
 
-    /** @brief Destructor */
+    /**
+     * @brief Destructor
+     * 
+     */
     virtual ~cAlarm();
 
-    /** @brief Initializer */
+    /**
+     * @brief Initializer
+     * 
+     */
     int init();
 
-    /** @brief Deinitializer */
+    /**
+     * @brief Deinitializer
+     * 
+     */
     int deinit();
 
-    /** @brief Start detection */
+    /**
+     * @brief Start detection
+     * 
+     */
     int start_detection();
 
-    /** @brief Stop detection */
+    /**
+     * @brief Stop detection
+     * 
+     */
     int stop_detection();
 
-    /** @brief Check if kinect is running */
+    /**
+     * @brief Check if kinect is running
+     * 
+     */
     bool is_detection_running();
 
-    /** @brief Start live view */
+    /**
+     * @brief Start liveview
+     * 
+     */
     int start_liveview();
 
-    /** @brief Stop live view */
+    /**
+     * @brief Stop live view
+     * 
+     */
     int stop_liveview();
 
-    /** @brief Check if kinect is running */
+    /**
+     * @brief Check if kinect is running
+     * 
+     */
     bool is_liveview_running();
 
-    /** @brief Get number of detections */
+    /**
+     * @brief Get number of detections
+     * 
+     */
     int get_num_detections();
 
-    /** @brief Reset number of detection */
+    /**
+     * @brief Reset number of detection
+     * 
+     */
     int reset_detection();
 
-    /** @brief Reset number of detection */
+    /**
+     * @brief Reset number of detection
+     * 
+     */
     int delete_detection(int id);
 
-    /** @brief Change Kinect's tilt */
+    /**
+     * @brief Change Kinect's tilt
+     * 
+     */
     int change_tilt(double tilt);
 
-    /** @brief Change Kinect's contrast */
+    /**
+     * @brief Change Kinect's contrast
+     * 
+     */
     int change_contrast(int32_t value);
 
-    /** @brief Change Kinect's brightness */
+    /**
+     * @brief Change Kinect's brightness
+     * 
+     */
     int change_brightness(int32_t value);
 
-    /** @brief Change detection's threshold */
+    /**
+     * @brief Change detection's threshold
+     * 
+     */
     int change_threshold(int32_t value);
 
-    /** @brief Change detection's sensitivity */
+    /**
+     * @brief Change detection's sensitivity
+     * 
+     */
     int change_sensitivity(int32_t value);
 
 private:
 
-    //// Variables ////
-
+    /* Kinect object */
     class cKinect kinect;
 
-    // Frame pointer for detection
+    /* Frame pointer for detection */
     uint16_t* reff_depth_frame;
     uint16_t* depth_frame;
     uint16_t* diff_depth_frame; pthread_mutex_t diff_depth_frame_lock;
     uint16_t* video_frames[NUM_DETECTIONS_FRAMES];
 
-    // Frame's timestamp for detection
+    /* Frame's timestamp for detection */
     uint32_t reff_depth_timestamp;
     uint32_t depth_timestamp;
     uint32_t video_timestamp;
 
-    // Frame pointer for detection
+    /* Frame pointer for detection */
     uint16_t* liveview_frame;
     uint8_t* liveview_jpeg;
 
-    // Frame pointer for detection
+    /* Frame pointer for detection */
     uint32_t liveview_timestamp;
 
-    // Frame jpeg buffer out
+    /* Frame jpeg buffer out */
     uint8_t* liveview_buffer_out;
 
-    // Frame used on get_diff_depth_frame
+    /* Frame used on get_diff_depth_frame */
     uint16_t* temp_depth_frame;uint32_t temp_depth_frame_timestamp;
 
-    // Threads
+    /* Threads */
     pthread_t detection_thread;
     pthread_t liveview_thread;
 
-    volatile bool detection_running; // Flag to control detection logic
-    volatile bool liveview_running;// Flag to control liveview logic
+    /* Running flags*/
+    volatile bool detection_running;
+    volatile bool liveview_running;
 
-    // State/config structs
+    /* State & config structs */
     struct sDet_conf det_conf;
     struct sLvw_conf lvw_conf;
 
-    //// Functions ////
 
     void update_led();
     void set_reference_depth_image();
