@@ -1,11 +1,9 @@
-
-
-/*
-* log.h
-*
-*  Created on: 5 ene. 2019
-*      Author: asolo
-*/
+/**
+ * @author Alejandro Solozabal
+ *
+ * @file log.h
+ *
+ */
 
 #ifndef SRC_LOG_H_
 #define SRC_LOG_H_

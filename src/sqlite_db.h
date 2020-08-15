@@ -1,9 +1,9 @@
-/*
-* sqlite_db.h
-*
-*  Created on: Apr 26, 2019
-*      Author: scvready
-*/
+/**
+ * @author Alejandro Solozabal
+ *
+ * @file sqlite_db.h
+ *
+ */
 
 #ifndef SQLITE_DB_H_
 #define SQLITE_DB_H_

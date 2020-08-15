@@ -1,6 +1,8 @@
 /**
- * @file cAlarma.h
  * @author Alejandro Solozabal
+ *
+ * @file cKinect.h
+ *
  */
 
 #ifndef CALARM_H_

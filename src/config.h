@@ -1,8 +1,8 @@
-/*
- * config.h
+/**
+ * @author Alejandro Solozabal
  *
- *  Created on: 22 ene. 2019
- *      Author: asolo
+ * @file config.h
+ *
  */
 
 #ifndef SRC_CONFIG_H_

@@ -1,6 +1,8 @@
 /**
- * @file common.h
  * @author Alejandro Solozabal
+ *
+ * @file common.h
+ *
  */
 
 #ifndef COMMON_H_

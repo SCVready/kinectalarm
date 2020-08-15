@@ -1,10 +1,9 @@
-/*
-* redis_db.cpp
-*
-*  Created on: Apr 17, 2019
-*      Author: scvready
-*/
-
+/**
+ * @author Alejandro Solozabal
+ *
+ * @file redis_db.cpp
+ *
+ */
 
 #include "redis_db.h"
 

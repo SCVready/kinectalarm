@@ -1,9 +1,9 @@
-/*
-* sqlite_db.cpp
-*
-*  Created on: Apr 26, 2019
-*      Author: scvready
-*/
+/**
+ * @author Alejandro Solozabal
+ *
+ * @file sqlite_db.cpp
+ *
+ */
 
 #include "sqlite_db.h"
 

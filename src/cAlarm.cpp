@@ -1,6 +1,8 @@
 /**
- * @file cAlarma.cpp
  * @author Alejandro Solozabal
+ *
+ * @file cAlarm.cpp
+ *
  */
 
 #include "cAlarm.h"

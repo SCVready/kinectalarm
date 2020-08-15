@@ -1,9 +1,9 @@
-/*
-* config.cpp
-*
-*  Created on: 22 ene. 2019
-*      Author: asolo
-*/
+/**
+ * @author Alejandro Solozabal
+ *
+ * @file config.cpp
+ *
+ */
 
 #include "config.h"
 

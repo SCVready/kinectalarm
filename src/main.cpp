@@ -1,9 +1,9 @@
-/*
-* freenect_test_1.cpp
-*
-*  Created on: 10 ago. 2018
-*      Author: asolo
-*/
+/**
+ * @author Alejandro Solozabal
+ *
+ * @file main.cpp
+ *
+ */
 
 #include <stdlib.h>
 #include <stdio.h>

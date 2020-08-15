@@ -1,7 +1,9 @@
 /**
-  * @file common.cpp
-  * @author Alejandro Solozabal
-  */
+ * @author Alejandro Solozabal
+ *
+ * @file common.cpp
+ *
+ */
 
 #include "common.h"
 

@@ -1,8 +1,8 @@
-/*
- * jpeg.h
+/**
+ * @author Alejandro Solozabal
  *
- *  Created on: Mar 13, 2019
- *      Author: scvready
+ * @file jpeg.h
+ *
  */
 
 #ifndef JPEG_H_

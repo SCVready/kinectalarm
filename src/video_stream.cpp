@@ -1,3 +1,9 @@
+/**
+ * @author Alejandro Solozabal
+ *
+ * @file video_stream.cpp
+ *
+ */
 
 #include "video_stream.h"
 

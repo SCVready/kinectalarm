@@ -1,9 +1,9 @@
-/*
-* jpeg.cpp
-*
-*  Created on: Mar 13, 2019
-*      Author: scvready
-*/
+/**
+ * @author Alejandro Solozabal
+ *
+ * @file jpeg.cpp
+ *
+ */
 
 #include "jpeg.h"
 #include "global_parameters.h"

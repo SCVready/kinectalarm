@@ -1,8 +1,8 @@
 /**
- * @file cKinect.h
  * @author Alejandro Solozabal
- * @title cKinect class
- * @brief Class for initialize, configure and gather frames from kinect
+ *
+ * @file cKinect.h
+ *
  */
 
 #ifndef CKINECT_H_

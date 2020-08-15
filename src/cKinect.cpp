@@ -1,10 +1,11 @@
 /**
- * @file cKinect.cpp
  * @author Alejandro Solozabal
+ *
+ * @file cKinect.cpp
+ *
  */
 
 #include "cKinect.h"
-
 
 //Static cKinect variables declaration
 

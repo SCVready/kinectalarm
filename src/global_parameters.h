@@ -1,8 +1,8 @@
-/*
- * global_parameters.h
+/**
+ * @author Alejandro Solozabal
  *
- *  Created on: Mar 13, 2019
- *      Author: scvready
+ * @file global_parameters.h
+ *
  */
 
 #ifndef GLOBAL_PARAMETERS_H_

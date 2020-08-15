@@ -1,31 +1,8 @@
-
-/*
-* Copyright (c) 2001 Fabrice Bellard
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included in
-* all copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
-* THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-* THE SOFTWARE.
-*/
-
 /**
- * @file
- * video encoding with libavcodec API example
+ * @author Alejandro Solozabal
  *
- * @example encode_video.c
+ * @file video.cpp
+ *
  */
 
 #include "video.h"
@@ -40,16 +17,19 @@ static void encode(AVCodecContext *enc_ctx, AVFrame *frame, AVPacket *pkt,
         printf("Send frame %3"PRId64"\n", frame->pts);
 
     ret = avcodec_send_frame(enc_ctx, frame);
-    if (ret < 0) {
+    if (ret < 0)
+    {
         fprintf(stderr, "Error sending a frame for encoding\n");
         exit(1);
     }
 
-    while (ret >= 0) {
+    while (ret >= 0)
+    {
         ret = avcodec_receive_packet(enc_ctx, pkt);
         if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
             return;
-        else if (ret < 0) {
+        else if (ret < 0)
+        {
             fprintf(stderr, "Error during encoding\n");
             exit(1);
         }
@@ -77,13 +57,15 @@ int encode_video_from_frames(char *filename,uint16_t **video_frames,int num_fram
 
     /* find the mpeg1video encoder */
     codec = avcodec_find_encoder_by_name(codec_name);
-    if (!codec) {
+    if (!codec)
+    {
         fprintf(stderr, "Codec '%s' not found\n", codec_name);
         exit(1);
     }
 
     c = avcodec_alloc_context3(codec);
-    if (!c) {
+    if (!c)
+    {
         fprintf(stderr, "Could not allocate video codec context\n");
         exit(1);
     }
@@ -117,19 +99,22 @@ int encode_video_from_frames(char *filename,uint16_t **video_frames,int num_fram
 */
     /* open it */
     ret = avcodec_open2(c, codec, NULL);
-    if (ret < 0) {
+    if (ret < 0)
+    {
         //fprintf(stderr, "Could not open codec: %s\n", av_err2str(ret));
         exit(1);
     }
 
     f = fopen(filename, "wb");
-    if (!f) {
+    if (!f)
+    {
         fprintf(stderr, "Could not open %s\n", filename);
         exit(1);
     }
 
     frame = av_frame_alloc();
-    if (!frame) {
+    if (!frame)
+    {
         fprintf(stderr, "Could not allocate video frame\n");
         exit(1);
     }
@@ -145,9 +130,9 @@ int encode_video_from_frames(char *filename,uint16_t **video_frames,int num_fram
 
     uint16_t *current_frame;
     /* encode 1 second of video */
-    for (i = 0; i < num_frames; i++) {
+    for (i = 0; i < num_frames; i++)
+    {
         fflush(stdout);
-
 
         current_frame = video_frames[i];
 
