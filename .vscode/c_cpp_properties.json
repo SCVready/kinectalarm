@@ -3,9 +3,9 @@
       {
         "name": "Linux",
         "intelliSenseMode": "gcc-x64",
-        "includePath": ["/opt/sdks/rasp/sysroots/aarch64-poky-linux/usr/include",
-                        "/opt/sdks/rasp/sysroots/aarch64-poky-linux/usr/include/c++/9.3.0"],
-        "compilerPath": "/opt/sdks/rasp/sysroots/x86_64-pokysdk-linux/usr/bin/aarch64-poky-linux/aarch64-poky-linux-g++",
+        "includePath": ["/opt/sdks/presenceos/sysroots/cortexa7t2hf-neon-vfpv4-poky-linux-gnueabi/usr/include",
+                        "/opt/sdks/presenceos/sysroots/cortexa7t2hf-neon-vfpv4-poky-linux-gnueabi/usr/include/c++/8.2.0"],
+        "compilerPath": "/opt/sdks/presenceos/sysroots/x86_64-pokysdk-linux/usr/bin/arm-poky-linux-gnueabi/arm-poky-linux-gnueabi-g++",
         "cStandard": "c11",
         "cppStandard": "c++17"
       }

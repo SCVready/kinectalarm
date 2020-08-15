@@ -7,13 +7,13 @@
         "type": "shell",
         "label": "make",
         "dependsOn" : [],
-        "command" : "source /opt/sdks/rasp/environment-setup-aarch64-poky-linux; mkdir -p build; cd build; cmake -DCMAKE_BUILD_TYPE=Debug ..; make;",
+        "command" : "source /opt/sdks/presenceos/environment-setup-cortexa7t2hf-neon-vfpv4-poky-linux-gnueabi; mkdir -p build; cd build; cmake -DCMAKE_BUILD_TYPE=Debug ..; make;",
       },
       {
         "type": "shell",
         "label": "sync",
         "dependsOn" : [],
-        "command" : "rsync -rlptzv --progress --delete --exclude=.git --exclude=.vscode ${workspaceRoot} root@192.168.0.4:/home/root/",
+        "command" : "rsync -rlptzv --progress --delete --exclude=.git --exclude=.vscode ${workspaceRoot} root@192.168.0.18:/home/root/",
       },
       {
         "type": "shell",

@@ -15,9 +15,9 @@
             "environment": [],
             "externalConsole": false,
             "pipeTransport": {
-                "debuggerPath": "/opt/sdks/rasp/sysroots/x86_64-pokysdk-linux/usr/bin/aarch64-poky-linux/aarch64-poky-linux-gdb",
+                "debuggerPath": "/opt/sdks/presenceos/sysroots/x86_64-pokysdk-linux/usr/bin/arm-poky-linux-gnueabi/arm-poky-linux-gnueabi-gdb",
                 "pipeProgram": "/usr/bin/ssh",
-                "pipeArgs": ["root@192.168.0.4"],
+                "pipeArgs": ["root@192.168.0.18"],
                 "pipeCwd": ""
             },
             "MIMode": "gdb",
@@ -39,7 +39,7 @@
                 "/home/scvready/workspace/github/presenceos/kinectalarm/": "/home/root/kinectalarm/"
             },
             "ssh": {
-                "host": "192.168.0.4",
+                "host": "192.168.0.18",
                 "cwd": "/home/root/kinectalarm",
                 "user": "root",
                 "password": "",
