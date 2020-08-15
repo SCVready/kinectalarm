@@ -75,7 +75,7 @@ int main(int argc, char** argv)
     class cAlarm alarma;
 
     // Alarm initialization
-    if(alarma.init())
+    if(alarma.Init())
     {
         LOG(LOG_ERR, "Alarm initialization error\n");
         retvalue = -1;
@@ -110,7 +110,7 @@ int main(int argc, char** argv)
     LOG(LOG_NOTICE, "Closing alarm\n");
 
 closing_alarm:
-    alarma.deinit();
+    alarma.Term();
     return retvalue;
 }
 
@@ -166,16 +166,16 @@ int message_process(class cAlarm *alarm, char *command)
         if(words[0].compare("det") == 0)
         {
             if(!words[1].compare("start"))
-                alarm->start_detection();
+                alarm->StartDetection();
             else if(!words[1].compare("stop"))
-                alarm->stop_detection();
+                alarm->StopDetection();
             else if(!words[1].compare("rst"))
-                alarm->reset_detection();
+                alarm->ResetDetection();
             else if(!words[1].compare("del")){
                 if(words.size() >=3)
                 {
                     int value = std::stoi(words[2]);;
-                    alarm->delete_detection(value);
+                    alarm->DeleteDetection(value);
                 }
 
             }
@@ -183,9 +183,9 @@ int message_process(class cAlarm *alarm, char *command)
         else if(!words[0].compare("lvw"))
         {
             if(!words[1].compare("start"))
-                alarm->start_liveview();
+                alarm->StartLiveview();
             else if(!words[1].compare("stop"))
-                alarm->stop_liveview();
+                alarm->StopLiveview();
         }
         else if(!words[0].compare("tilt"))
         {
@@ -196,7 +196,7 @@ int message_process(class cAlarm *alarm, char *command)
             catch (const std::invalid_argument& ia) {
                 tilt = 0;
             }
-            alarm->change_tilt(tilt);
+            alarm->ChangeTilt(tilt);
         }
         else if(!words[0].compare("brightness"))
         {
@@ -207,7 +207,7 @@ int message_process(class cAlarm *alarm, char *command)
             catch (const std::invalid_argument& ia) {
                 value = 0;
             }
-            alarm->change_brightness(value);
+            alarm->ChangeBrightness(value);
         }
         else if(!words[0].compare("contrast"))
         {
@@ -218,7 +218,7 @@ int message_process(class cAlarm *alarm, char *command)
             catch (const std::invalid_argument& ia) {
                 value = 0;
             }
-            alarm->change_contrast(value);
+            alarm->ChangeContrast(value);
         }
         else if(!words[0].compare("threshold"))
         {
@@ -229,7 +229,7 @@ int message_process(class cAlarm *alarm, char *command)
             catch (const std::invalid_argument& ia) {
                 value = 0;
             }
-            alarm->change_threshold(value);
+            alarm->ChangeThreshold(value);
         }
         else if(!words[0].compare("sensitivity"))
         {
@@ -240,7 +240,7 @@ int message_process(class cAlarm *alarm, char *command)
             catch (const std::invalid_argument& ia) {
                 value = 0;
             }
-            alarm->change_sensitivity(value);
+            alarm->ChangeSensitivity(value);
         }
     }
     return 0;

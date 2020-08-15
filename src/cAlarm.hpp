@@ -108,97 +108,97 @@ public:
      * @brief Initializer
      * 
      */
-    int init();
+    int Init();
 
     /**
      * @brief Deinitializer
      * 
      */
-    int deinit();
+    int Term();
 
     /**
      * @brief Start detection
      * 
      */
-    int start_detection();
+    int StartDetection();
 
     /**
      * @brief Stop detection
      * 
      */
-    int stop_detection();
+    int StopDetection();
 
     /**
      * @brief Check if kinect is running
      * 
      */
-    bool is_detection_running();
+    bool IsDetectionRunning();
 
     /**
      * @brief Start liveview
      * 
      */
-    int start_liveview();
+    int StartLiveview();
 
     /**
      * @brief Stop live view
      * 
      */
-    int stop_liveview();
+    int StopLiveview();
 
     /**
      * @brief Check if kinect is running
      * 
      */
-    bool is_liveview_running();
+    bool IsLiveviewRunning();
 
     /**
      * @brief Get number of detections
      * 
      */
-    int get_num_detections();
+    int GetNumDetections();
 
     /**
      * @brief Reset number of detection
      * 
      */
-    int reset_detection();
+    int ResetDetection();
 
     /**
      * @brief Reset number of detection
      * 
      */
-    int delete_detection(int id);
+    int DeleteDetection(int id);
 
     /**
      * @brief Change Kinect's tilt
      * 
      */
-    int change_tilt(double tilt);
+    int ChangeTilt(double tilt);
 
     /**
      * @brief Change Kinect's contrast
      * 
      */
-    int change_contrast(int32_t value);
+    int ChangeContrast(int32_t value);
 
     /**
      * @brief Change Kinect's brightness
      * 
      */
-    int change_brightness(int32_t value);
+    int ChangeBrightness(int32_t value);
 
     /**
      * @brief Change detection's threshold
      * 
      */
-    int change_threshold(int32_t value);
+    int ChangeThreshold(int32_t value);
 
     /**
      * @brief Change detection's sensitivity
      * 
      */
-    int change_sensitivity(int32_t value);
+    int ChangeSensitivity(int32_t value);
 
 private:
 
@@ -226,7 +226,7 @@ private:
     /* Frame jpeg buffer out */
     uint8_t* liveview_buffer_out;
 
-    /* Frame used on get_diff_depth_frame */
+    /* Frame used on GetDiffDepthFrame */
     uint16_t* temp_depth_frame;uint32_t temp_depth_frame_timestamp;
 
     /* Threads */
@@ -241,26 +241,25 @@ private:
     struct sDet_conf det_conf;
     struct sLvw_conf lvw_conf;
 
+    void UpdateLed();
+    void SetReferenceDepthImage();
+    void SetCaptureVideoImage(int num);
+    int GetDiffDepthFrame(uint16_t *diff_depth_frame, uint32_t *timestamp);
+    uint32_t CompareDepthFrameToReferenceDepthFrame();
 
-    void update_led();
-    void set_reference_depth_image();
-    void set_capture_video_image(int num);
-    int get_diff_depth_frame(uint16_t *diff_depth_frame, uint32_t *timestamp);
-    uint32_t compare_depth_frame_to_reference_depth_frame();
+    int InitVarsRedis();
 
-    int init_vars_redis();
+    static void *DetectionThreadHelper(void *context);
+    static void *LiveviewThreadHelper(void *context);
 
-    static void *detection_thread_helper(void *context);
-    static void *liveview_thread_helper(void *context);
-
-    void *detection(void);
-    void *liveview(void);
-
-    template <typename T>
-    int change_det_status(enum enumDet_conf, T value);
+    void *Detection(void);
+    void *Liveview(void);
 
     template <typename T>
-    int change_lvw_status(enum enumLvw_conf, T value);
+    int ChangeDetStatus(enum enumDet_conf, T value);
+
+    template <typename T>
+    int ChangeLvwStatus(enum enumLvw_conf, T value);
 };
 
 extern int pipe_fd[2];

@@ -62,7 +62,7 @@ cAlarm::~cAlarm()
 {
 }
 
-int cAlarm::init()
+int cAlarm::Init()
 {
     /* SQLite initialization */
     if(init_sqlite_db())
@@ -105,7 +105,7 @@ int cAlarm::init()
     }
 
     /* Initialize redis vars */
-    if(init_vars_redis())
+    if(InitVarsRedis())
     {
         LOG(LOG_ERR,"Error: couldn't intialize variables in Redis db\n");
         kinect.deinit();
@@ -121,7 +121,7 @@ int cAlarm::init()
     }
 
     /* Update kinect led */
-    update_led();
+    UpdateLed();
 
     /* Create base directory to save detection images */
     create_dir((char *)DETECTION_PATH);
@@ -160,10 +160,10 @@ int cAlarm::init()
 
     /* Apply status */
     if(det_conf.is_active)
-        start_detection();
+        StartDetection();
 
     if(lvw_conf.is_active)
-        start_liveview();
+        StartLiveview();
 
     /* Adjust kinect's tilt */
     if(kinect.change_tilt(lvw_conf.tilt))
@@ -176,19 +176,19 @@ int cAlarm::init()
     return 0;
 }
 
-int cAlarm::deinit()
+int cAlarm::Term()
 {
     if(detection_running)
     {
         detection_running = false;
         pthread_join(detection_thread,NULL);
-        update_led();
+        UpdateLed();
     }
     if(liveview_running)
     {
         liveview_running = false;
         pthread_join(liveview_thread,NULL);
-        update_led();
+        UpdateLed();
     }
     if(kinect.is_kinect_running())
         kinect.stop();
@@ -217,7 +217,7 @@ int cAlarm::deinit()
     return 0;
 }
 
-int cAlarm::start_detection()
+int cAlarm::StartDetection()
 {
     /* Start kinect */
     if(!kinect.is_kinect_running())
@@ -229,16 +229,16 @@ int cAlarm::start_detection()
         detection_running = true;
 
         /* Change status */
-        change_det_status(DET_ACTIVE,true);
+        ChangeDetStatus(DET_ACTIVE,true);
 
         /* Update Redis DB */
         redis_set_int((char *) "det_status", 1);
 
         /* Update led */
-        update_led();
+        UpdateLed();
 
         /* Launch detection thread */
-        pthread_create(&detection_thread, 0, detection_thread_helper, this);
+        pthread_create(&detection_thread, 0, DetectionThreadHelper, this);
 
         /* Publish event */
         redis_publish("event_info","Detection started");
@@ -249,7 +249,7 @@ int cAlarm::start_detection()
     return 1;
 }
 
-int cAlarm::stop_detection()
+int cAlarm::StopDetection()
 {
     if(detection_running)
     {
@@ -257,7 +257,7 @@ int cAlarm::stop_detection()
         detection_running = false;
 
         /* Change status */
-        change_det_status(DET_ACTIVE,false);
+        ChangeDetStatus(DET_ACTIVE,false);
 
         /* Update Redis DB */
         redis_set_int((char *) "det_status", 0);
@@ -266,7 +266,7 @@ int cAlarm::stop_detection()
         pthread_join(detection_thread,NULL);
 
         /* Update led */
-        update_led();
+        UpdateLed();
 
         /* Publish event */
         redis_publish("event_info","Detection stopped");
@@ -282,7 +282,7 @@ int cAlarm::stop_detection()
     return 1;
 }
 
-int cAlarm::start_liveview()
+int cAlarm::StartLiveview()
 {
     /* Start kinect */
     if(!kinect.is_kinect_running())
@@ -294,16 +294,16 @@ int cAlarm::start_liveview()
         liveview_running = true;
 
         /* Change status */
-        change_lvw_status(LVW_ACTIVE,true);
+        ChangeLvwStatus(LVW_ACTIVE,true);
 
         /* Update redis db */
         redis_set_int((char *) "lvw_status", 1);
 
         /* Update led */
-        update_led();
+        UpdateLed();
 
         /* Launch Liveview thread */
-        pthread_create(&liveview_thread, 0, liveview_thread_helper, this);
+        pthread_create(&liveview_thread, 0, LiveviewThreadHelper, this);
 
         /* Publish event */
         redis_publish("event_info","Liveview started");
@@ -315,7 +315,7 @@ int cAlarm::start_liveview()
     return 0;
 }
 
-int cAlarm::stop_liveview()
+int cAlarm::StopLiveview()
 {
     if(liveview_running)
     {
@@ -323,7 +323,7 @@ int cAlarm::stop_liveview()
         liveview_running = false;
 
         /* Change status */
-        change_lvw_status(LVW_ACTIVE,false);
+        ChangeLvwStatus(LVW_ACTIVE,false);
 
         /* Update Redis DB */
         redis_set_int((char *) "lvw_status", 0);
@@ -332,7 +332,7 @@ int cAlarm::stop_liveview()
         pthread_join(liveview_thread,NULL);
 
         /* Update led */
-        update_led();
+        UpdateLed();
 
         /* Publish event */
         redis_publish("event_info","Liveview stopped");
@@ -346,7 +346,7 @@ int cAlarm::stop_liveview()
     return 0;
 }
 
-uint32_t cAlarm::compare_depth_frame_to_reference_depth_frame()
+uint32_t cAlarm::CompareDepthFrameToReferenceDepthFrame()
 {
     uint32_t cont = 0;
 
@@ -370,7 +370,7 @@ uint32_t cAlarm::compare_depth_frame_to_reference_depth_frame()
 }
 
 /* TODO: not used */
-int cAlarm::get_diff_depth_frame(uint16_t *diff_depth_frame, uint32_t *timestamp)
+int cAlarm::GetDiffDepthFrame(uint16_t *diff_depth_frame, uint32_t *timestamp)
 {
 
     kinect.get_depth_frame(temp_depth_frame,&temp_depth_frame_timestamp);
@@ -378,7 +378,7 @@ int cAlarm::get_diff_depth_frame(uint16_t *diff_depth_frame, uint32_t *timestamp
     return 0;
 }
 
-void *cAlarm::detection(void)
+void *cAlarm::Detection(void)
 {
     /* Variable initialization */
     reff_depth_timestamp = 0;
@@ -396,7 +396,7 @@ void *cAlarm::detection(void)
     while(detection_running)
     {
         /* Update led */
-        update_led();
+        UpdateLed();
 
         /* Get Reference frame */
         if(kinect.get_depth_frame(reff_depth_frame,&reff_depth_timestamp))
@@ -418,7 +418,7 @@ void *cAlarm::detection(void)
                 return 0;
             }
 
-            diff_cont = compare_depth_frame_to_reference_depth_frame();
+            diff_cont = CompareDepthFrameToReferenceDepthFrame();
 
         }while(diff_cont < det_conf.threshold && detection_running);
 
@@ -483,7 +483,7 @@ void *cAlarm::detection(void)
                     kinect.deinit();
                     return 0;
                 }
-                diff_cont = compare_depth_frame_to_reference_depth_frame();
+                diff_cont = CompareDepthFrameToReferenceDepthFrame();
             }while(diff_cont > det_conf.threshold && detection_running);
 
 
@@ -508,22 +508,22 @@ void *cAlarm::detection(void)
             redis_publish("new_det",message);
 
             /* Update SQLite db */
-            insert_entry_det_table_sqlite_db(det_conf.curr_det_num,t,frame_counter,filepath,filepath_vid); //TODO check if it fails
+            insert_entry_det_table_sqlite_db(det_conf.curr_det_num,t,frame_counter,filepath,filepath_vid); /* TODO: check if it fails */
 
             /* Update Redis db */
-            redis_set_int((char *) "det_numdet", det_conf.curr_det_num); //TODO check if it fails
+            redis_set_int((char *) "det_numdet", det_conf.curr_det_num); /* TODO: check if it fails */
 
             /* Change Status */
-            change_det_status(CURR_DET_NUM,det_conf.curr_det_num+1);
+            ChangeDetStatus(CURR_DET_NUM,det_conf.curr_det_num+1);
         }
     }
     return 0;
 }
 
 
-void *cAlarm::detection_thread_helper(void *context)
+void *cAlarm::DetectionThreadHelper(void *context)
 {
-    return ((cAlarm *)context)->detection();
+    return ((cAlarm *)context)->Detection();
 }
 
 #if 0
@@ -560,7 +560,7 @@ void *cAlarm::liveview(void)
 }
 #endif
 
-void *cAlarm::liveview(void)
+void *cAlarm::Liveview(void)
 {
     unsigned int size = 0;
 
@@ -592,12 +592,12 @@ void *cAlarm::liveview(void)
     return 0;
 }
 
-void *cAlarm::liveview_thread_helper(void *context)
+void *cAlarm::LiveviewThreadHelper(void *context)
 {
-    return ((cAlarm *)context)->liveview();
+    return ((cAlarm *)context)->Liveview();
 }
 
-void cAlarm::update_led()
+void cAlarm::UpdateLed()
 {
     if(liveview_running && detection_running)
         kinect.change_led_color((freenect_led_options)4);
@@ -609,7 +609,7 @@ void cAlarm::update_led()
         kinect.change_led_color(LED_OFF);
 }
 
-bool cAlarm::is_detection_running()
+bool cAlarm::IsDetectionRunning()
 {
     if(detection_running)
         return true;
@@ -617,7 +617,7 @@ bool cAlarm::is_detection_running()
         return false;
 }
 
-bool cAlarm::is_liveview_running()
+bool cAlarm::IsLiveviewRunning()
 {
     if(liveview_running)
         return true;
@@ -625,12 +625,12 @@ bool cAlarm::is_liveview_running()
         return false;
 }
 
-int cAlarm::get_num_detections()
+int cAlarm::GetNumDetections()
 {
     return det_conf.curr_det_num;
 }
 
-int cAlarm::reset_detection()
+int cAlarm::ResetDetection()
 {
     delete_all_entries_det_table_sqlite_db();
     delete_all_files_from_dir(DETECTION_PATH);
@@ -643,7 +643,7 @@ int cAlarm::reset_detection()
     return 0;
 }
 
-int cAlarm::delete_detection(int id)
+int cAlarm::DeleteDetection(int id)
 {
     char command[50];
     sprintf(command, "rm -rf %s/%d_*",DETECTION_PATH,id);
@@ -656,7 +656,7 @@ int cAlarm::delete_detection(int id)
 }
 
 template <typename T>
-int cAlarm::change_det_status(enum enumDet_conf conf_name, T value)
+int cAlarm::ChangeDetStatus(enum enumDet_conf conf_name, T value)
 {
     switch(conf_name)
     {
@@ -685,7 +685,7 @@ int cAlarm::change_det_status(enum enumDet_conf conf_name, T value)
 }
 
 template <typename T>
-int cAlarm::change_lvw_status(enum enumLvw_conf conf_name, T value)
+int cAlarm::ChangeLvwStatus(enum enumLvw_conf conf_name, T value)
 {
     switch(conf_name)
     {
@@ -707,7 +707,7 @@ int cAlarm::change_lvw_status(enum enumLvw_conf conf_name, T value)
     return 0;
 }
 
-int cAlarm::init_vars_redis()
+int cAlarm::InitVarsRedis()
 {
     if(redis_set_int((char *) "det_status", det_conf.is_active))
         return -1;
@@ -728,38 +728,38 @@ int cAlarm::init_vars_redis()
     return 0;
 }
 
-int cAlarm::change_tilt(double tilt)
+int cAlarm::ChangeTilt(double tilt)
 {
     kinect.change_tilt(tilt);
     redis_set_int((char *) "tilt", (int) tilt);
-    change_lvw_status(TILT,tilt);
+    ChangeLvwStatus(TILT,tilt);
     LOG(LOG_INFO,"Changed Kinect's titl to: %d\n",(int)tilt);
 
     return 0;
 }
 
-int cAlarm::change_brightness(int32_t value)
+int cAlarm::ChangeBrightness(int32_t value)
 {
     redis_set_int((char *) "brightness", value);
-    change_lvw_status(BRIGHTNESS,value);
+    ChangeLvwStatus(BRIGHTNESS,value);
     LOG(LOG_INFO,"Changed Kinect's brightness to: %d\n",value);
 
     return 0;
 }
 
-int cAlarm::change_contrast(int32_t value)
+int cAlarm::ChangeContrast(int32_t value)
 {
     redis_set_int((char *) "contrast", value);
-    change_lvw_status(CONTRAST,value);
+    ChangeLvwStatus(CONTRAST,value);
     LOG(LOG_INFO,"Changed Kinect's contrast to: %d\n",value);
 
     return 0;
 }
 
-int cAlarm::change_threshold(int32_t value)
+int cAlarm::ChangeThreshold(int32_t value)
 {
     redis_set_int((char *) "threshold", value);
-    change_det_status(THRESHOLD,value);
+    ChangeDetStatus(THRESHOLD,value);
     LOG(LOG_INFO,"Changed Kinect's threshold to: %d\n",value);
 
     /* Publish events */
@@ -770,10 +770,10 @@ int cAlarm::change_threshold(int32_t value)
     return 0;
 }
 
-int cAlarm::change_sensitivity(int32_t value)
+int cAlarm::ChangeSensitivity(int32_t value)
 {
     redis_set_int((char *) "sensitivity", value);
-    change_det_status(TOLERANCE,value);
+    ChangeDetStatus(TOLERANCE,value);
     LOG(LOG_INFO,"Changed Kinect's sensitivity to: %d\n",value);
     
     /* Publish events */
