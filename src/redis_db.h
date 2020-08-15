@@ -1,9 +1,9 @@
 /*
- * redis_db.h
- *
- *  Created on: Apr 17, 2019
- *      Author: scvready
- */
+* redis_db.h
+*
+*  Created on: Apr 17, 2019
+*      Author: scvready
+*/
 
 #ifndef REDIS_DB_H_
 #define REDIS_DB_H_

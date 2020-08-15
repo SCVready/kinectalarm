@@ -1,9 +1,9 @@
 /*
- * video.h
- *
- *  Created on: May 13, 2019
- *      Author: scvready
- */
+* video.h
+*
+*  Created on: May 13, 2019
+*      Author: scvready
+*/
 
 #ifndef VIDEO_H_
 #define VIDEO_H_

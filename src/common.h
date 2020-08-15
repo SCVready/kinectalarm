@@ -1,7 +1,7 @@
 /**
-  * @file common.h
-  * @author Alejandro Solozabal
-  */
+ * @file common.h
+ * @author Alejandro Solozabal
+ */
 
 #ifndef COMMON_H_
 #define COMMON_H_
@@ -25,8 +25,8 @@ bool allowed_characters(char c);
 
 
 struct sBase64encode_context{
-	BIO *b64_bio, *mem_bio;
-	BUF_MEM *mem_bio_mem_ptr;
+    BIO *b64_bio, *mem_bio;
+    BUF_MEM *mem_bio_mem_ptr;
 };
 int init_base64encode(struct sBase64encode_context *c);
 int deinit_base64encode(struct sBase64encode_context *c);
