@@ -105,13 +105,13 @@ public:
     virtual ~cAlarm();
 
     /**
-     * @brief Initializer
+     * @brief Initialization
      * 
      */
     int Init();
 
     /**
-     * @brief Deinitializer
+     * @brief Termination
      * 
      */
     int Term();

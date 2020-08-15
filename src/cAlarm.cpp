@@ -15,7 +15,7 @@
  *******************************************************************/
 cAlarm::cAlarm()
 {
-    /* Variable initialization */
+    /* Members initialization */
 
     /* Frame pointers */
     reff_depth_frame        = NULL;
@@ -68,7 +68,7 @@ int cAlarm::Init()
     if(init_sqlite_db())
     {
         LOG(LOG_ERR,"Error: couldn't intialize SQLite\n");
-        kinect.deinit();
+        kinect.Term();
         return -1;
     }
 
@@ -76,7 +76,7 @@ int cAlarm::Init()
     if(create_det_table_sqlite_db())
     {
         LOG(LOG_ERR,"Error: creating detection table on SQLite\n");
-        kinect.deinit();
+        kinect.Term();
         return -1;
     }
 
@@ -84,7 +84,7 @@ int cAlarm::Init()
     if(create_status_table_sqlite_db())
     {
         LOG(LOG_ERR,"Error: creating status table on SQLite\n");
-        kinect.deinit();
+        kinect.Term();
         return -1;
     }
 
@@ -100,7 +100,7 @@ int cAlarm::Init()
     if(init_redis_db())
     {
         LOG(LOG_ERR,"Error: couldn't intialize Redis db\n");
-        kinect.deinit();
+        kinect.Term();
         return -1;
     }
 
@@ -108,15 +108,15 @@ int cAlarm::Init()
     if(InitVarsRedis())
     {
         LOG(LOG_ERR,"Error: couldn't intialize variables in Redis db\n");
-        kinect.deinit();
+        kinect.Term();
         return -1;
     }
 
     /* Kinect initialization */
-    if(kinect.init())
+    if(kinect.Init())
     {
         LOG(LOG_ERR,"Error: couldn't intialize Kinect\n");
-        kinect.deinit();
+        kinect.Term();
         return -1;
     }
 
@@ -166,10 +166,10 @@ int cAlarm::Init()
         StartLiveview();
 
     /* Adjust kinect's tilt */
-    if(kinect.change_tilt(lvw_conf.tilt))
+    if(kinect.ChangeTilt(lvw_conf.tilt))
     {
         LOG(LOG_ERR,"Fallo al cambiar la inclinacion de kinect\n");
-        kinect.deinit();
+        kinect.Term();
         return -1;
     }
 
@@ -190,9 +190,9 @@ int cAlarm::Term()
         pthread_join(liveview_thread,NULL);
         UpdateLed();
     }
-    if(kinect.is_kinect_running())
-        kinect.stop();
-    kinect.deinit();
+    if(kinect.IsKinectRunning())
+        kinect.Stop();
+    kinect.Term();
 
     /* Deinit Redis */
     deinit_redis_db();
@@ -220,8 +220,8 @@ int cAlarm::Term()
 int cAlarm::StartDetection()
 {
     /* Start kinect */
-    if(!kinect.is_kinect_running())
-        kinect.start();
+    if(!kinect.IsKinectRunning())
+        kinect.Start();
 
     if(!detection_running)
     {
@@ -275,7 +275,7 @@ int cAlarm::StopDetection()
 
         /* Turn off Kinect */
         if(!detection_running && !liveview_running)
-            kinect.stop();
+            kinect.Stop();
 
         return 0;
     }
@@ -285,8 +285,8 @@ int cAlarm::StopDetection()
 int cAlarm::StartLiveview()
 {
     /* Start kinect */
-    if(!kinect.is_kinect_running())
-        kinect.start();
+    if(!kinect.IsKinectRunning())
+        kinect.Start();
 
     if(!liveview_running)
     {
@@ -341,7 +341,7 @@ int cAlarm::StopLiveview()
 
         /* Turn off Kinect */
         if(!detection_running && !liveview_running)
-            kinect.stop();
+            kinect.Stop();
     }
     return 0;
 }
@@ -373,7 +373,7 @@ uint32_t cAlarm::CompareDepthFrameToReferenceDepthFrame()
 int cAlarm::GetDiffDepthFrame(uint16_t *diff_depth_frame, uint32_t *timestamp)
 {
 
-    kinect.get_depth_frame(temp_depth_frame,&temp_depth_frame_timestamp);
+    kinect.GetDepthFrame(temp_depth_frame,&temp_depth_frame_timestamp);
 
     return 0;
 }
@@ -399,10 +399,10 @@ void *cAlarm::Detection(void)
         UpdateLed();
 
         /* Get Reference frame */
-        if(kinect.get_depth_frame(reff_depth_frame,&reff_depth_timestamp))
+        if(kinect.GetDepthFrame(reff_depth_frame,&reff_depth_timestamp))
         {
             LOG(LOG_ERR,"Failed to capture depth frame\n");
-            kinect.deinit();
+            kinect.Term();
             return 0;
         }
 
@@ -411,10 +411,10 @@ void *cAlarm::Detection(void)
         do
         {
             /* get depth image to compare */
-            if(kinect.get_depth_frame(depth_frame,&depth_timestamp))
+            if(kinect.GetDepthFrame(depth_frame,&depth_timestamp))
             {
                 LOG(LOG_ERR,"Failed to capture depth frame\n");
-                kinect.deinit();
+                kinect.Term();
                 return 0;
             }
 
@@ -437,7 +437,7 @@ void *cAlarm::Detection(void)
             redis_publish("email_send_det","");
 
             /* Update kinect led */
-            kinect.change_led_color(LED_RED);
+            kinect.ChangeLedColor(LED_RED);
 
             frame_counter = 0;
 
@@ -456,10 +456,10 @@ void *cAlarm::Detection(void)
                     wakeup_time = timeAdd(wakeup_time, sleep_time);
 
                     /* Getting video frame */
-                    if(kinect.get_video_frame(video_frames[0],&video_timestamp))
+                    if(kinect.GetVideoFrame(video_frames[0],&video_timestamp))
                     {
                         LOG(LOG_ERR,"Failed to capture video frame\n");
-                        kinect.deinit();
+                        kinect.Term();
                         return 0;
                     }
 
@@ -477,10 +477,10 @@ void *cAlarm::Detection(void)
                         clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &wakeup_time, NULL);
                 }
                 /* Get depth image to compare */
-                if(kinect.get_depth_frame(depth_frame,&depth_timestamp))
+                if(kinect.GetDepthFrame(depth_frame,&depth_timestamp))
                 {
                     LOG(LOG_ERR,"Failed to capture depth frame\n");
-                    kinect.deinit();
+                    kinect.Term();
                     return 0;
                 }
                 diff_cont = CompareDepthFrameToReferenceDepthFrame();
@@ -544,7 +544,7 @@ void *cAlarm::liveview(void)
     {
         wakeup_time = timeAdd(wakeup_time, sleep_time);
         
-        kinect.get_video_frame(liveview_frame);
+        kinect.GetVideoFrame(liveview_frame);
         send_frame(liveview_frame);
         
         clock_gettime(CLOCK_MONOTONIC, &current_time);
@@ -573,7 +573,7 @@ void *cAlarm::Liveview(void)
     while(liveview_running)
     {
         /* Get new video frame and convert it to jpeg */
-        kinect.get_video_frame(liveview_frame,&liveview_timestamp);
+        kinect.GetVideoFrame(liveview_frame,&liveview_timestamp);
 
         /* Convert to jpeg */
         save_video_frame_to_jpeg_inmemory(liveview_frame, liveview_jpeg,&size,lvw_conf.brightness,lvw_conf.contrast);
@@ -600,13 +600,13 @@ void *cAlarm::LiveviewThreadHelper(void *context)
 void cAlarm::UpdateLed()
 {
     if(liveview_running && detection_running)
-        kinect.change_led_color((freenect_led_options)4);
+        kinect.ChangeLedColor((freenect_led_options)4);
     else if(detection_running)
-        kinect.change_led_color(LED_YELLOW);
+        kinect.ChangeLedColor(LED_YELLOW);
     else if(liveview_running)
-        kinect.change_led_color((freenect_led_options)5);
+        kinect.ChangeLedColor((freenect_led_options)5);
     else
-        kinect.change_led_color(LED_OFF);
+        kinect.ChangeLedColor(LED_OFF);
 }
 
 bool cAlarm::IsDetectionRunning()
@@ -730,7 +730,7 @@ int cAlarm::InitVarsRedis()
 
 int cAlarm::ChangeTilt(double tilt)
 {
-    kinect.change_tilt(tilt);
+    kinect.ChangeTilt(tilt);
     redis_set_int((char *) "tilt", (int) tilt);
     ChangeLvwStatus(TILT,tilt);
     LOG(LOG_INFO,"Changed Kinect's titl to: %d\n",(int)tilt);
