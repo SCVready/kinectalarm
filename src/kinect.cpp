@@ -8,27 +8,27 @@
 /*******************************************************************
  * Includes
  *******************************************************************/
-#include "cKinect.hpp"
+#include "kinect.hpp"
 
 /*******************************************************************
  * Static variables
  *******************************************************************/
-uint16_t* cKinect::temp_depth_frame_raw;
-uint16_t* cKinect::temp_video_frame_raw;
+uint16_t* Kinect::temp_depth_frame_raw;
+uint16_t* Kinect::temp_video_frame_raw;
 
-uint32_t cKinect::temp_depth_frame_timestamp;
-uint32_t cKinect::temp_video_frame_timestamp;
+uint32_t Kinect::temp_depth_frame_timestamp;
+uint32_t Kinect::temp_video_frame_timestamp;
 
-pthread_mutex_t cKinect::depth_lock;
-pthread_mutex_t cKinect::video_lock;
+pthread_mutex_t Kinect::depth_lock;
+pthread_mutex_t Kinect::video_lock;
 
-pthread_cond_t  cKinect::depth_ready;
-pthread_cond_t  cKinect::video_ready;
+pthread_cond_t  Kinect::depth_ready;
+pthread_cond_t  Kinect::video_ready;
 
 /*******************************************************************
  * Class definition
  *******************************************************************/
-cKinect::cKinect()
+Kinect::Kinect()
 {
     /* Members initialization */
     is_kinect_initialize = false;
@@ -38,11 +38,11 @@ cKinect::cKinect()
     process_event_thread = 0;
 }
 
-cKinect::~cKinect()
+Kinect::~Kinect()
 {
 }
 
-int cKinect::Init()
+int Kinect::Init()
 {
     int ret = 0;
 
@@ -51,12 +51,12 @@ int cKinect::Init()
         return 0;
 
     /* Mutex init */
-    pthread_mutex_init(&cKinect::depth_lock, NULL);
-    pthread_mutex_init(&cKinect::video_lock, NULL);
+    pthread_mutex_init(&Kinect::depth_lock, NULL);
+    pthread_mutex_init(&Kinect::video_lock, NULL);
 
     /* new frame Mutex init */
-    pthread_cond_init(&cKinect::depth_ready, NULL);
-    pthread_cond_init(&cKinect::video_ready, NULL);
+    pthread_cond_init(&Kinect::depth_ready, NULL);
+    pthread_cond_init(&Kinect::video_ready, NULL);
 
     /* Library freenect init */
     ret = freenect_init(&kinect_ctx, NULL);
@@ -117,8 +117,8 @@ int cKinect::Init()
     temp_video_frame_raw = (uint16_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint16_t));
 
     /* Initialize frame time-stamps */
-    cKinect::temp_depth_frame_timestamp = 0;
-    cKinect::temp_video_frame_timestamp = 0;
+    Kinect::temp_depth_frame_timestamp = 0;
+    Kinect::temp_video_frame_timestamp = 0;
 
     /* Set kinect init flag to true */
     is_kinect_initialize = true;
@@ -126,7 +126,7 @@ int cKinect::Init()
     return 0;
 }
 
-int cKinect::Term()
+int Kinect::Term()
 {
     LOG(LOG_INFO,"Shutting down kinect\n");
 
@@ -147,11 +147,11 @@ int cKinect::Term()
     return 0;
 }
 
-int cKinect::Start()
+int Kinect::Start()
 {
     /* Initialize frame time-stamps */
-    cKinect::temp_depth_frame_timestamp = 0;
-    cKinect::temp_video_frame_timestamp = 0;
+    Kinect::temp_depth_frame_timestamp = 0;
+    Kinect::temp_video_frame_timestamp = 0;
 
     running = true;
     freenect_start_video(kinect_dev);
@@ -161,7 +161,7 @@ int cKinect::Start()
     return 0;
 }
 
-int cKinect::Stop()
+int Kinect::Stop()
 {
     running = false;
     pthread_join(process_event_thread,NULL);
@@ -174,62 +174,62 @@ int cKinect::Stop()
     return 0;
 }
 
-int cKinect::GetDepthFrame(uint16_t *depth_frame, uint32_t *timestamp)
+int Kinect::GetDepthFrame(uint16_t *depth_frame, uint32_t *timestamp)
 {
-    pthread_mutex_lock(&cKinect::depth_lock);
+    pthread_mutex_lock(&Kinect::depth_lock);
 
     /* Compare the given timestamp with the current, if it's the same must wait to the next frame */
-    if(*timestamp == cKinect::temp_depth_frame_timestamp)
-        pthread_cond_wait(&cKinect::depth_ready, &cKinect::depth_lock);
+    if(*timestamp == Kinect::temp_depth_frame_timestamp)
+        pthread_cond_wait(&Kinect::depth_ready, &Kinect::depth_lock);
 
-    memcpy (depth_frame, cKinect::temp_depth_frame_raw, (DEPTH_WIDTH*DEPTH_HEIGHT)*sizeof(uint16_t));
-    *timestamp = cKinect::temp_depth_frame_timestamp;
+    memcpy (depth_frame, Kinect::temp_depth_frame_raw, (DEPTH_WIDTH*DEPTH_HEIGHT)*sizeof(uint16_t));
+    *timestamp = Kinect::temp_depth_frame_timestamp;
 
-    pthread_mutex_unlock(&cKinect::depth_lock);
+    pthread_mutex_unlock(&Kinect::depth_lock);
     return 0;
 }
 
-int cKinect::GetVideoFrame(uint16_t *video_frame, uint32_t *timestamp)
+int Kinect::GetVideoFrame(uint16_t *video_frame, uint32_t *timestamp)
 {
 
-    pthread_mutex_lock(&cKinect::video_lock);
+    pthread_mutex_lock(&Kinect::video_lock);
 
     /*  Compare the given timestamp with the current, if it's the same must wait to the next frame */
-    if(*timestamp == cKinect::temp_video_frame_timestamp)
-        pthread_cond_wait(&cKinect::video_ready, &cKinect::video_lock);
+    if(*timestamp == Kinect::temp_video_frame_timestamp)
+        pthread_cond_wait(&Kinect::video_ready, &Kinect::video_lock);
 
-    memcpy (video_frame, cKinect::temp_video_frame_raw, (VIDEO_WIDTH*VIDEO_HEIGHT)*sizeof(uint16_t));
-    *timestamp = cKinect::temp_video_frame_timestamp;
+    memcpy (video_frame, Kinect::temp_video_frame_raw, (VIDEO_WIDTH*VIDEO_HEIGHT)*sizeof(uint16_t));
+    *timestamp = Kinect::temp_video_frame_timestamp;
 
-    pthread_mutex_unlock(&cKinect::video_lock);
+    pthread_mutex_unlock(&Kinect::video_lock);
     return 0;
 }
 
 
-void cKinect::DepthCallback(freenect_device* dev, void* data, uint32_t timestamp)
+void Kinect::DepthCallback(freenect_device* dev, void* data, uint32_t timestamp)
 {
-    pthread_mutex_lock(&cKinect::depth_lock);
-    memcpy (cKinect::temp_depth_frame_raw, data, (DEPTH_WIDTH*DEPTH_HEIGHT)*sizeof(uint16_t));
-    cKinect::temp_depth_frame_timestamp = timestamp;
-    pthread_cond_broadcast(&cKinect::depth_ready);
-    pthread_mutex_unlock(&cKinect::depth_lock);
+    pthread_mutex_lock(&Kinect::depth_lock);
+    memcpy (Kinect::temp_depth_frame_raw, data, (DEPTH_WIDTH*DEPTH_HEIGHT)*sizeof(uint16_t));
+    Kinect::temp_depth_frame_timestamp = timestamp;
+    pthread_cond_broadcast(&Kinect::depth_ready);
+    pthread_mutex_unlock(&Kinect::depth_lock);
 
     return;
 }
 
-void cKinect::VideoCallback(freenect_device* dev, void* data, uint32_t timestamp)
+void Kinect::VideoCallback(freenect_device* dev, void* data, uint32_t timestamp)
 {
-    pthread_mutex_lock(&cKinect::video_lock);
-    memcpy (cKinect::temp_video_frame_raw, data, (VIDEO_WIDTH*VIDEO_HEIGHT)*sizeof(uint16_t));
-    cKinect::temp_video_frame_timestamp = timestamp;
-    pthread_cond_broadcast(&cKinect::video_ready);
-    pthread_mutex_unlock(&cKinect::video_lock);
+    pthread_mutex_lock(&Kinect::video_lock);
+    memcpy (Kinect::temp_video_frame_raw, data, (VIDEO_WIDTH*VIDEO_HEIGHT)*sizeof(uint16_t));
+    Kinect::temp_video_frame_timestamp = timestamp;
+    pthread_cond_broadcast(&Kinect::video_ready);
+    pthread_mutex_unlock(&Kinect::video_lock);
 
     return;
 }
 
 
-bool cKinect::ChangeTilt(double tilt_angle)
+bool Kinect::ChangeTilt(double tilt_angle)
 {
     freenect_raw_tilt_state* state;
     freenect_update_tilt_state(kinect_dev);
@@ -254,7 +254,7 @@ bool cKinect::ChangeTilt(double tilt_angle)
     return false;
 }
 
-void *cKinect::KinectProcessEvents(void)
+void *Kinect::KinectProcessEvents(void)
 {
     /* Loop processing packets from kinect */
     do
@@ -266,17 +266,17 @@ void *cKinect::KinectProcessEvents(void)
     return 0;
 }
 
-void *cKinect::KinectProcessEventsHelper(void *context)
+void *Kinect::KinectProcessEventsHelper(void *context)
 {
-    return ((cKinect *)context)->KinectProcessEvents();
+    return ((Kinect *)context)->KinectProcessEvents();
 }
 
-void cKinect::ChangeLedColor(freenect_led_options color)
+void Kinect::ChangeLedColor(freenect_led_options color)
 {
     freenect_set_led(kinect_dev,color);
 }
 
-bool cKinect::IsRunning()
+bool Kinect::IsRunning()
 {
     if(running)
         return true;

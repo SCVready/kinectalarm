@@ -1,7 +1,7 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file cKinect.hpp
+ * @file alarm.hpp
  *
  */
 
@@ -25,9 +25,10 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 #include <time.h>
+#include <memory>
 
 #include "global_parameters.hpp"
-#include "cKinect.hpp"
+#include "kinect.hpp"
 #include "log.hpp"
 #include "config.hpp"
 #include "jpeg.hpp"
@@ -35,9 +36,11 @@
 #include "sqlite_db.hpp"
 #include "video_stream.hpp"
 #include "video.hpp"
+#include "liveview.hpp"
+#include "detection.hpp"
 
 /*******************************************************************
- * Defines
+ * Includes
  *******************************************************************/
 #define DETECTION_THRESHOLD    2000
 #define DEPTH_CHANGE_TOLERANCE 10
@@ -90,19 +93,19 @@ enum enumLvw_conf
 /*******************************************************************
  * Class declaration
  *******************************************************************/
-class cAlarm {
+class Alarm {
 public:
     /**
      * @brief Contructor
      * 
      */
-    cAlarm();
+    Alarm();
 
     /**
      * @brief Destructor
      * 
      */
-    virtual ~cAlarm();
+    virtual ~Alarm();
 
     /**
      * @brief Initialization
@@ -201,9 +204,14 @@ public:
     int ChangeSensitivity(int32_t value);
 
 private:
-
     /* Kinect object */
-    class cKinect kinect;
+    std::shared_ptr<Kinect> m_kinect;
+
+    /* Liveview object */
+    std::unique_ptr<Liveview> m_liveview;
+
+    /* Detection object */
+    std::unique_ptr<Detection> m_detection;
 
     /* Frame pointer for detection */
     uint16_t* reff_depth_frame;
@@ -252,8 +260,8 @@ private:
     static void *DetectionThreadHelper(void *context);
     static void *LiveviewThreadHelper(void *context);
 
-    void *Detection(void);
-    void *Liveview(void);
+    void *DetectionFunction(void);
+    void *LiveviewFunction(void);
 
     template <typename T>
     int ChangeDetStatus(enum enumDet_conf, T value);

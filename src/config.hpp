@@ -17,7 +17,7 @@
 #include <string>
 
 #include "global_parameters.hpp"
-#include "cAlarm.hpp"
+#include "alarm.hpp"
 #include "sqlite_db.hpp"
 
 /*******************************************************************

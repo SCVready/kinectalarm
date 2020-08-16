@@ -27,7 +27,7 @@
 #include <iterator>
 
 #include "global_parameters.hpp"
-#include "cAlarm.hpp"
+#include "alarm.hpp"
 #include "log.hpp"
 #include "config.hpp"
 #include "redis_db.hpp"
@@ -46,7 +46,7 @@ volatile bool kinect_alarm_running = true;
 /*******************************************************************
  * Funtion declaration
  *******************************************************************/
-int MessageProcess(class cAlarm *alarm, char *command);
+int MessageProcess(class Alarm *alarm, char *command);
 void OnMessage(redisAsyncContext *c, void *reply, void *privdata);
 void *RefreshWatchdog(void *x_void_ptr);
 
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
     openlog ("kinect_alarm", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
     /* Alarm Class creation */
-    class cAlarm alarm;
+    class Alarm alarm;
 
     /* Alarm initialization */
     if(alarm.Init())
@@ -129,7 +129,7 @@ closing_alarm:
 
 void OnMessage(redisAsyncContext *c, void *reply, void *privdata)
 {
-    class cAlarm *alarm = (class cAlarm*) privdata;
+    class Alarm *alarm = (class Alarm*) privdata;
     redisReply *r = (redisReply*) reply;
     if (reply == NULL) return;
 
@@ -150,7 +150,7 @@ void OnMessage(redisAsyncContext *c, void *reply, void *privdata)
     }
 }
 
-int MessageProcess(class cAlarm *alarm, char *command)
+int MessageProcess(class Alarm *alarm, char *command)
 {
     std::string str(command);
 

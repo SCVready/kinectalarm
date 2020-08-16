@@ -1,19 +1,19 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file cAlarm.cpp
+ * @file alarm.cpp
  *
  */
 
 /*******************************************************************
  * Defines
  *******************************************************************/
-#include "cAlarm.hpp"
+#include "alarm.hpp"
 
 /*******************************************************************
  * Class definition
  *******************************************************************/
-cAlarm::cAlarm()
+Alarm::Alarm()
 {
     /* Members initialization */
 
@@ -56,19 +56,23 @@ cAlarm::cAlarm()
     lvw_conf.tilt           = 0;
     lvw_conf.brightness     = 0;
     lvw_conf.contrast       = 0;
+
+    m_kinect    = std::make_shared<Kinect>();
+    m_liveview  = std::make_unique<Liveview>(m_kinect);
+    m_detection = std::make_unique<Detection>(m_kinect);
 }
 
-cAlarm::~cAlarm()
+Alarm::~Alarm()
 {
 }
 
-int cAlarm::Init()
+int Alarm::Init()
 {
     /* SQLite initialization */
     if(init_sqlite_db())
     {
         LOG(LOG_ERR,"Error: couldn't intialize SQLite\n");
-        kinect.Term();
+        m_kinect->Term();
         return -1;
     }
 
@@ -76,7 +80,7 @@ int cAlarm::Init()
     if(create_det_table_sqlite_db())
     {
         LOG(LOG_ERR,"Error: creating detection table on SQLite\n");
-        kinect.Term();
+        m_kinect->Term();
         return -1;
     }
 
@@ -84,7 +88,7 @@ int cAlarm::Init()
     if(create_status_table_sqlite_db())
     {
         LOG(LOG_ERR,"Error: creating status table on SQLite\n");
-        kinect.Term();
+        m_kinect->Term();
         return -1;
     }
 
@@ -100,7 +104,7 @@ int cAlarm::Init()
     if(init_redis_db())
     {
         LOG(LOG_ERR,"Error: couldn't intialize Redis db\n");
-        kinect.Term();
+        m_kinect->Term();
         return -1;
     }
 
@@ -108,15 +112,15 @@ int cAlarm::Init()
     if(InitVarsRedis())
     {
         LOG(LOG_ERR,"Error: couldn't intialize variables in Redis db\n");
-        kinect.Term();
+        m_kinect->Term();
         return -1;
     }
 
     /* Kinect initialization */
-    if(kinect.Init())
+    if(m_kinect->Init())
     {
         LOG(LOG_ERR,"Error: couldn't intialize Kinect\n");
-        kinect.Term();
+        m_kinect->Term();
         return -1;
     }
 
@@ -166,17 +170,17 @@ int cAlarm::Init()
         StartLiveview();
 
     /* Adjust kinect's tilt */
-    if(kinect.ChangeTilt(lvw_conf.tilt))
+    if(m_kinect->ChangeTilt(lvw_conf.tilt))
     {
         LOG(LOG_ERR,"Fallo al cambiar la inclinacion de kinect\n");
-        kinect.Term();
+        m_kinect->Term();
         return -1;
     }
 
     return 0;
 }
 
-int cAlarm::Term()
+int Alarm::Term()
 {
     if(detection_running)
     {
@@ -190,9 +194,9 @@ int cAlarm::Term()
         pthread_join(liveview_thread,NULL);
         UpdateLed();
     }
-    if(kinect.IsRunning())
-        kinect.Stop();
-    kinect.Term();
+    if(m_kinect->IsRunning())
+        m_kinect->Stop();
+    m_kinect->Term();
 
     /* Deinit Redis */
     deinit_redis_db();
@@ -217,11 +221,11 @@ int cAlarm::Term()
     return 0;
 }
 
-int cAlarm::StartDetection()
+int Alarm::StartDetection()
 {
     /* Start kinect */
-    if(!kinect.IsRunning())
-        kinect.Start();
+    if(!m_kinect->IsRunning())
+        m_kinect->Start();
 
     if(!detection_running)
     {
@@ -249,7 +253,7 @@ int cAlarm::StartDetection()
     return 1;
 }
 
-int cAlarm::StopDetection()
+int Alarm::StopDetection()
 {
     if(detection_running)
     {
@@ -275,18 +279,18 @@ int cAlarm::StopDetection()
 
         /* Turn off Kinect */
         if(!detection_running && !liveview_running)
-            kinect.Stop();
+            m_kinect->Stop();
 
         return 0;
     }
     return 1;
 }
 
-int cAlarm::StartLiveview()
+int Alarm::StartLiveview()
 {
     /* Start kinect */
-    if(!kinect.IsRunning())
-        kinect.Start();
+    if(!m_kinect->IsRunning())
+        m_kinect->Start();
 
     if(!liveview_running)
     {
@@ -315,7 +319,7 @@ int cAlarm::StartLiveview()
     return 0;
 }
 
-int cAlarm::StopLiveview()
+int Alarm::StopLiveview()
 {
     if(liveview_running)
     {
@@ -341,12 +345,12 @@ int cAlarm::StopLiveview()
 
         /* Turn off Kinect */
         if(!detection_running && !liveview_running)
-            kinect.Stop();
+            m_kinect->Stop();
     }
     return 0;
 }
 
-uint32_t cAlarm::CompareDepthFrameToReferenceDepthFrame()
+uint32_t Alarm::CompareDepthFrameToReferenceDepthFrame()
 {
     uint32_t cont = 0;
 
@@ -370,15 +374,15 @@ uint32_t cAlarm::CompareDepthFrameToReferenceDepthFrame()
 }
 
 /* TODO: not used */
-int cAlarm::GetDiffDepthFrame(uint16_t *diff_depth_frame, uint32_t *timestamp)
+int Alarm::GetDiffDepthFrame(uint16_t *diff_depth_frame, uint32_t *timestamp)
 {
 
-    kinect.GetDepthFrame(temp_depth_frame,&temp_depth_frame_timestamp);
+    m_kinect->GetDepthFrame(temp_depth_frame,&temp_depth_frame_timestamp);
 
     return 0;
 }
 
-void *cAlarm::Detection(void)
+void *Alarm::DetectionFunction(void)
 {
     /* Variable initialization */
     reff_depth_timestamp = 0;
@@ -399,10 +403,10 @@ void *cAlarm::Detection(void)
         UpdateLed();
 
         /* Get Reference frame */
-        if(kinect.GetDepthFrame(reff_depth_frame,&reff_depth_timestamp))
+        if(m_kinect->GetDepthFrame(reff_depth_frame,&reff_depth_timestamp))
         {
             LOG(LOG_ERR,"Failed to capture depth frame\n");
-            kinect.Term();
+            m_kinect->Term();
             return 0;
         }
 
@@ -411,10 +415,10 @@ void *cAlarm::Detection(void)
         do
         {
             /* get depth image to compare */
-            if(kinect.GetDepthFrame(depth_frame,&depth_timestamp))
+            if(m_kinect->GetDepthFrame(depth_frame,&depth_timestamp))
             {
                 LOG(LOG_ERR,"Failed to capture depth frame\n");
-                kinect.Term();
+                m_kinect->Term();
                 return 0;
             }
 
@@ -437,7 +441,7 @@ void *cAlarm::Detection(void)
             redis_publish("email_send_det","");
 
             /* Update kinect led */
-            kinect.ChangeLedColor(LED_RED);
+            m_kinect->ChangeLedColor(LED_RED);
 
             frame_counter = 0;
 
@@ -456,10 +460,10 @@ void *cAlarm::Detection(void)
                     wakeup_time = timeAdd(wakeup_time, sleep_time);
 
                     /* Getting video frame */
-                    if(kinect.GetVideoFrame(video_frames[0],&video_timestamp))
+                    if(m_kinect->GetVideoFrame(video_frames[0],&video_timestamp))
                     {
                         LOG(LOG_ERR,"Failed to capture video frame\n");
-                        kinect.Term();
+                        m_kinect->Term();
                         return 0;
                     }
 
@@ -477,10 +481,10 @@ void *cAlarm::Detection(void)
                         clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &wakeup_time, NULL);
                 }
                 /* Get depth image to compare */
-                if(kinect.GetDepthFrame(depth_frame,&depth_timestamp))
+                if(m_kinect->GetDepthFrame(depth_frame,&depth_timestamp))
                 {
                     LOG(LOG_ERR,"Failed to capture depth frame\n");
-                    kinect.Term();
+                    m_kinect->Term();
                     return 0;
                 }
                 diff_cont = CompareDepthFrameToReferenceDepthFrame();
@@ -521,9 +525,9 @@ void *cAlarm::Detection(void)
 }
 
 
-void *cAlarm::DetectionThreadHelper(void *context)
+void *Alarm::DetectionThreadHelper(void *context)
 {
-    return ((cAlarm *)context)->Detection();
+    return ((Alarm *)context)->DetectionFunction();
 }
 
 #if 0
@@ -544,7 +548,7 @@ void *cAlarm::liveview(void)
     {
         wakeup_time = timeAdd(wakeup_time, sleep_time);
         
-        kinect.GetVideoFrame(liveview_frame);
+        m_kinect->GetVideoFrame(liveview_frame);
         send_frame(liveview_frame);
         
         clock_gettime(CLOCK_MONOTONIC, &current_time);
@@ -560,7 +564,7 @@ void *cAlarm::liveview(void)
 }
 #endif
 
-void *cAlarm::Liveview(void)
+void *Alarm::LiveviewFunction(void)
 {
     unsigned int size = 0;
 
@@ -573,7 +577,7 @@ void *cAlarm::Liveview(void)
     while(liveview_running)
     {
         /* Get new video frame and convert it to jpeg */
-        kinect.GetVideoFrame(liveview_frame,&liveview_timestamp);
+        m_kinect->GetVideoFrame(liveview_frame,&liveview_timestamp);
 
         /* Convert to jpeg */
         save_video_frame_to_jpeg_inmemory(liveview_frame, liveview_jpeg,&size,lvw_conf.brightness,lvw_conf.contrast);
@@ -592,24 +596,24 @@ void *cAlarm::Liveview(void)
     return 0;
 }
 
-void *cAlarm::LiveviewThreadHelper(void *context)
+void *Alarm::LiveviewThreadHelper(void *context)
 {
-    return ((cAlarm *)context)->Liveview();
+    return ((Alarm *)context)->LiveviewFunction();
 }
 
-void cAlarm::UpdateLed()
+void Alarm::UpdateLed()
 {
     if(liveview_running && detection_running)
-        kinect.ChangeLedColor((freenect_led_options)4);
+        m_kinect->ChangeLedColor((freenect_led_options)4);
     else if(detection_running)
-        kinect.ChangeLedColor(LED_YELLOW);
+        m_kinect->ChangeLedColor(LED_YELLOW);
     else if(liveview_running)
-        kinect.ChangeLedColor((freenect_led_options)5);
+        m_kinect->ChangeLedColor((freenect_led_options)5);
     else
-        kinect.ChangeLedColor(LED_OFF);
+        m_kinect->ChangeLedColor(LED_OFF);
 }
 
-bool cAlarm::IsDetectionRunning()
+bool Alarm::IsDetectionRunning()
 {
     if(detection_running)
         return true;
@@ -617,7 +621,7 @@ bool cAlarm::IsDetectionRunning()
         return false;
 }
 
-bool cAlarm::IsLiveviewRunning()
+bool Alarm::IsLiveviewRunning()
 {
     if(liveview_running)
         return true;
@@ -625,12 +629,12 @@ bool cAlarm::IsLiveviewRunning()
         return false;
 }
 
-int cAlarm::GetNumDetections()
+int Alarm::GetNumDetections()
 {
     return det_conf.curr_det_num;
 }
 
-int cAlarm::ResetDetection()
+int Alarm::ResetDetection()
 {
     delete_all_entries_det_table_sqlite_db();
     delete_all_files_from_dir(DETECTION_PATH);
@@ -643,7 +647,7 @@ int cAlarm::ResetDetection()
     return 0;
 }
 
-int cAlarm::DeleteDetection(int id)
+int Alarm::DeleteDetection(int id)
 {
     char command[50];
     sprintf(command, "rm -rf %s/%d_*",DETECTION_PATH,id);
@@ -656,7 +660,7 @@ int cAlarm::DeleteDetection(int id)
 }
 
 template <typename T>
-int cAlarm::ChangeDetStatus(enum enumDet_conf conf_name, T value)
+int Alarm::ChangeDetStatus(enum enumDet_conf conf_name, T value)
 {
     switch(conf_name)
     {
@@ -685,7 +689,7 @@ int cAlarm::ChangeDetStatus(enum enumDet_conf conf_name, T value)
 }
 
 template <typename T>
-int cAlarm::ChangeLvwStatus(enum enumLvw_conf conf_name, T value)
+int Alarm::ChangeLvwStatus(enum enumLvw_conf conf_name, T value)
 {
     switch(conf_name)
     {
@@ -707,7 +711,7 @@ int cAlarm::ChangeLvwStatus(enum enumLvw_conf conf_name, T value)
     return 0;
 }
 
-int cAlarm::InitVarsRedis()
+int Alarm::InitVarsRedis()
 {
     if(redis_set_int((char *) "det_status", det_conf.is_active))
         return -1;
@@ -728,9 +732,9 @@ int cAlarm::InitVarsRedis()
     return 0;
 }
 
-int cAlarm::ChangeTilt(double tilt)
+int Alarm::ChangeTilt(double tilt)
 {
-    kinect.ChangeTilt(tilt);
+    m_kinect->ChangeTilt(tilt);
     redis_set_int((char *) "tilt", (int) tilt);
     ChangeLvwStatus(TILT,tilt);
     LOG(LOG_INFO,"Changed Kinect's titl to: %d\n",(int)tilt);
@@ -738,7 +742,7 @@ int cAlarm::ChangeTilt(double tilt)
     return 0;
 }
 
-int cAlarm::ChangeBrightness(int32_t value)
+int Alarm::ChangeBrightness(int32_t value)
 {
     redis_set_int((char *) "brightness", value);
     ChangeLvwStatus(BRIGHTNESS,value);
@@ -747,7 +751,7 @@ int cAlarm::ChangeBrightness(int32_t value)
     return 0;
 }
 
-int cAlarm::ChangeContrast(int32_t value)
+int Alarm::ChangeContrast(int32_t value)
 {
     redis_set_int((char *) "contrast", value);
     ChangeLvwStatus(CONTRAST,value);
@@ -756,7 +760,7 @@ int cAlarm::ChangeContrast(int32_t value)
     return 0;
 }
 
-int cAlarm::ChangeThreshold(int32_t value)
+int Alarm::ChangeThreshold(int32_t value)
 {
     redis_set_int((char *) "threshold", value);
     ChangeDetStatus(THRESHOLD,value);
@@ -770,7 +774,7 @@ int cAlarm::ChangeThreshold(int32_t value)
     return 0;
 }
 
-int cAlarm::ChangeSensitivity(int32_t value)
+int Alarm::ChangeSensitivity(int32_t value)
 {
     redis_set_int((char *) "sensitivity", value);
     ChangeDetStatus(TOLERANCE,value);

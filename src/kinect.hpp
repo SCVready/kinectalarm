@@ -1,7 +1,7 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file cKinect.hpp
+ * @file Kinect.hpp
  *
  */
 
@@ -35,19 +35,44 @@
 /*******************************************************************
  * Class declaration
  *******************************************************************/
-class cKinect {
+class KinectFrame
+{
+public:
+    ;
+private:
+    ;
+};
+
+class VideoFrame : public KinectFrame
+{
+public:
+    ;
+private:
+    ;
+};
+
+class DepthFrame : public KinectFrame
+{
+public:
+    ;
+private:
+    ;
+};
+
+class Kinect
+{
 public:
     /**
      * @brief Constructor
      * 
      */
-    cKinect();
+    Kinect();
 
     /**
      * @brief Destructor
      * 
      */
-    virtual ~cKinect();
+    virtual ~Kinect();
 
     /**
      * @brief Initialization
