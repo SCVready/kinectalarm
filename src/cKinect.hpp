@@ -18,27 +18,25 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <syslog.h>
 
-#include "global_parameters.hpp"
 #include <libfreenect/libfreenect.h>
 #include <libfreenect/libfreenect_sync.h>
-#include <syslog.h>
-#include "log.hpp"
+
 #include "common.hpp"
+#include "global_parameters.hpp"
+#include "log.hpp"
 
 /*******************************************************************
  * Defines
  *******************************************************************/
-#define MAX_TILT_WAIT 	10	// Seconds to wait until the kinect's tilting is complete
+#define MAX_TILT_WAIT 10 /* Seconds to wait until the kinect's tilting is complete */
 
 /*******************************************************************
  * Class declaration
  *******************************************************************/
 class cKinect {
 public:
-
-    //// Functions ////
-
     /**
      * @brief Constructor
      * 

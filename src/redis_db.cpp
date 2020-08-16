@@ -5,19 +5,25 @@
  *
  */
 
+/*******************************************************************
+ * Includes
+ *******************************************************************/
 #include "redis_db.hpp"
 
-//Global variables
+/*******************************************************************
+ * Global variables
+ *******************************************************************/
 redisContext *c				= NULL;
 redisAsyncContext *c_async	= NULL;
 pthread_mutex_t redis_context_mutex;
 struct event_base *base;
 
-
-// Sync functions
+/*******************************************************************
+ * Function definition
+ *******************************************************************/
 int init_redis_db()
 {
-    // Connect to the redis DB
+    /* Connect to the redis DB */
     c = redisConnectUnix("/tmp/redis.sock");
     if (c == NULL || c->err)
     {
@@ -28,7 +34,7 @@ int init_redis_db()
 
         return -1;
     }
-    // Initialize context mutex
+    /* Initialize context mutex */
     if (pthread_mutex_init(&redis_context_mutex, NULL) != 0)
         return -1;
 
@@ -41,7 +47,6 @@ int deinit_redis_db()
     return 0;
 }
 
-// GET functions
 int redis_get_int(char *key, int *value)
 {
     int retval = 0;
@@ -87,10 +92,6 @@ clean:
     return 0;
 }
 
-//TODO float,byte_array
-
-// SET functions
-
 int redis_set_int(char *key, int value)
 {
     int retval = 0;
@@ -131,7 +132,6 @@ clean:
     return 0;
 }
 
-// SETEX functions
 int redis_setex_int(char *key, int time, int value)
 {
     int retval = 0;
@@ -151,9 +151,6 @@ clean:
     pthread_mutex_unlock(&redis_context_mutex);
     return retval;
 }
-
-
-// Publish
 
 int redis_publish(char *channel, char *message)
 {
@@ -175,7 +172,6 @@ clean:
     return 0;
 }
 
-// Async functions
 int init_async_redis_db()
 {
     signal(SIGPIPE, SIG_IGN);

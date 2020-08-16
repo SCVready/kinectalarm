@@ -5,6 +5,9 @@
  *
  */
 
+/*******************************************************************
+ * Includes
+ *******************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
@@ -15,7 +18,6 @@
 #include <errno.h>
 #include <syslog.h>
 #include <pthread.h>
-
 #include <iostream>
 #include <algorithm>
 #include <vector>
@@ -31,14 +33,26 @@
 #include "redis_db.hpp"
 #include "common.hpp"
 
+/*******************************************************************
+ * Defines
+ *******************************************************************/
 #define KINECTALARM_VERSION "0.1"
 
+/*******************************************************************
+ * Global variables
+ *******************************************************************/
 volatile bool kinect_alarm_running = true;
 
-int message_process(class cAlarm *alarm, char *command);
-void onMessage(redisAsyncContext *c, void *reply, void *privdata);
-void *refresh_watchdog(void *x_void_ptr);
+/*******************************************************************
+ * Funtion declaration
+ *******************************************************************/
+int MessageProcess(class cAlarm *alarm, char *command);
+void OnMessage(redisAsyncContext *c, void *reply, void *privdata);
+void *RefreshWatchdog(void *x_void_ptr);
 
+/*******************************************************************
+ * Funtion definition
+ *******************************************************************/
 void signalHandler(int signal)
 {
     if (signal == SIGINT
@@ -52,7 +66,6 @@ void signalHandler(int signal)
 
 int main(int argc, char** argv)
 {
-
 #ifndef DEBUG_ALARM
     printf("RELEASE BUILD\n");
 #else
@@ -61,98 +74,97 @@ int main(int argc, char** argv)
 
     int retvalue = 0;
 
-
-    // Handle signals
+    /* Handle signals */
     signal(SIGINT, signalHandler);
     signal(SIGTERM, signalHandler);
     signal(SIGQUIT, signalHandler);
 
-    // Set up syslog
+    /* Set up syslog */
     setlogmask(LOG_UPTO(LOG_DEBUG));
     openlog ("kinect_alarm", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-    // Alarma Class creation
-    class cAlarm alarma;
+    /* Alarm Class creation */
+    class cAlarm alarm;
 
-    // Alarm initialization
-    if(alarma.Init())
+    /* Alarm initialization */
+    if(alarm.Init())
     {
         LOG(LOG_ERR, "Alarm initialization error\n");
         retvalue = -1;
         goto closing_alarm;
     }
     else
+    {
         LOG(LOG_NOTICE, "Alarm initialize successful\n");
+    }
 
-    // INIT REDIS
+    /* Init Redis async context */
     if(init_async_redis_db())
         goto closing_alarm;
 
-    // Subscribe to redis channel
-    async_redis_subscribe("kinectalarm",onMessage,&alarma);
+    /* Subscribe to Redis channel */
+    async_redis_subscribe("kinectalarm",OnMessage,&alarm);
 
-    // Set version on redis
+    /* Set version on Redis */
     redis_set_char("kinectalarm_version",KINECTALARM_VERSION);
 
-    //TODO LAUNCH THREAD
+    /* Launch watchdog thread */
     pthread_t watchdog_thread;
-
-    if(pthread_create(&watchdog_thread, NULL, refresh_watchdog, NULL))
+    if(pthread_create(&watchdog_thread, NULL, RefreshWatchdog, NULL))
     {
         LOG(LOG_ERR, "Error launching watchdog_thread\n");
         return 1;
     }
     redis_setex_int("kinectalarm_watchdog", 5, 0);
 
-    // Listen to publishes
+    /* Listen to Redis publications */
     async_redis_event_dispatch();
 
     LOG(LOG_NOTICE, "Closing alarm\n");
 
 closing_alarm:
-    alarma.Term();
+    alarm.Term();
     return retvalue;
 }
 
-
-void onMessage(redisAsyncContext *c, void *reply, void *privdata) {
-
+void OnMessage(redisAsyncContext *c, void *reply, void *privdata)
+{
     class cAlarm *alarm = (class cAlarm*) privdata;
     redisReply *r = (redisReply*) reply;
     if (reply == NULL) return;
 
     if (r->type == REDIS_REPLY_ARRAY)
     {
-        // Check number of elements
+        /* Check number of elements */
         if(r->elements != 3)
             return;
 
-        // Check channel
+        /* Check channel */
         if(strncmp(r->element[0]->str,"message",strlen("message")))
             return;
         if(strncmp(r->element[1]->str,"kinectalarm",strlen("kinectalarm")))
             return;
 
-        // Process the message
-        message_process(alarm, r->element[2]->str);
+        /* Process the message */
+        MessageProcess(alarm, r->element[2]->str);
     }
 }
 
-int message_process(class cAlarm *alarm, char *command)
+int MessageProcess(class cAlarm *alarm, char *command)
 {
     std::string str(command);
 
-    // Remove non wanted characters
+    /* Remove non wanted characters */
     str.erase(std::remove_if(str.begin(), str.end(), allowed_characters), str.end());
 
-    // Remove consecutive spaces
+    /* Remove consecutive spaces */
     std::string::iterator new_end = std::unique(str.begin(), str.end(), both_are_spaces);
     str.erase(new_end, str.end());
 
-    // Lower cases
+    /* Lower cases */
     std::transform(str.begin(), str.end(), str.begin(), ::tolower);
 
-    // Remove leading and trailing spaces
+    /* Remove leading and trailing spaces */
     if(str.front() == ' ')
         str.erase(0,1);
     if(str.back() == ' ')
@@ -246,8 +258,7 @@ int message_process(class cAlarm *alarm, char *command)
     return 0;
 }
 
-
-void *refresh_watchdog(void *x_void_ptr)
+void *RefreshWatchdog(void *x_void_ptr)
 {
     while(1){
     redis_setex_int("kinectalarm_watchdog", 2, 0);

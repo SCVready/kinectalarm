@@ -5,8 +5,14 @@
  *
  */
 
+/*******************************************************************
+ * Includes
+ *******************************************************************/
 #include "config.hpp"
 
+/*******************************************************************
+ * Funtion definition
+ *******************************************************************/
 int write_status(struct sDet_conf det_conf,struct sLvw_conf lvw_conf)
 {
     struct status_table status;
@@ -36,15 +42,15 @@ int write_status(struct sDet_conf det_conf,struct sLvw_conf lvw_conf)
 int read_status(struct sDet_conf *det_conf,struct sLvw_conf *lvw_conf)
 {
 
-    // Creation status table on SQLite
+    /* Creation status table on SQLite */
     int num_status_entries =-1;
     number_entries_status_table_sqlite_db(&num_status_entries);
 
-    // If there is any entry, create a default status
+    /* If there is any entry, create a default status */
     if(!num_status_entries)
         return -1;
 
-    // Retrieve status
+    /* Retrieve status */
     struct status_table status;
     status.id = 0;
     get_entry_status_table_sqlite_db(&status);

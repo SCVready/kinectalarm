@@ -5,9 +5,15 @@
  *
  */
 
+/*******************************************************************
+ * Includes
+ *******************************************************************/
 #include "jpeg.hpp"
 #include "global_parameters.hpp"
 
+/*******************************************************************
+ * Funtion definition
+ *******************************************************************/
 bool save_depth_frame_to_jpeg(uint16_t* depth_frame,char *filepath)
 {
     FIBITMAP *depth_bitmap;
@@ -52,7 +58,7 @@ bool save_video_frame_to_jpeg_inmemory(uint16_t* video_frame, uint8_t* video_jpe
     FIMEMORY *hmem = NULL;
     hmem = FreeImage_OpenMemory();
 
-    // get the buffer from the memory stream
+    /* Get the buffer from the memory stream */
     BYTE *mem_buffer = NULL;
     DWORD size_in_bytes = 0;
 
@@ -74,9 +80,9 @@ bool save_video_frame_to_jpeg_inmemory(uint16_t* video_frame, uint8_t* video_jpe
     return retval;
 }
 
+/* TODO: complete and test */
 bool save_video_frames_to_gif(uint16_t** video_frames_array, int num_frames, float frame_interval, char *filepath)
 {
-    //TODO
     FIBITMAP *video_bitmap[num_frames];
     FIBITMAP *video_bitmap_rescale[num_frames];
     FIBITMAP *video_bitmap_tmp[num_frames];
@@ -90,7 +96,6 @@ bool save_video_frames_to_gif(uint16_t** video_frames_array, int num_frames, flo
             bmap_array[3*j]   = *(video_frames_array[i]+j);
             bmap_array[3*j+1] = *(video_frames_array[i]+j);
             bmap_array[3*j+2] = *(video_frames_array[i]+j);
-
         }
 
         video_bitmap[i] = FreeImage_ConvertFromRawBits((BYTE *) bmap_array, VIDEO_WIDTH, VIDEO_HEIGHT, VIDEO_WIDTH*3, 24, 0xFF0000,  0x00FF00, 0x0000FF, TRUE);
@@ -99,17 +104,17 @@ bool save_video_frames_to_gif(uint16_t** video_frames_array, int num_frames, flo
         video_bitmap_tmp[i] = FreeImage_ConvertTo8Bits(video_bitmap_rescale[i]);
     }
 
-    // assume we have an array of dibs which are already 8bpp and all the same size,
-    // and some float called fps for frames per second
+    /* assume we have an array of dibs which are already 8bpp and all the same size, */
+    /* and some float called fps for frames per second */
 
     FIMULTIBITMAP *multi = FreeImage_OpenMultiBitmap(FIF_GIF, "output.gif", TRUE, FALSE);
     float fps = 1/frame_interval;
     DWORD dwFrameTime = (DWORD)((1000.0f / fps) + 0.5f);
     for(int i = 0; i < num_frames; i++ )
     {
-        // clear any animation metadata used by this dib as we�ll adding our own ones
+        /* clear any animation metadata used by this dib as we�ll adding our own ones */
         FreeImage_SetMetadata(FIMD_ANIMATION, video_bitmap_tmp[i], NULL, NULL);
-        // add animation tags to dib[i]
+        /* add animation tags to dib[i] */
         FITAG *tag = FreeImage_CreateTag();
         if(tag)
         {
@@ -123,6 +128,7 @@ bool save_video_frames_to_gif(uint16_t** video_frames_array, int num_frames, flo
         }
         FreeImage_AppendPage(multi, video_bitmap[i]);
     }
+
     retval = FreeImage_CloseMultiBitmap(multi,0);
 
     for(int i = 0; i<num_frames ; i++)
@@ -130,7 +136,6 @@ bool save_video_frames_to_gif(uint16_t** video_frames_array, int num_frames, flo
         FreeImage_Unload(video_bitmap[i]);
         FreeImage_Unload(video_bitmap_tmp[i]);
     }
-
 
     return retval;
 }

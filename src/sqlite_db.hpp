@@ -8,6 +8,9 @@
 #ifndef SQLITE_DB_H_
 #define SQLITE_DB_H_
 
+/*******************************************************************
+ * Defines
+ *******************************************************************/
 #include <stdlib.h>
 #include <stdio.h>
 #include <sqlite3.h>
@@ -17,26 +20,15 @@
 
 #include "log.hpp"
 
-int init_sqlite_db();
-int deinit_sqlite_db();
-
-////// DETECTION TABLE ////////
-
+/*******************************************************************
+ * Structures
+ *******************************************************************/
 struct det_table{
     uint32_t id;
     uint32_t datetime;
     uint32_t duration;
     char *filename;
 };
-
-int create_det_table_sqlite_db();
-int insert_entry_det_table_sqlite_db(unsigned int id, unsigned int datetime, unsigned int duration, char *filename_img, char *filename_vid);
-int get_entry_det_table_sqlite_db(uint32_t id, uint32_t *timestamp, uint32_t *duration, char *filename);
-int number_entries_det_table_sqlite_db(int *number_entries);
-int delete_entry_det_table_sqlite_db(int id);
-int delete_all_entries_det_table_sqlite_db();
-
-////// STATUS TABLE ////////
 
 struct status_table{
     uint32_t id;
@@ -52,6 +44,19 @@ struct status_table{
     uint32_t det_curr_det_id;
     uint32_t lvw_fps;
 };
+
+/*******************************************************************
+ * Function declaration
+ *******************************************************************/
+int init_sqlite_db();
+int deinit_sqlite_db();
+
+int create_det_table_sqlite_db();
+int insert_entry_det_table_sqlite_db(unsigned int id, unsigned int datetime, unsigned int duration, char *filename_img, char *filename_vid);
+int get_entry_det_table_sqlite_db(uint32_t id, uint32_t *timestamp, uint32_t *duration, char *filename);
+int number_entries_det_table_sqlite_db(int *number_entries);
+int delete_entry_det_table_sqlite_db(int id);
+int delete_all_entries_det_table_sqlite_db();
 
 int create_status_table_sqlite_db();
 int number_entries_status_table_sqlite_db(int *number_entries);

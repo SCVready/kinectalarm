@@ -5,16 +5,24 @@
  *
  */
 
+/*******************************************************************
+ * Defines
+ *******************************************************************/
 #include "sqlite_db.hpp"
 
-// Global variables
+/*******************************************************************
+ * Global variables
+ *******************************************************************/
 sqlite3 *db = NULL;
 
+/*******************************************************************
+ * Function definition
+ *******************************************************************/
 int init_sqlite_db()
 {
     int rc;
 
-    // Open connection with DB only once
+    /* Open connection with DB only once */
     if(!db)
     {
         rc = sqlite3_open("/etc/kinectalarm/detections.db", &db);
@@ -35,9 +43,6 @@ int deinit_sqlite_db()
     db = NULL;
     return 0;
 }
-
-
-////// DETECTION TABLE ////////
 
 int create_det_table_sqlite_db()
 {
@@ -66,12 +71,11 @@ int create_det_table_sqlite_db()
 int insert_entry_det_table_sqlite_db(unsigned int id, unsigned int datetime, unsigned int duration, char *filename_img, char *filename_vid)
 {
     char *err_msg = 0;
-    /* Create SQL statement */
 
+    /* Create SQL statement */
     char sql[255];
     sprintf(sql,"INSERT INTO DETECTIONS (ID,DATE,DURATION,FILENAME_IMG,FILENAME_VID) "  \
         "VALUES (%u, %u, %u, '%s', '%s'); ",id,datetime,duration,filename_img,filename_vid);
-
 
     /* Execute SQL statement */
     int rc = sqlite3_exec(db, sql, NULL, 0, &err_msg);
@@ -198,8 +202,6 @@ int delete_all_entries_det_table_sqlite_db()
     return 0;
 }
 
-////// STATUS TABLE ////////
-
 int create_status_table_sqlite_db()
 {
     char *err_msg = 0;
@@ -263,8 +265,8 @@ int number_entries_status_table_sqlite_db(int *number_entries)
 int insert_entry_status_table_sqlite_db(struct status_table *status)
 {
     char *err_msg = 0;
-    /* Create SQL statement */
 
+    /* Create SQL statement */
     char sql[512];
     sprintf(sql,"INSERT INTO STATUS (ID,TILT,BRIGHTNESS,CONTRAST,DET_ACTIVE,LVW_ACTIVE,DET_THRESHOLD," \
             "DET_SENSITIVITY,DET_NUM_SHOTS,DET_FPS,DET_CURR_DET_ID,LVW_FPS) "  \
@@ -331,8 +333,8 @@ int get_entry_status_table_sqlite_db(struct status_table *status)
 int update_entry_status_table_sqlite_db(struct status_table *status)
 {
     char *err_msg = 0;
-    /* Create SQL statement */
 
+    /* Create SQL statement */
     char sql[512];
     sprintf(sql,"UPDATE STATUS SET " \
             "TILT=%d,BRIGHTNESS=%d,CONTRAST=%d,DET_ACTIVE=%u,LVW_ACTIVE=%u,DET_THRESHOLD=%u," \

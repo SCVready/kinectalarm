@@ -8,6 +8,10 @@
 #ifndef SRC_CONFIG_H_
 #define SRC_CONFIG_H_
 
+
+/*******************************************************************
+ * Includes
+ *******************************************************************/
 #include <stdio.h>
 #include <string.h>
 #include <string>
@@ -16,7 +20,9 @@
 #include "cAlarm.hpp"
 #include "sqlite_db.hpp"
 
-
+/*******************************************************************
+ * Funtion declaration
+ *******************************************************************/
 int write_status(struct sDet_conf det_conf,struct sLvw_conf lvw_conf);
 int read_status(struct sDet_conf *det_conf,struct sLvw_conf *lvw_conf);
 
