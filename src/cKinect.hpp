@@ -74,21 +74,31 @@ public:
     int Stop();
 
     /**
-     * @brief To get depth frame
+     * @brief Syncronous funtion to get a depth frame.
      * 
+     * @param[in/out] depth_frame : pointer to an already allocated memory
+     *                              array. It will be filled with the frame content
+     * @param[in/out] timestamp : to provide the funtion with the timestamp of the last
+     *                            frame you have. It will be updated with the 
+     *                            timestamp of the provided frame.
      */
     int GetDepthFrame(uint16_t *depth_frame, uint32_t *timestamp);
 
     /**
-     * @brief To get video frame
+     * @brief Syncronous funtion to get a depth frame.
      * 
+     * @param[in/out] video_frame : pointer to an already allocated memory
+     *                              array. It will be filled with the frame info
+     * @param[in/out] timestamp : to provide te funtion the timestamp of the last
+     *                            frame you have. It will be updated with the 
+     *                            timestamp of the provided frame.
      */
     int GetVideoFrame(uint16_t *video_frame, uint32_t *timestamp);
 
     /**
      * @brief To get change kinect's tilt
      * 
-     * @param tilt_angle Wanted kinect's tilt angle, range [-61,61]
+     * @param[in] tilt_angle : wanted kinect's tilt angle, range [-61,61]
      * 
      */
     bool ChangeTilt(double tilt_angle);
@@ -96,13 +106,16 @@ public:
     /**
      * @brief To get change kinect's led color
      * 
-     * @param color Wanted color
+     * @param[in] color : wanted color
      * 
      */
     void ChangeLedColor(freenect_led_options color);
 
-    /** @brief Check if kinect is running */
-    bool IsKinectRunning();
+    /**
+     * @brief Check if kinect is running
+     * 
+     */
+    bool IsRunning();
 
 private:
     /* Freenect context strucutres */

@@ -190,7 +190,7 @@ int cAlarm::Term()
         pthread_join(liveview_thread,NULL);
         UpdateLed();
     }
-    if(kinect.IsKinectRunning())
+    if(kinect.IsRunning())
         kinect.Stop();
     kinect.Term();
 
@@ -220,7 +220,7 @@ int cAlarm::Term()
 int cAlarm::StartDetection()
 {
     /* Start kinect */
-    if(!kinect.IsKinectRunning())
+    if(!kinect.IsRunning())
         kinect.Start();
 
     if(!detection_running)
@@ -285,7 +285,7 @@ int cAlarm::StopDetection()
 int cAlarm::StartLiveview()
 {
     /* Start kinect */
-    if(!kinect.IsKinectRunning())
+    if(!kinect.IsRunning())
         kinect.Start();
 
     if(!liveview_running)

@@ -276,7 +276,7 @@ void cKinect::ChangeLedColor(freenect_led_options color)
     freenect_set_led(kinect_dev,color);
 }
 
-bool cKinect::IsKinectRunning()
+bool cKinect::IsRunning()
 {
     if(running)
         return true;
