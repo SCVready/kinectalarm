@@ -38,7 +38,7 @@ bool check_dir_exist(char *path)
         return false;
 }
 
-int delete_all_files_from_dir(char *path)
+int delete_all_files_from_dir(const char *path)
 {
     char command[50];
     sprintf(command, "rm -rf %s/*",path);

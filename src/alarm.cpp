@@ -6,7 +6,7 @@
  */
 
 /*******************************************************************
- * Defines
+ * Includes
  *******************************************************************/
 #include "alarm.hpp"
 
@@ -508,7 +508,7 @@ void *Alarm::DetectionFunction(void)
             system(command);
 
             /* Publish event */
-            sprintf(message, "newdet %u %u %u",det_conf.curr_det_num,t,frame_counter);
+            sprintf(message, "newdet %u %lu %u",det_conf.curr_det_num,t,frame_counter);
             redis_publish("new_det",message);
 
             /* Update SQLite db */

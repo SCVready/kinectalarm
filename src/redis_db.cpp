@@ -47,7 +47,7 @@ int deinit_redis_db()
     return 0;
 }
 
-int redis_get_int(char *key, int *value)
+int redis_get_int(const char *key, int *value)
 {
     int retval = 0;
     redisReply *reply;
@@ -66,10 +66,10 @@ int redis_get_int(char *key, int *value)
 clean:
     freeReplyObject(reply);
     pthread_mutex_unlock(&redis_context_mutex);
-    return 0;
+    return retval;
 }
 
-int redis_get_char(char *key, char **value)
+int redis_get_char(const char *key, char **value)
 {
     int retval = 0;
     redisReply *reply;
@@ -89,10 +89,10 @@ int redis_get_char(char *key, char **value)
 clean:
     freeReplyObject(reply);
     pthread_mutex_unlock(&redis_context_mutex);
-    return 0;
+    return retval;
 }
 
-int redis_set_int(char *key, int value)
+int redis_set_int(const char *key, int value)
 {
     int retval = 0;
     redisReply *reply;
@@ -112,7 +112,7 @@ clean:
     return retval;
 }
 
-int redis_set_char(char *key, char *value)
+int redis_set_char(const char *key, const char *value)
 {
     int retval = 0;
     redisReply *reply;
@@ -129,10 +129,10 @@ int redis_set_char(char *key, char *value)
 clean:
     freeReplyObject(reply);
     pthread_mutex_unlock(&redis_context_mutex);
-    return 0;
+    return retval;
 }
 
-int redis_setex_int(char *key, int time, int value)
+int redis_setex_int(const char *key, int time, int value)
 {
     int retval = 0;
     redisReply *reply;
@@ -152,7 +152,7 @@ clean:
     return retval;
 }
 
-int redis_publish(char *channel, char *message)
+int redis_publish(const char *channel, const char *message)
 {
     int retval = 0;
     redisReply *reply;
@@ -169,7 +169,7 @@ int redis_publish(char *channel, char *message)
 clean:
     freeReplyObject(reply);
     pthread_mutex_unlock(&redis_context_mutex);
-    return 0;
+    return retval;
 }
 
 int init_async_redis_db()
@@ -186,7 +186,7 @@ int init_async_redis_db()
     return 0;
 }
 
-int async_redis_subscribe(char * channel, void callback(redisAsyncContext *c, void *reply, void *privdata),void * data)
+int async_redis_subscribe(const char * channel, void callback(redisAsyncContext *c, void *reply, void *privdata),void * data)
 {
     redisAsyncCommand(c_async, callback, data, "SUBSCRIBE %s",channel);
     return 0;

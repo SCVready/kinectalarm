@@ -46,7 +46,7 @@
                 "useAgent": false,
                 "forwardX11": false
             },
-            "preLaunchTask": "build"
+            "preLaunchTask": "sync"
         }
     ]
 }

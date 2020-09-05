@@ -31,7 +31,7 @@ struct sBase64encode_context
  *******************************************************************/
 bool check_dir_exist(char *dir);
 int create_dir(char *dir);
-int delete_all_files_from_dir(char *path);
+int delete_all_files_from_dir(const char *path);
 
 struct timespec timeAdd(struct timespec t1, struct timespec t2);
 struct timespec timeSub(struct timespec t1, struct timespec t2);

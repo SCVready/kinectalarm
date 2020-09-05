@@ -1,55 +1,56 @@
-cmake_minimum_required (VERSION 2.8.1)
+cmake_minimum_required (VERSION 3.10)
 
 ######## Project settings ########
 PROJECT(kinectalarm)
-SET(LICENSE "TBD")
 
-######## Build and include settings ########
+######## Project variables ########
+file(GLOB_RECURSE sources
+    "src/*.cpp"
+)
+get_filename_component(file_excluded ${CMAKE_CURRENT_SOURCE_DIR}/src/video_stream.cpp ABSOLUTE)
+list(REMOVE_ITEM sources "${file_excluded}")
 
-add_definitions(-D__STDC_CONSTANT_MACROS)
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations ")
-
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG_ALARM")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ")
-
-link_directories(
-	${LINK_DIRECTORIES}
+set(libs_ffmpeg
+    "avcodec"
+    "avformat"
+    "avutil"
+    "swscale"
+    "swresample"
 )
 
-file(GLOB SOURCES
-	"src/*.cpp"
+set(libs
+    "freenect"
+    "freeimage"
+    "pthread"
+    "m"
+    "dl"
+    "hiredis"
+    "event"
+    "ssl"
+    "crypto"
+    "sqlite3"
+    ${libs_ffmpeg}
 )
 
-add_executable(
-	kinectalarm
-
-	${SOURCES}
+set(inc_dirs
+    "inc"
 )
 
-TARGET_LINK_LIBRARIES(
-	kinectalarm
-	freenect
-	freeimage
-	pthread
-	avcodec
-	avformat
-	avutil
-	swscale
-	swresample
-	m
-	dl
-	hiredis
-	event
-	ssl
-	crypto
-	sqlite3
-	avcodec
-	avutil
-	avformat
-)
+######## Executable ########
+add_executable(kinectalarm ${sources})
 
-######## Install targets ########
-INSTALL(TARGETS kinectalarm
-	RUNTIME DESTINATION bin
-)
+######## Include directories ########
+target_include_directories(kinectalarm PRIVATE ${inc_dirs})
+
+######## Link libraries ########
+target_link_libraries(kinectalarm ${libs})
+
+######## Compile definitions ########
+target_compile_definitions(kinectalarm PRIVATE __STDC_CONSTANT_MACROS)
+target_compile_definitions(kinectalarm PRIVATE "$<$<CONFIG:DEBUG>:DEBUG>")
+
+######## Compile options ########
+target_compile_options(kinectalarm PRIVATE -Wall -Werror)
+
+######## Compile fetatures ########
+target_compile_features(kinectalarm PRIVATE cxx_std_17)

@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef CALARM_H_
-#define CALARM_H_
+#ifndef ALARM_H_
+#define ALARM_H_
 
 /*******************************************************************
  * Includes
@@ -40,7 +40,7 @@
 #include "detection.hpp"
 
 /*******************************************************************
- * Includes
+ * Defines
  *******************************************************************/
 #define DETECTION_THRESHOLD    2000
 #define DEPTH_CHANGE_TOLERANCE 10
@@ -272,4 +272,4 @@ private:
 
 extern int pipe_fd[2];
 
-#endif /* CALARM_H_ */
+#endif /* ALARM_H_ */

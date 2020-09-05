@@ -1,12 +1,12 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file Kinect.hpp
+ * @file kinect.hpp
  *
  */
 
-#ifndef CKINECT_H_
-#define CKINECT_H_
+#ifndef KINECT_H_
+#define KINECT_H_
 
 /*******************************************************************
  * Includes
@@ -35,30 +35,6 @@
 /*******************************************************************
  * Class declaration
  *******************************************************************/
-class KinectFrame
-{
-public:
-    ;
-private:
-    ;
-};
-
-class VideoFrame : public KinectFrame
-{
-public:
-    ;
-private:
-    ;
-};
-
-class DepthFrame : public KinectFrame
-{
-public:
-    ;
-private:
-    ;
-};
-
 class Kinect
 {
 public:
@@ -174,4 +150,4 @@ private:
     static void *KinectProcessEventsHelper(void *context);
 };
 
-#endif /* CKINECT_H_ */
+#endif /* KINECT_H_ */

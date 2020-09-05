@@ -1,15 +1,14 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file detection.hpp
+ * @file liveview.hpp
  *
  */
 
-#ifndef DETECTION_H_
-#define DETECTION_H_
-
+#ifndef LIVEVIEW_H_
+#define LIVEVIEW_H_
 /*******************************************************************
- * Defines
+ * Includes
  *******************************************************************/
 #include <memory>
 
@@ -18,20 +17,20 @@
 /*******************************************************************
  * Class declaration
  *******************************************************************/
-class Detection
+class Liveview
 {
 public:
     /**
      * @brief Construct a new Liveview object
      * 
      */
-    Detection(std::shared_ptr<Kinect> kinect);
+    Liveview(std::shared_ptr<Kinect> kinect);
 
     /**
      * @brief Destroy the Liveview object
      * 
      */
-    ~Detection();
+    ~Liveview();
 
     /**
      * @brief 
@@ -56,6 +55,7 @@ public:
 
 private:
     std::shared_ptr<Kinect> m_kinect;
+    uint16_t* video_frame;
 };
 
-#endif /* DETECTION_H_ */
+#endif /* LIVEVIEW_H_ */

@@ -66,7 +66,7 @@ void signalHandler(int signal)
 
 int main(int argc, char** argv)
 {
-#ifndef DEBUG_ALARM
+#ifndef DEBUG
     printf("RELEASE BUILD\n");
 #else
     printf("DEBUG BUILD\n");

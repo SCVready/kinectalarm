@@ -6,7 +6,7 @@
  */
 
 /*******************************************************************
- * Defines
+ * Includes
  *******************************************************************/
 #include "sqlite_db.hpp"
 
@@ -49,7 +49,7 @@ int create_det_table_sqlite_db()
     char *err_msg = 0;
 
     /* Create SQL statement */
-    char *sql = "CREATE TABLE IF NOT EXISTS DETECTIONS("  \
+    char sql[] = "CREATE TABLE IF NOT EXISTS DETECTIONS("  \
     "ID			INTEGER		PRIMARY KEY," \
     "DATE			DATETIME	NOT NULL," \
     "DURATION		INTEGER		NOT NULL," \
@@ -133,8 +133,6 @@ int get_entry_det_table_sqlite_db(uint32_t id, uint32_t *timestamp, uint32_t *du
 
     rc = sqlite3_step(pStmt);
 
-    int bytes = 0;
-
     if (rc == SQLITE_ROW) {
 
         if(timestamp)
@@ -146,14 +144,14 @@ int get_entry_det_table_sqlite_db(uint32_t id, uint32_t *timestamp, uint32_t *du
         if(filename_img) {
             const unsigned char *text = sqlite3_column_text(pStmt, 3);
             size_t len = strlen((char*)text);
-            strncpy(filename_img,(const char*)text,len);
+            memcpy(filename_img, text, len);
             filename_img[len] = '\0';
         }
 
         if(filename_vid) {
             const unsigned char *text = sqlite3_column_text(pStmt, 4);
             size_t len = strlen((char*)text);
-            strncpy(filename_vid,(const char*)text,len);
+            memcpy(filename_vid, text, len);
             filename_vid[len] = '\0';
         }
 
@@ -207,7 +205,7 @@ int create_status_table_sqlite_db()
     char *err_msg = 0;
 
     /* Create SQL statement */
-    char *sql = "CREATE TABLE IF NOT EXISTS STATUS("  \
+    char sql[] = "CREATE TABLE IF NOT EXISTS STATUS("  \
         "ID					INTEGER		PRIMARY KEY," \
         "TILT				INTEGER		NOT NULL," \
         "BRIGHTNESS			INTEGER		NOT NULL," \
@@ -248,8 +246,6 @@ int number_entries_status_table_sqlite_db(int *number_entries)
     }
 
     rc = sqlite3_step(pStmt);
-
-    int bytes = 0;
 
     if (rc == SQLITE_ROW) {
         if(number_entries)
@@ -307,8 +303,6 @@ int get_entry_status_table_sqlite_db(struct status_table *status)
     }
 
     rc = sqlite3_step(pStmt);
-
-    int bytes = 0;
 
     if (rc == SQLITE_ROW) {
         status->tilt            = sqlite3_column_int(pStmt, 1);

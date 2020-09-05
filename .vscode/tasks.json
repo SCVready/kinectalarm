@@ -12,13 +12,14 @@
       {
         "type": "shell",
         "label": "sync",
-        "dependsOn" : [],
+        "dependsOn" : ["make"],
+        "dependsOrder": "sequence",
         "command" : "rsync -rlptzv --progress --delete --exclude=.git --exclude=.vscode ${workspaceRoot} root@192.168.0.18:/home/root/",
       },
       {
         "type": "shell",
         "label": "build",
-        "dependsOn" : ["make","sync"],
+        "dependsOn" : ["make"],
         "dependsOrder": "sequence",
         "group": {
           "kind": "build",
