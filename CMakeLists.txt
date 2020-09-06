@@ -9,6 +9,8 @@ file(GLOB_RECURSE sources
 )
 get_filename_component(file_excluded ${CMAKE_CURRENT_SOURCE_DIR}/src/video_stream.cpp ABSOLUTE)
 list(REMOVE_ITEM sources "${file_excluded}")
+get_filename_component(file_excluded ${CMAKE_CURRENT_SOURCE_DIR}/src/video.cpp ABSOLUTE)
+list(REMOVE_ITEM sources "${file_excluded}")
 
 set(libs_ffmpeg
     "avcodec"

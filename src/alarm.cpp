@@ -57,8 +57,9 @@ Alarm::Alarm()
     lvw_conf.brightness     = 0;
     lvw_conf.contrast       = 0;
 
+    /* New implementation */
     m_kinect    = std::make_shared<Kinect>();
-    m_liveview  = std::make_unique<Liveview>(m_kinect);
+    m_liveview  = std::make_unique<Liveview>(m_kinect, 100);
     m_detection = std::make_unique<Detection>(m_kinect);
 }
 
@@ -288,6 +289,9 @@ int Alarm::StopDetection()
 
 int Alarm::StartLiveview()
 {
+    /* New implementation */
+    m_liveview->Start();
+
     /* Start kinect */
     if(!m_kinect->IsRunning())
         m_kinect->Start();
@@ -321,6 +325,9 @@ int Alarm::StartLiveview()
 
 int Alarm::StopLiveview()
 {
+    /* New implementation */
+    m_liveview->Stop();
+
     if(liveview_running)
     {
         /* Change running flag */

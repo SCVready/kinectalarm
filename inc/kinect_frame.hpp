@@ -11,7 +11,7 @@
 /*******************************************************************
  * Includes
  *******************************************************************/
-
+#include <vector>
 
 /*******************************************************************
  * Class declaration
@@ -19,11 +19,13 @@
 class KinectFrame
 {
 public:
-    ;
+    KinectFrame();
+    ~KinectFrame();
 private:
     uint32_t height;
     uint32_t width;
     uint32_t timestamp;
+    std::vector<uint8_t> data;
 };
 
 class VideoFrame : public KinectFrame

@@ -11,20 +11,25 @@
  * Includes
  *******************************************************************/
 #include <memory>
+#include <thread>
+#include <atomic>
 
 #include "kinect.hpp"
+#include "alarm_component.hpp"
+#include "log.hpp"
+#include "global_parameters.hpp"
 
 /*******************************************************************
  * Class declaration
  *******************************************************************/
-class Liveview
+class Liveview : public AlarmComponent
 {
 public:
     /**
      * @brief Construct a new Liveview object
      * 
      */
-    Liveview(std::shared_ptr<Kinect> kinect);
+    Liveview(std::shared_ptr<Kinect> kinect, uint32_t loop_period_ms);
 
     /**
      * @brief Destroy the Liveview object
@@ -32,30 +37,12 @@ public:
      */
     ~Liveview();
 
-    /**
-     * @brief 
-     * 
-     * @return int 
-     */
-    int Start();
-
-    /**
-     * @brief 
-     * 
-     * @return int 
-     */
-    int Stop();
-
-    /**
-     * @brief 
-     * 
-     * @return int 
-     */
-    int IsRunning();
+    void ExecutionCycle() override;
 
 private:
-    std::shared_ptr<Kinect> m_kinect;
-    uint16_t* video_frame;
+    uint16_t* m_frame;
+    uint32_t m_timestamp;
+
 };
 
 #endif /* LIVEVIEW_H_ */

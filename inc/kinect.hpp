@@ -23,6 +23,7 @@
 #include <libfreenect/libfreenect.h>
 #include <libfreenect/libfreenect_sync.h>
 
+#include "kinect_frame.hpp"
 #include "common.hpp"
 #include "global_parameters.hpp"
 #include "log.hpp"

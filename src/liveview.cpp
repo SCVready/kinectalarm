@@ -14,20 +14,19 @@
  * Class definition
  *******************************************************************/
 
-Liveview::Liveview(std::shared_ptr<Kinect> kinect) : m_kinect(kinect)
+Liveview::Liveview(std::shared_ptr<Kinect> kinect, uint32_t loop_period_ms) : AlarmComponent("Liveview", kinect, loop_period_ms)
 {
+    m_frame = (uint16_t*) malloc (VIDEO_WIDTH * VIDEO_HEIGHT * sizeof(uint16_t));
+    m_timestamp = 0;
 }
 
 Liveview::~Liveview()
 {
+    ;
 }
 
-int Liveview::Start()
+void Liveview::ExecutionCycle()
 {
-    return 0;
-}
-
-int Liveview::Stop()
-{
-    return 0;
+    m_kinect->GetVideoFrame(m_frame,&m_timestamp);
+    LOG(LOG_INFO,"Liveview cycle: frame taken\n");
 }
