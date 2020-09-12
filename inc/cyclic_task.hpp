@@ -1,12 +1,12 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file alarm_component.hpp
+ * @file cyclic_task.hpp
  *
  */
 
-#ifndef ALARM_COMPONENT_H_
-#define ALARM_COMPONENT_H_
+#ifndef CYCLIC_TASK_H_
+#define CYCLIC_TASK_H_
 /*******************************************************************
  * Includes
  *******************************************************************/
@@ -15,26 +15,25 @@
 #include <atomic>
 #include <string>
 
-#include "kinect.hpp"
 #include "log.hpp"
 
 /*******************************************************************
  * Class declaration
  *******************************************************************/
-class AlarmComponent
+class CyclicTask
 {
 public:
     /**
      * @brief Construct a new Liveview object
      * 
      */
-    AlarmComponent(std::string component_name, std::shared_ptr<Kinect> kinect, uint32_t loop_period_ms);
+    CyclicTask(std::string task_name, uint32_t loop_period_ms);
 
     /**
      * @brief Destroy the Liveview object
      * 
      */
-    ~AlarmComponent();
+    ~CyclicTask();
 
     /**
      * @brief 
@@ -70,11 +69,10 @@ public:
     virtual void ExecutionCycle() = 0;
 
 protected:
-    std::shared_ptr<Kinect> m_kinect;
     std::unique_ptr<std::thread> m_thread;
     std::atomic<bool> m_running;
-    std::string m_component_name;
+    std::string m_task_name;
     uint32_t m_loop_period_ms;
 };
 
-#endif /* ALARM_COMPONENT_H_ */
+#endif /* CYCLIC_TASK_H_ */

@@ -20,6 +20,8 @@
 #include <pthread.h>
 #include <syslog.h>
 
+#include <memory>
+
 #include <libfreenect/libfreenect.h>
 #include <libfreenect/libfreenect_sync.h>
 
@@ -96,6 +98,7 @@ public:
      *                            timestamp of the provided frame.
      */
     int GetVideoFrame(uint16_t *video_frame, uint32_t *timestamp);
+    void GetVideoFrame_ex(std::shared_ptr<VideoFrame> frame, uint32_t& timestamp);
 
     /**
      * @brief To get change kinect's tilt

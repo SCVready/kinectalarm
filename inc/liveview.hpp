@@ -15,14 +15,14 @@
 #include <atomic>
 
 #include "kinect.hpp"
-#include "alarm_component.hpp"
+#include "cyclic_task.hpp"
 #include "log.hpp"
 #include "global_parameters.hpp"
 
 /*******************************************************************
  * Class declaration
  *******************************************************************/
-class Liveview : public AlarmComponent
+class Liveview : public CyclicTask
 {
 public:
     /**
@@ -41,8 +41,9 @@ public:
 
 private:
     uint16_t* m_frame;
+    std::shared_ptr<KinectFrame> m_frame_ex;
     uint32_t m_timestamp;
-
+    std::shared_ptr<Kinect> m_kinect;
 };
 
 #endif /* LIVEVIEW_H_ */

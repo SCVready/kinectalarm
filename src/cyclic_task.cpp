@@ -1,50 +1,49 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file alarm_component.cpp
+ * @file cyclic_task.cpp
  *
  */
 
 /*******************************************************************
  * Includes
  *******************************************************************/
-#include "alarm_component.hpp"
+#include "cyclic_task.hpp"
 
 /*******************************************************************
  * Class definition
  *******************************************************************/
 
-AlarmComponent::AlarmComponent(std::string component_name, std::shared_ptr<Kinect> kinect, uint32_t loop_period_ms) :
-    m_kinect(kinect),
+CyclicTask::CyclicTask(std::string task_name, uint32_t loop_period_ms) :
     m_running(false),
-    m_component_name(component_name),
+    m_task_name(task_name),
     m_loop_period_ms(loop_period_ms)
 {
     ;
 }
 
-AlarmComponent::~AlarmComponent()
+CyclicTask::~CyclicTask()
 {
     ;
 }
 
-void AlarmComponent::Start()
+void CyclicTask::Start()
 {
     if(!m_running)
     {
         m_running = true;
 
-        m_thread = std::make_unique<std::thread>(&AlarmComponent::ThreadLoop,this);
+        m_thread = std::make_unique<std::thread>(&CyclicTask::ThreadLoop,this);
 
-        LOG(LOG_INFO,"Starting %s thread\n",m_component_name.c_str());
+        LOG(LOG_INFO,"Starting %s thread\n",m_task_name.c_str());
     }
     else
     {
-        LOG(LOG_INFO,"%s thread is already started\n",m_component_name.c_str());
+        LOG(LOG_INFO,"%s thread is already started\n",m_task_name.c_str());
     }
 }
 
-void AlarmComponent::Stop()
+void CyclicTask::Stop()
 {
     if(m_running)
     {
@@ -52,20 +51,20 @@ void AlarmComponent::Stop()
 
         m_thread->join();
 
-        LOG(LOG_INFO,"Stoping %s thread\n",m_component_name.c_str());
+        LOG(LOG_INFO,"Stoping %s thread\n",m_task_name.c_str());
     }
     else
     {
-        LOG(LOG_INFO,"%s thread is already stoped\n",m_component_name.c_str());
+        LOG(LOG_INFO,"%s thread is already stoped\n",m_task_name.c_str());
     }
 }
 
-bool AlarmComponent::IsRunning()
+bool CyclicTask::IsRunning()
 {
     return m_running;
 }
 
-void AlarmComponent::ThreadLoop()
+void CyclicTask::ThreadLoop()
 {
     auto sleep_abs_time = std::chrono::system_clock::now();
     while(m_running)

@@ -19,13 +19,14 @@
 class KinectFrame
 {
 public:
-    KinectFrame();
+    KinectFrame(uint32_t width, uint32_t height);
     ~KinectFrame();
+    void Fill(uint16_t* frame_data);
 private:
-    uint32_t height;
-    uint32_t width;
-    uint32_t timestamp;
-    std::vector<uint8_t> data;
+    uint32_t m_width;
+    uint32_t m_height;
+    uint32_t m_timestamp;
+    std::vector<uint16_t> m_data;
 };
 
 class VideoFrame : public KinectFrame
