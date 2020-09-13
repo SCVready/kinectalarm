@@ -7,17 +7,19 @@
 
 #ifndef LIVEVIEW_H_
 #define LIVEVIEW_H_
+
 /*******************************************************************
  * Includes
  *******************************************************************/
 #include <memory>
-#include <thread>
-#include <atomic>
 
 #include "kinect.hpp"
 #include "cyclic_task.hpp"
 #include "log.hpp"
 #include "global_parameters.hpp"
+#include "jpeg.hpp"
+#include "common.hpp"
+#include "redis_db.hpp"
 
 /*******************************************************************
  * Class declaration
@@ -40,10 +42,11 @@ public:
     void ExecutionCycle() override;
 
 private:
-    uint16_t* m_frame;
-    std::shared_ptr<KinectFrame> m_frame_ex;
+    std::shared_ptr<KinectFrame> m_frame;
     uint32_t m_timestamp;
     std::shared_ptr<Kinect> m_kinect;
+    struct sBase64encode_context m_c;
+    uint8_t* liveview_jpeg;
 };
 
 #endif /* LIVEVIEW_H_ */

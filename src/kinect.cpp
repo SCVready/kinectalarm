@@ -189,6 +189,20 @@ int Kinect::GetDepthFrame(uint16_t *depth_frame, uint32_t *timestamp)
     return 0;
 }
 
+void Kinect::GetDepthFrame_ex(std::shared_ptr<KinectFrame> frame)
+{
+    pthread_mutex_lock(&Kinect::depth_lock);
+
+    /* Compare the given timestamp with the current, if it's the same must wait to the next frame */
+    if(frame->m_timestamp == Kinect::temp_depth_frame_timestamp)
+        pthread_cond_wait(&Kinect::depth_ready, &Kinect::depth_lock);
+
+    frame->Fill(temp_depth_frame_raw);
+    frame->m_timestamp = Kinect::temp_depth_frame_timestamp;
+
+    pthread_mutex_unlock(&Kinect::depth_lock);
+}
+
 int Kinect::GetVideoFrame(uint16_t *video_frame, uint32_t *timestamp)
 {
 
@@ -205,16 +219,16 @@ int Kinect::GetVideoFrame(uint16_t *video_frame, uint32_t *timestamp)
     return 0;
 }
 
-void Kinect::GetVideoFrame_ex(std::shared_ptr<VideoFrame> frame, uint32_t& timestamp)
+void Kinect::GetVideoFrame_ex(std::shared_ptr<KinectFrame> frame)
 {
     pthread_mutex_lock(&Kinect::video_lock);
 
     /*  Compare the given timestamp with the current, if it's the same must wait to the next frame */
-    if(timestamp == Kinect::temp_video_frame_timestamp)
+    if(frame->m_timestamp == Kinect::temp_video_frame_timestamp)
         pthread_cond_wait(&Kinect::video_ready, &Kinect::video_lock);
 
     frame->Fill(temp_video_frame_raw);
-    timestamp = Kinect::temp_video_frame_timestamp;
+    frame->m_timestamp = Kinect::temp_video_frame_timestamp;
 
     pthread_mutex_unlock(&Kinect::video_lock);
 }

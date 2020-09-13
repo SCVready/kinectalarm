@@ -72,5 +72,6 @@ void CyclicTask::ThreadLoop()
         ExecutionCycle();
         sleep_abs_time += std::chrono::milliseconds(m_loop_period_ms);
         std::this_thread::sleep_until(sleep_abs_time);
+        /* TODO: Sleep with conditional variable */
     }
 }

@@ -87,6 +87,7 @@ public:
      *                            timestamp of the provided frame.
      */
     int GetDepthFrame(uint16_t *depth_frame, uint32_t *timestamp);
+    void GetDepthFrame_ex(std::shared_ptr<KinectFrame> frame);
 
     /**
      * @brief Syncronous funtion to get a depth frame.
@@ -98,7 +99,7 @@ public:
      *                            timestamp of the provided frame.
      */
     int GetVideoFrame(uint16_t *video_frame, uint32_t *timestamp);
-    void GetVideoFrame_ex(std::shared_ptr<VideoFrame> frame, uint32_t& timestamp);
+    void GetVideoFrame_ex(std::shared_ptr<KinectFrame> frame);
 
     /**
      * @brief To get change kinect's tilt

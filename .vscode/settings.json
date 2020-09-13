@@ -52,5 +52,8 @@
         "ctime": "cpp",
         "ratio": "cpp",
         "thread": "cpp"
+    },
+    "kanban": {
+        "openOnStartup": true
     }
 }

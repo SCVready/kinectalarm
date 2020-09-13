@@ -93,7 +93,21 @@ enum enumLvw_conf
 /*******************************************************************
  * Class declaration
  *******************************************************************/
-class Alarm {
+class Alarm;
+
+class AlarmDetectionObserver : public DetectionObserver
+{
+public:
+    AlarmDetectionObserver(Alarm& alarm);
+    void IntrusionStarted() override;
+    void IntrusionStopped(uint32_t det_num, uint32_t frame_num) override;
+private:
+    Alarm& m_alarm;
+};
+
+class Alarm
+{
+    friend AlarmDetectionObserver;
 public:
     /**
      * @brief Contructor
@@ -213,37 +227,8 @@ private:
     /* Detection object */
     std::unique_ptr<Detection> m_detection;
 
-    /* Frame pointer for detection */
-    uint16_t* reff_depth_frame;
-    uint16_t* depth_frame;
-    uint16_t* diff_depth_frame; pthread_mutex_t diff_depth_frame_lock;
-    uint16_t* video_frames[NUM_DETECTIONS_FRAMES];
-
-    /* Frame's timestamp for detection */
-    uint32_t reff_depth_timestamp;
-    uint32_t depth_timestamp;
-    uint32_t video_timestamp;
-
-    /* Frame pointer for detection */
-    uint16_t* liveview_frame;
-    uint8_t* liveview_jpeg;
-
-    /* Frame pointer for detection */
-    uint32_t liveview_timestamp;
-
-    /* Frame jpeg buffer out */
-    uint8_t* liveview_buffer_out;
-
-    /* Frame used on GetDiffDepthFrame */
-    uint16_t* temp_depth_frame;uint32_t temp_depth_frame_timestamp;
-
-    /* Threads */
-    pthread_t detection_thread;
-    pthread_t liveview_thread;
-
-    /* Running flags*/
-    volatile bool detection_running;
-    volatile bool liveview_running;
+    /* Detection observer object */
+    std::shared_ptr<AlarmDetectionObserver> m_detection_observer;
 
     /* State & config structs */
     struct sDet_conf det_conf;
@@ -252,16 +237,13 @@ private:
     void UpdateLed();
     void SetReferenceDepthImage();
     void SetCaptureVideoImage(int num);
-    int GetDiffDepthFrame(uint16_t *diff_depth_frame, uint32_t *timestamp);
     uint32_t CompareDepthFrameToReferenceDepthFrame();
 
     int InitVarsRedis();
 
     static void *DetectionThreadHelper(void *context);
-    static void *LiveviewThreadHelper(void *context);
 
     void *DetectionFunction(void);
-    void *LiveviewFunction(void);
 
     template <typename T>
     int ChangeDetStatus(enum enumDet_conf, T value);
