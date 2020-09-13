@@ -49,7 +49,7 @@ bool save_video_frame_to_jpeg(uint16_t* video_frame,char *filepath, int32_t brig
     return retval;
 }
 
-bool save_video_frame_to_jpeg_inmemory(uint16_t* video_frame, uint8_t* video_jpeg, uint32_t *size_bytes, int32_t brightness, int32_t contrast)
+bool save_video_frame_to_jpeg_inmemory(uint16_t* video_frame, std::vector<uint8_t>& video_jpeg, int32_t brightness, int32_t contrast)
 {
     FIBITMAP *video_bitmap;
     uint8_t bmap[VIDEO_WIDTH*VIDEO_HEIGHT];
@@ -72,8 +72,7 @@ bool save_video_frame_to_jpeg_inmemory(uint16_t* video_frame, uint8_t* video_jpe
         retval = true;
 
     FreeImage_AcquireMemory(hmem, &mem_buffer, &size_in_bytes);
-    memcpy(video_jpeg,mem_buffer,size_in_bytes);
-    *size_bytes = size_in_bytes;
+    video_jpeg.assign(mem_buffer, mem_buffer + size_in_bytes);
 
     FreeImage_CloseMemory(hmem);
     FreeImage_Unload(video_bitmap);

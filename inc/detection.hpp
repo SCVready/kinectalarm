@@ -13,13 +13,12 @@
  *******************************************************************/
 #include <memory>
 
+#include "common.hpp"
+#include "global_parameters.hpp"
+#include "log.hpp"
 #include "kinect.hpp"
 #include "cyclic_task.hpp"
-#include "log.hpp"
-#include "global_parameters.hpp"
 #include "jpeg.hpp"
-#include "common.hpp"
-#include "redis_db.hpp"
 
 /*******************************************************************
  * Class declaration
@@ -49,7 +48,7 @@ public:
      */
     ~Detection();
 
-    void Start();
+    void Start(uint32_t detection_num);
 
     void ExecutionCycle() override;
 
@@ -63,7 +62,7 @@ private:
     uint32_t m_intrusion_cooldown;
     std::unique_ptr<RefreshReferenceFrame> m_refresh_reference_frame;
     std::unique_ptr<TakeVideoFrames> m_take_video_frames;
-    uint32_t m_num_detection;
+    uint32_t m_detection_num;
     std::shared_ptr<DetectionObserver> m_detection_observer;
 };
 

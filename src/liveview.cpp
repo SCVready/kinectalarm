@@ -15,13 +15,12 @@
  * Class definition
  *******************************************************************/
 
-Liveview::Liveview(std::shared_ptr<Kinect> kinect, uint32_t loop_period_ms) :
+Liveview::Liveview(std::shared_ptr<Kinect> kinect, std::shared_ptr<LiveviewObserver> liveview_observer, uint32_t loop_period_ms) :
     CyclicTask("Liveview", loop_period_ms),
-    m_kinect(kinect)
+    m_kinect(kinect),
+    m_liveview_observer(liveview_observer)
 {
     m_frame = std::make_unique<KinectFrame>(VIDEO_WIDTH,VIDEO_HEIGHT);
-    m_timestamp = 0;
-    liveview_jpeg = new uint8_t[VIDEO_WIDTH * VIDEO_HEIGHT * 2];
 
     init_base64encode(&m_c);
 }
@@ -29,23 +28,20 @@ Liveview::Liveview(std::shared_ptr<Kinect> kinect, uint32_t loop_period_ms) :
 Liveview::~Liveview()
 {
     deinit_base64encode(&m_c);
-    delete liveview_jpeg;
 }
 
 void Liveview::ExecutionCycle()
 {
-    unsigned int size = 0;
+    static std::vector<uint8_t> liveview_jpeg;
 
     m_kinect->GetVideoFrame_ex(m_frame);
     LOG(LOG_INFO,"Liveview cycle: frame taken\n");
 
-    /*TODO: Move to alarm class in a callback */
     /* Convert to jpeg */
-    save_video_frame_to_jpeg_inmemory(m_frame->GetDataPointer(), liveview_jpeg,&size,200,0);
+    save_video_frame_to_jpeg_inmemory(m_frame->GetDataPointer(), liveview_jpeg, 200, 0);
 
     /* Convert to base64 */
-    char *base64_encoded = base64encode(&m_c, liveview_jpeg, size);
+    char *base64_encoded = base64encode(&m_c, liveview_jpeg.data(), liveview_jpeg.size());
 
-    /* Publish in redis channel */
-    redis_publish("liveview", base64_encoded);
+    m_liveview_observer->NewFrame(base64_encoded);
 }

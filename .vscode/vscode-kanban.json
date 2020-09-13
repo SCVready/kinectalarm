@@ -4,6 +4,16 @@
       "assignedTo": {
         "name": "SCVready"
       },
+      "creation_time": "2020-09-13T14:18:20.061Z",
+      "id": "5",
+      "references": [],
+      "title": "Status: detection active is not being save",
+      "type": "bug"
+    },
+    {
+      "assignedTo": {
+        "name": "SCVready"
+      },
       "creation_time": "2020-09-13T13:45:26.551Z",
       "description": {
         "content": "- Check if heritance is needed",
@@ -11,7 +21,20 @@
       },
       "id": "3",
       "references": [],
-      "title": "Kinect frame"
+      "title": "Refactor: Kinect frame"
+    },
+    {
+      "assignedTo": {
+        "name": "SCVready"
+      },
+      "creation_time": "2020-10-11T16:02:21.553Z",
+      "description": {
+        "content": "- New funtion in the detection observer class to pass the intrusions frames\n- detection class shouldn't save the current detection. This logic should be in alarm",
+        "mime": "text/markdown"
+      },
+      "id": "6",
+      "references": [],
+      "title": "Refactor: detection class - defere the task of saving frames to alarm"
     },
     {
       "assignedTo": {
@@ -32,7 +55,7 @@
       },
       "creation_time": "2020-09-13T13:34:40.438Z",
       "description": {
-        "content": "- Use new frame class",
+        "content": "- Use new frame class\n- Add jpeg,base64 apis",
         "mime": "text/markdown"
       },
       "id": "2",

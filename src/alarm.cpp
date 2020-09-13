@@ -31,7 +31,8 @@ Alarm::Alarm()
 
     /* New implementation */
     m_kinect             = std::make_shared<Kinect>();
-    m_liveview           = std::make_unique<Liveview>(m_kinect, 100);
+    m_liveview_observer  = std::make_shared<AlarmLiveviewObserver>(*this);
+    m_liveview           = std::make_unique<Liveview>(m_kinect, m_liveview_observer, 100);
     m_detection_observer = std::make_shared<AlarmDetectionObserver>(*this);
     m_detection          = std::make_unique<Detection>(m_kinect, m_detection_observer, 10);
 }
@@ -157,7 +158,7 @@ int Alarm::StartDetection()
         /* Update led */
         UpdateLed();
 
-        m_detection->Start();
+        m_detection->Start(det_conf.curr_det_num);
 
         /* Publish event */
         redis_publish("event_info","Detection started");
@@ -427,6 +428,18 @@ AlarmDetectionObserver::AlarmDetectionObserver(Alarm& alarm) :
     m_alarm(alarm)
 {
     ;
+}
+
+AlarmLiveviewObserver::AlarmLiveviewObserver(Alarm& alarm) :
+    m_alarm(alarm)
+{
+    ;
+}
+
+void AlarmLiveviewObserver::NewFrame(char* base64_jpeg_frame)
+{
+    /* Publish in redis channel */
+    redis_publish("liveview", base64_jpeg_frame);;
 }
 
 void AlarmDetectionObserver::IntrusionStarted()

@@ -13,17 +13,23 @@
  *******************************************************************/
 #include <memory>
 
+#include "common.hpp"
+#include "global_parameters.hpp"
+#include "log.hpp"
 #include "kinect.hpp"
 #include "cyclic_task.hpp"
-#include "log.hpp"
-#include "global_parameters.hpp"
 #include "jpeg.hpp"
-#include "common.hpp"
-#include "redis_db.hpp"
+
 
 /*******************************************************************
  * Class declaration
  *******************************************************************/
+class LiveviewObserver
+{
+public:
+    virtual void NewFrame(char* base64_jpeg_frame) = 0;
+};
+
 class Liveview : public CyclicTask
 {
 public:
@@ -31,7 +37,7 @@ public:
      * @brief Construct a new Liveview object
      * 
      */
-    Liveview(std::shared_ptr<Kinect> kinect, uint32_t loop_period_ms);
+    Liveview(std::shared_ptr<Kinect> kinect, std::shared_ptr<LiveviewObserver> liveview_observer, uint32_t loop_period_ms);
 
     /**
      * @brief Destroy the Liveview object
@@ -42,11 +48,10 @@ public:
     void ExecutionCycle() override;
 
 private:
-    std::shared_ptr<KinectFrame> m_frame;
-    uint32_t m_timestamp;
     std::shared_ptr<Kinect> m_kinect;
+    std::shared_ptr<KinectFrame> m_frame;
     struct sBase64encode_context m_c;
-    uint8_t* liveview_jpeg;
+    std::shared_ptr<LiveviewObserver> m_liveview_observer;
 };
 
 #endif /* LIVEVIEW_H_ */

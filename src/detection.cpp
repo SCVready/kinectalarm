@@ -19,7 +19,7 @@ Detection::Detection(std::shared_ptr<Kinect> kinect, std::shared_ptr<DetectionOb
     m_kinect(kinect),
     m_intrusion(false),
     m_intrusion_cooldown(0),
-    m_num_detection(0),
+    m_detection_num(0),
     m_detection_observer(detection_observer)
 {
     m_depth_frame_reff        = std::make_unique<KinectFrame>(DEPTH_WIDTH,DEPTH_HEIGHT);
@@ -32,11 +32,13 @@ Detection::~Detection()
 {
 }
 
-void Detection::Start()
+void Detection::Start(uint32_t detection_num)
 {
     /* Reset intrusion variables */
     m_intrusion = false;
     m_intrusion_cooldown = 0;
+
+    m_detection_num = detection_num;
 
     /* Get Reference Depth frame */
     m_kinect->GetDepthFrame_ex(m_depth_frame_reff);
@@ -55,12 +57,12 @@ void Detection::ExecutionCycle()
 
     LOG(LOG_DEBUG,"Detection: Diff %d\n", diff);
 
-    if(diff > 1000)
+    if(diff > 2000)
     {
         if(!m_intrusion)
         {
             m_detection_observer->IntrusionStarted();
-            m_take_video_frames->Start(m_num_detection);
+            m_take_video_frames->Start(m_detection_num);
             m_refresh_reference_frame->Start();
             LOG(LOG_INFO,"Detection: Intrusion started\n");
             m_intrusion = true;
@@ -77,9 +79,9 @@ void Detection::ExecutionCycle()
                 uint32_t num_frames = m_take_video_frames->Stop();
                 m_refresh_reference_frame->Stop();
                 LOG(LOG_INFO,"Detection: Intrusion Stopped\n");
-                m_detection_observer->IntrusionStopped(m_num_detection, num_frames);
+                m_detection_observer->IntrusionStopped(m_detection_num, num_frames);
                 m_intrusion = false;
-                m_num_detection++;
+                m_detection_num++;
             }
             else
             {

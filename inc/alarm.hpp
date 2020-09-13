@@ -105,9 +105,19 @@ private:
     Alarm& m_alarm;
 };
 
+class AlarmLiveviewObserver : public LiveviewObserver
+{
+public:
+    AlarmLiveviewObserver(Alarm& alarm);
+    void NewFrame(char* base64_jpeg_frame) override;
+private:
+    Alarm& m_alarm;
+};
+
 class Alarm
 {
     friend AlarmDetectionObserver;
+    friend AlarmLiveviewObserver;
 public:
     /**
      * @brief Contructor
@@ -223,6 +233,9 @@ private:
 
     /* Liveview object */
     std::unique_ptr<Liveview> m_liveview;
+
+    /* Liveview observer object */
+    std::shared_ptr<AlarmLiveviewObserver> m_liveview_observer;
 
     /* Detection object */
     std::unique_ptr<Detection> m_detection;
