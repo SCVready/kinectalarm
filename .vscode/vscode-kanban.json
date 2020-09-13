@@ -1,6 +1,60 @@
 {
-  "todo": [],
+  "todo": [
+    {
+      "assignedTo": {
+        "name": "SCVready"
+      },
+      "creation_time": "2020-09-13T13:45:26.551Z",
+      "description": {
+        "content": "- Check if heritance is needed",
+        "mime": "text/markdown"
+      },
+      "id": "3",
+      "references": [],
+      "title": "Kinect frame"
+    },
+    {
+      "assignedTo": {
+        "name": "SCVready"
+      },
+      "creation_time": "2020-09-13T13:52:09.055Z",
+      "description": {
+        "content": "- Move all global defines to global_defines.hpp\n",
+        "mime": "text/markdown"
+      },
+      "id": "4",
+      "references": [],
+      "title": "Refactor: Global defines"
+    },
+    {
+      "assignedTo": {
+        "name": "SCVready"
+      },
+      "creation_time": "2020-09-13T13:34:40.438Z",
+      "description": {
+        "content": "- Use new frame class",
+        "mime": "text/markdown"
+      },
+      "id": "2",
+      "references": [],
+      "title": "Refactor: kinect class"
+    }
+  ],
   "in-progress": [],
   "testing": [],
-  "done": []
+  "done": [
+    {
+      "assignedTo": {
+        "name": "SCVready"
+      },
+      "creation_time": "2020-09-13T13:26:12.595Z",
+      "description": {
+        "content": "- Remove unused code",
+        "mime": "text/markdown"
+      },
+      "id": "1",
+      "references": [],
+      "title": "Refactor: alarm class"
+    }
+  ]
 }

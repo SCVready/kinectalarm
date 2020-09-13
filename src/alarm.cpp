@@ -148,8 +148,6 @@ int Alarm::StartDetection()
 
     if(!m_detection->IsRunning())
     {
-        m_detection->Start();
-
         /* Change status */
         ChangeDetStatus(DET_ACTIVE,true);
 
@@ -159,8 +157,7 @@ int Alarm::StartDetection()
         /* Update led */
         UpdateLed();
 
-        /* Launch detection thread */
-        //pthread_create(&detection_thread, 0, DetectionThreadHelper, this);
+        m_detection->Start();
 
         /* Publish event */
         redis_publish("event_info","Detection started");
@@ -175,8 +172,6 @@ int Alarm::StopDetection()
 {
     if(m_detection->IsRunning())
     {
-        m_detection->Stop();
-
         /* Change status */
         ChangeDetStatus(DET_ACTIVE,false);
 
@@ -185,6 +180,8 @@ int Alarm::StopDetection()
 
         /* Update led */
         UpdateLed();
+
+        m_detection->Stop();
 
         /* Publish event */
         redis_publish("event_info","Detection stopped");
@@ -210,8 +207,6 @@ int Alarm::StartLiveview()
 
     if(!m_liveview->IsRunning())
     {
-        m_liveview->Start();
-
         /* Change status */
         ChangeLvwStatus(LVW_ACTIVE,true);
 
@@ -220,6 +215,8 @@ int Alarm::StartLiveview()
 
         /* Update led */
         UpdateLed();
+
+        m_liveview->Start();
 
         /* Publish event */
         redis_publish("event_info","Liveview started");
@@ -232,8 +229,6 @@ int Alarm::StopLiveview()
 {
     if(m_liveview->IsRunning())
     {
-        m_liveview->Stop();
-
         /* Change status */
         ChangeLvwStatus(LVW_ACTIVE,false);
 
@@ -242,6 +237,8 @@ int Alarm::StopLiveview()
 
         /* Update led */
         UpdateLed();
+
+        m_liveview->Stop();
 
         /* Publish event */
         redis_publish("event_info","Liveview stopped");
@@ -254,40 +251,6 @@ int Alarm::StopLiveview()
     }
     return 0;
 }
-
-#if 0
-/* Liveview stream in h264 */
-void *cAlarm::liveview(void)
-{
-    struct timespec sleep_time = {0,41666666};
-    struct timespec wakeup_time;
-    struct timespec current_time;
-    struct timespec sleep_remain_time = {0,0};
-    
-    init_video();
-    start_video();
-    
-    clock_gettime(CLOCK_MONOTONIC, &wakeup_time);
-
-    while(liveview_running)
-    {
-        wakeup_time = timeAdd(wakeup_time, sleep_time);
-        
-        m_kinect->GetVideoFrame(liveview_frame);
-        send_frame(liveview_frame);
-        
-        clock_gettime(CLOCK_MONOTONIC, &current_time);
-        sleep_remain_time = timeSub(wakeup_time,current_time);
-        printf("usec to sleep:%d\n",sleep_remain_time.tv_nsec/1000);
-        
-        clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &wakeup_time, NULL);
-    }
-
-    stop_video();
-    deinit_video();
-    return 0;
-}
-#endif
 
 void Alarm::UpdateLed()
 {

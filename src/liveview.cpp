@@ -39,6 +39,7 @@ void Liveview::ExecutionCycle()
     m_kinect->GetVideoFrame_ex(m_frame);
     LOG(LOG_INFO,"Liveview cycle: frame taken\n");
 
+    /*TODO: Move to alarm class in a callback */
     /* Convert to jpeg */
     save_video_frame_to_jpeg_inmemory(m_frame->GetDataPointer(), liveview_jpeg,&size,200,0);
 

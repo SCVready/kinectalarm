@@ -235,15 +235,8 @@ private:
     struct sLvw_conf lvw_conf;
 
     void UpdateLed();
-    void SetReferenceDepthImage();
-    void SetCaptureVideoImage(int num);
-    uint32_t CompareDepthFrameToReferenceDepthFrame();
 
     int InitVarsRedis();
-
-    static void *DetectionThreadHelper(void *context);
-
-    void *DetectionFunction(void);
 
     template <typename T>
     int ChangeDetStatus(enum enumDet_conf, T value);
@@ -251,7 +244,5 @@ private:
     template <typename T>
     int ChangeLvwStatus(enum enumLvw_conf, T value);
 };
-
-extern int pipe_fd[2];
 
 #endif /* ALARM_H_ */
