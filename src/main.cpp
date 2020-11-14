@@ -36,7 +36,7 @@
 /*******************************************************************
  * Defines
  *******************************************************************/
-#define KINECTALARM_VERSION "0.1"
+#define KINECTALARM_VERSION "0.11"
 
 /*******************************************************************
  * Global variables
@@ -48,7 +48,7 @@ volatile bool kinect_alarm_running = true;
  *******************************************************************/
 int MessageProcess(class Alarm *alarm, char *command);
 void OnMessage(redisAsyncContext *c, void *reply, void *privdata);
-void *RefreshWatchdog(void *x_void_ptr);
+void* RefreshWatchdog(void *x_void_ptr);
 
 /*******************************************************************
  * Funtion definition
@@ -258,11 +258,12 @@ int MessageProcess(class Alarm *alarm, char *command)
     return 0;
 }
 
-void *RefreshWatchdog(void *x_void_ptr)
+void* RefreshWatchdog(void *x_void_ptr)
 {
-    while(1){
-    redis_setex_int("kinectalarm_watchdog", 2, 0);
-    sleep(1);
+    while(1)
+    {
+        redis_setex_int("kinectalarm_watchdog", 2, 0);
+        sleep(1);
     }
     return NULL;
 }

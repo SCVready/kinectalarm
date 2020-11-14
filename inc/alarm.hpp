@@ -101,6 +101,7 @@ public:
     AlarmDetectionObserver(Alarm& alarm);
     void IntrusionStarted() override;
     void IntrusionStopped(uint32_t det_num, uint32_t frame_num) override;
+    void IntrusionFrame(std::shared_ptr<KinectFrame> frame, uint32_t det_num, uint32_t frame_num) override;
 private:
     Alarm& m_alarm;
 };
@@ -109,7 +110,7 @@ class AlarmLiveviewObserver : public LiveviewObserver
 {
 public:
     AlarmLiveviewObserver(Alarm& alarm);
-    void NewFrame(char* base64_jpeg_frame) override;
+    void NewFrame(std::shared_ptr<KinectFrame> frame) override;
 private:
     Alarm& m_alarm;
 };
@@ -228,6 +229,9 @@ public:
     int ChangeSensitivity(int32_t value);
 
 private:
+
+    struct sBase64encode_context m_c;
+
     /* Kinect object */
     std::shared_ptr<Kinect> m_kinect;
 

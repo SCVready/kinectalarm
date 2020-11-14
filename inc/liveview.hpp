@@ -18,8 +18,6 @@
 #include "log.hpp"
 #include "kinect.hpp"
 #include "cyclic_task.hpp"
-#include "jpeg.hpp"
-
 
 /*******************************************************************
  * Class declaration
@@ -27,7 +25,7 @@
 class LiveviewObserver
 {
 public:
-    virtual void NewFrame(char* base64_jpeg_frame) = 0;
+    virtual void NewFrame(std::shared_ptr<KinectFrame> frame) = 0;
 };
 
 class Liveview : public CyclicTask
@@ -50,7 +48,6 @@ public:
 private:
     std::shared_ptr<Kinect> m_kinect;
     std::shared_ptr<KinectFrame> m_frame;
-    struct sBase64encode_context m_c;
     std::shared_ptr<LiveviewObserver> m_liveview_observer;
 };
 

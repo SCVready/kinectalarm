@@ -43,6 +43,8 @@ Alarm::~Alarm()
 
 int Alarm::Init()
 {
+    init_base64encode(&m_c);
+
     /* SQLite initialization */
     if(init_sqlite_db())
     {
@@ -137,6 +139,8 @@ int Alarm::Term()
 
     /* Deinit SQLite */
     deinit_sqlite_db();
+
+    deinit_base64encode(&m_c);
 
     return 0;
 }
@@ -436,8 +440,16 @@ AlarmLiveviewObserver::AlarmLiveviewObserver(Alarm& alarm) :
     ;
 }
 
-void AlarmLiveviewObserver::NewFrame(char* base64_jpeg_frame)
+void AlarmLiveviewObserver::NewFrame(std::shared_ptr<KinectFrame> frame)
 {
+    static std::vector<uint8_t> liveview_jpeg;
+
+    /* Convert to jpeg */
+    save_video_frame_to_jpeg_inmemory(frame->GetDataPointer(), liveview_jpeg, m_alarm.lvw_conf.brightness, m_alarm.lvw_conf.contrast);
+
+    /* Convert to base64 */
+    char *base64_jpeg_frame = base64encode(&m_alarm.m_c, liveview_jpeg.data(), liveview_jpeg.size());
+
     /* Publish in redis channel */
     redis_publish("liveview", base64_jpeg_frame);;
 }
@@ -463,15 +475,33 @@ void AlarmDetectionObserver::IntrusionStopped(uint32_t det_num, uint32_t frame_n
 
     /* Publish event */
     char message[255];
-    sprintf(message, "newdet %u %u %u",det_num,1000,frame_num);
+    sprintf(message, "newdet %u %u %u", det_num, 1000, frame_num);
     redis_publish("new_det",message);
 
     /* Update SQLite db */
-    insert_entry_det_table_sqlite_db(det_num,1000,frame_num,filepath,filepath_vid);
+    insert_entry_det_table_sqlite_db(det_num,1000, frame_num, filepath, filepath_vid);
 
     /* Update Redis db */
     redis_set_int((char *) "det_numdet", det_num);
 
     /* Change Status */
-    m_alarm.ChangeDetStatus(CURR_DET_NUM,det_num+1);
+    m_alarm.ChangeDetStatus(CURR_DET_NUM, det_num + 1);
+
+    /* Package detections */
+    char command[PATH_MAX];
+    sprintf(command,"cd %s;zip -q %u_capture.zip %u*",DETECTION_PATH, det_num, det_num);
+    system(command);
+}
+
+void AlarmDetectionObserver::IntrusionFrame(std::shared_ptr<KinectFrame> frame, uint32_t det_num, uint32_t frame_num)
+{
+    /* Save the frame to JPEG */
+    char filepath[PATH_MAX];
+    
+    sprintf(filepath,"%s/%u_capture_%d.jpeg",DETECTION_PATH, det_num, frame_num);
+
+    if(save_video_frame_to_jpeg(frame->GetDataPointer(), filepath, m_alarm.lvw_conf.brightness, m_alarm.lvw_conf.contrast))
+    {
+        LOG(LOG_ERR,"Error saving video frame\n");
+    }
 }

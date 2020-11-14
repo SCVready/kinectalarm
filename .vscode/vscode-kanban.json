@@ -14,32 +14,6 @@
       "assignedTo": {
         "name": "SCVready"
       },
-      "creation_time": "2020-09-13T13:45:26.551Z",
-      "description": {
-        "content": "- Check if heritance is needed",
-        "mime": "text/markdown"
-      },
-      "id": "3",
-      "references": [],
-      "title": "Refactor: Kinect frame"
-    },
-    {
-      "assignedTo": {
-        "name": "SCVready"
-      },
-      "creation_time": "2020-10-11T16:02:21.553Z",
-      "description": {
-        "content": "- New funtion in the detection observer class to pass the intrusions frames\n- detection class shouldn't save the current detection. This logic should be in alarm",
-        "mime": "text/markdown"
-      },
-      "id": "6",
-      "references": [],
-      "title": "Refactor: detection class - defere the task of saving frames to alarm"
-    },
-    {
-      "assignedTo": {
-        "name": "SCVready"
-      },
       "creation_time": "2020-09-13T13:52:09.055Z",
       "description": {
         "content": "- Move all global defines to global_defines.hpp\n",
@@ -61,6 +35,19 @@
       "id": "2",
       "references": [],
       "title": "Refactor: kinect class"
+    },
+    {
+      "assignedTo": {
+        "name": "SCVready"
+      },
+      "creation_time": "2020-09-13T13:45:26.551Z",
+      "description": {
+        "content": "- Check if heritance is needed",
+        "mime": "text/markdown"
+      },
+      "id": "3",
+      "references": [],
+      "title": "Refactor: Kinect frame"
     }
   ],
   "in-progress": [],
@@ -78,6 +65,19 @@
       "id": "1",
       "references": [],
       "title": "Refactor: alarm class"
+    },
+    {
+      "assignedTo": {
+        "name": "SCVready"
+      },
+      "creation_time": "2020-10-11T16:02:21.553Z",
+      "description": {
+        "content": "- New funtion in the detection observer class to pass the intrusions frames",
+        "mime": "text/markdown"
+      },
+      "id": "6",
+      "references": [],
+      "title": "Refactor: detection class - defere the task of saving frames to alarm"
     }
   ]
 }
