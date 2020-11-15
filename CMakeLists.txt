@@ -52,7 +52,7 @@ target_compile_definitions(kinectalarm PRIVATE __STDC_CONSTANT_MACROS)
 target_compile_definitions(kinectalarm PRIVATE "$<$<CONFIG:DEBUG>:DEBUG>")
 
 ######## Compile options ########
-target_compile_options(kinectalarm PRIVATE -Wall -Werror)
+target_compile_options(kinectalarm PRIVATE -Wall -Werror -Wno-unused-result)
 
 ######## Compile fetatures ########
 target_compile_features(kinectalarm PRIVATE cxx_std_17)
