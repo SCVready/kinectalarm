@@ -56,3 +56,8 @@ target_compile_options(kinectalarm PRIVATE -Wall -Werror -Wno-unused-result)
 
 ######## Compile fetatures ########
 target_compile_features(kinectalarm PRIVATE cxx_std_17)
+
+######## Install targets ########
+INSTALL(TARGETS kinectalarm
+	RUNTIME DESTINATION bin
+)
