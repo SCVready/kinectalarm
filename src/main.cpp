@@ -72,8 +72,6 @@ int main(int argc, char** argv)
     printf("DEBUG BUILD\n");
 #endif
 
-    int retvalue = 0;
-
     /* Handle signals */
     signal(SIGINT, signalHandler);
     signal(SIGTERM, signalHandler);
@@ -90,7 +88,6 @@ int main(int argc, char** argv)
     if(alarm.Init())
     {
         LOG(LOG_ERR, "Alarm initialization error\n");
-        retvalue = -1;
         goto closing_alarm;
     }
     else
@@ -124,7 +121,7 @@ int main(int argc, char** argv)
 
 closing_alarm:
     alarm.Term();
-    return retvalue;
+    return 0;
 }
 
 void OnMessage(redisAsyncContext *c, void *reply, void *privdata)

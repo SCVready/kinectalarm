@@ -1,4 +1,10 @@
 {
+    "testMate.cpp.test.advancedExecutables": [
+        {
+            "pattern": "test/build/*",
+            "cwd": "${absDirpath}",
+        }
+    ],
     "files.associations": {
         "optional": "cpp",
         "array": "cpp",

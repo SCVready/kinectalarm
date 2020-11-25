@@ -5,21 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Pipe Launch",
+            "name": "Degub native UT",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolderBasename}/build/kinectalarm",
+            "program": "${workspaceFolder}/test/build/kinect_tests",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/test/build/",
             "environment": [],
             "externalConsole": false,
-            "pipeTransport": {
-                "debuggerPath": "/opt/sdks/presenceos/sysroots/x86_64-pokysdk-linux/usr/bin/arm-poky-linux-gnueabi/arm-poky-linux-gnueabi-gdb",
-                "pipeProgram": "/usr/bin/ssh",
-                "pipeArgs": ["root@192.168.0.18"],
-                "pipeCwd": ""
-            },
             "MIMode": "gdb",
             "setupCommands": [
                 {
@@ -47,6 +41,7 @@
                 "forwardX11": false
             },
             "preLaunchTask": "sync"
-        }
+        },
+        
     ]
 }

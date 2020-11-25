@@ -7,7 +7,25 @@
         "type": "shell",
         "label": "make",
         "dependsOn" : [],
-        "command" : "source /opt/sdks/presenceos/environment-setup-cortexa7t2hf-neon-vfpv4-poky-linux-gnueabi; mkdir -p build; cd build; cmake -DCMAKE_BUILD_TYPE=Debug ..; make;",
+        "command" : "source /opt/sdk/presenceos/environment-setup-cortexa7t2hf-neon-vfpv4-poky-linux-gnueabi; mkdir -p build; cd build; cmake -DCMAKE_BUILD_TYPE=Debug ..; make -j32;",
+      },
+      {
+        "type": "shell",
+        "label": "make run native",
+        "dependsOn" : [],
+        "command" : "source /opt/sdk/presenceos_native/environment-setup-core2-64-poky-linux; mkdir -p build; cd build; cmake -DCMAKE_BUILD_TYPE=Debug ..; make -j32; /opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/lib/ld-linux-x86-64.so.2 --library-path \"/opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/lib/:/opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/usr/lib/\" ./kinectalarm",
+      },
+      {
+        "type": "shell",
+        "label": "make test",
+        "dependsOn" : [],
+        "command" : "cd test; source /opt/sdk/presenceos/environment-setup-cortexa7t2hf-neon-vfpv4-poky-linux-gnueabi; mkdir -p build; cd build; cmake -DCMAKE_BUILD_TYPE=Debug ..; make -j32;",
+      },
+      {
+        "type": "shell",
+        "label": "make test native",
+        "dependsOn" : [],
+        "command" : "cd test; source /opt/sdk/presenceos_native/environment-setup-core2-64-poky-linux; mkdir -p build; cd build; cmake -DCMAKE_BUILD_TYPE=Debug ..; make -j32; patchelf --set-interpreter /opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/lib/ld-linux-x86-64.so.2 --set-rpath /opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/lib/:/opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/usr/lib/ ./kinect_tests",
       },
       {
         "type": "shell",
@@ -19,7 +37,7 @@
       {
         "type": "shell",
         "label": "build",
-        "dependsOn" : ["make"],
+        "dependsOn" : ["make test native"],
         "dependsOrder": "sequence",
         "group": {
           "kind": "build",
