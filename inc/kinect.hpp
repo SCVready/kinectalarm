@@ -11,24 +11,16 @@
 /*******************************************************************
  * Includes
  *******************************************************************/
-#include <pthread.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
-#include <string.h>
-#include <unistd.h>
-#include <pthread.h>
-#include <syslog.h>
-
 #include <memory>
-
+#include <mutex>
+#include <condition_variable>
 #include <libfreenect/libfreenect.h>
 #include <libfreenect/libfreenect_sync.h>
 
+#include "cyclic_task.hpp"
 #include "kinect_frame.hpp"
 #include "common.hpp"
 #include "global_parameters.hpp"
-#include "log.hpp"
 
 /*******************************************************************
  * Defines
@@ -38,7 +30,7 @@
 /*******************************************************************
  * Class declaration
  *******************************************************************/
-class Kinect
+class Kinect : public CyclicTask
 {
 public:
     /**
@@ -78,28 +70,26 @@ public:
     int Stop();
 
     /**
-     * @brief Syncronous funtion to get a depth frame.
+     * @brief Synchonous function to get a depth frame.
      * 
      * @param[in/out] depth_frame : pointer to an already allocated memory
      *                              array. It will be filled with the frame content
-     * @param[in/out] timestamp : to provide the funtion with the timestamp of the last
+     * @param[in/out] timestamp : to provide the function with the timestamp of the last
      *                            frame you have. It will be updated with the 
      *                            timestamp of the provided frame.
      */
-    int GetDepthFrame(uint16_t *depth_frame, uint32_t *timestamp);
-    void GetDepthFrame_ex(std::shared_ptr<KinectFrame> frame);
+    void GetDepthFrame(std::shared_ptr<KinectFrame> frame);
 
     /**
-     * @brief Syncronous funtion to get a depth frame.
+     * @brief Synchonous function to get a depth frame.
      * 
      * @param[in/out] video_frame : pointer to an already allocated memory
      *                              array. It will be filled with the frame info
-     * @param[in/out] timestamp : to provide te funtion the timestamp of the last
+     * @param[in/out] timestamp : to provide te function the timestamp of the last
      *                            frame you have. It will be updated with the 
      *                            timestamp of the provided frame.
      */
-    int GetVideoFrame(uint16_t *video_frame, uint32_t *timestamp);
-    void GetVideoFrame_ex(std::shared_ptr<KinectFrame> frame);
+    void GetVideoFrame(std::shared_ptr<KinectFrame> frame);
 
     /**
      * @brief To get change kinect's tilt
@@ -114,45 +104,30 @@ public:
      * 
      * @param[in] color : wanted color
      * 
+     * @return 0 on success
      */
-    void ChangeLedColor(freenect_led_options color);
-
-    /**
-     * @brief Check if kinect is running
-     * 
-     */
-    bool IsRunning();
+    int ChangeLedColor(freenect_led_options color);
 
 private:
     /* Freenect context strucutres */
-    freenect_context* kinect_ctx;
-    freenect_device* kinect_dev;
-
-    /* Thread */
-    pthread_t process_event_thread;
+    freenect_context* m_kinect_ctx;
+    freenect_device* m_kinect_dev;
 
     /* Flags */
-    bool is_kinect_initialize;
-    volatile bool running;
+    bool m_is_kinect_initialized;
 
-    /* Frame pointers */
-    static uint16_t* temp_depth_frame_raw;
-    static uint16_t* temp_video_frame_raw;
+    /* Frames */
+    static std::unique_ptr<KinectFrame> m_depth_frame;
+    static std::unique_ptr<KinectFrame> m_video_frame;
 
-    /* Frame timestamp */
-    static uint32_t temp_depth_frame_timestamp;
-    static uint32_t temp_video_frame_timestamp;
+    /* Concurrency safe */
+    static std::mutex m_depth_mutex, m_video_mutex;
+    static std::condition_variable m_depth_cv,m_video_cv;
 
-    /* Thread sinc */
-    static pthread_mutex_t depth_lock;
-    static pthread_mutex_t video_lock;
-    static pthread_cond_t depth_ready;
-    static pthread_cond_t video_ready;
-
+    /* Private funtions */
     static void VideoCallback(freenect_device* dev, void* data, uint32_t timestamp);
     static void DepthCallback(freenect_device* dev, void* data, uint32_t timestamp);
-    void *KinectProcessEvents(void);
-    static void *KinectProcessEventsHelper(void *context);
+    void ExecutionCycle() override;
 };
 
 #endif /* KINECT_H_ */

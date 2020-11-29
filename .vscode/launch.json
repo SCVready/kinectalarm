@@ -30,7 +30,7 @@
             "target": "build/kinectalarm",
             "cwd": "${workspaceRoot}",
             "pathSubstitutions": {
-                "/home/scvready/workspace/github/presenceos/kinectalarm/": "/home/root/kinectalarm/"
+                "/home/scvready/workspace/github/kinectalarm/": "/home/root/kinectalarm/"
             },
             "ssh": {
                 "host": "192.168.0.18",

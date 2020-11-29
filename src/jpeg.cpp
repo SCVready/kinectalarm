@@ -14,7 +14,7 @@
 /*******************************************************************
  * Funtion definition
  *******************************************************************/
-bool save_depth_frame_to_jpeg(uint16_t* depth_frame,char *filepath)
+bool save_depth_frame_to_jpeg(const uint16_t* depth_frame,char *filepath)
 {
     FIBITMAP *depth_bitmap;
 
@@ -29,7 +29,7 @@ bool save_depth_frame_to_jpeg(uint16_t* depth_frame,char *filepath)
     return retval;
 }
 
-bool save_video_frame_to_jpeg(uint16_t* video_frame,char *filepath, int32_t brightness, int32_t contrast)
+bool save_video_frame_to_jpeg(const uint16_t* video_frame,char *filepath, int32_t brightness, int32_t contrast)
 {
     FIBITMAP *video_bitmap;
     uint8_t bmap[VIDEO_WIDTH*VIDEO_HEIGHT*3];
@@ -49,7 +49,7 @@ bool save_video_frame_to_jpeg(uint16_t* video_frame,char *filepath, int32_t brig
     return retval;
 }
 
-bool save_video_frame_to_jpeg_inmemory(uint16_t* video_frame, std::vector<uint8_t>& video_jpeg, int32_t brightness, int32_t contrast)
+bool save_video_frame_to_jpeg_inmemory(const uint16_t* video_frame, std::vector<uint8_t>& video_jpeg, int32_t brightness, int32_t contrast)
 {
     FIBITMAP *video_bitmap;
     uint8_t bmap[VIDEO_WIDTH*VIDEO_HEIGHT];

@@ -24,55 +24,47 @@ class CyclicTask
 {
 public:
     /**
-     * @brief Construct a new Liveview object
+     * @brief Constructor
      * 
      */
     CyclicTask(std::string task_name, uint32_t loop_period_ms);
 
     /**
-     * @brief Destroy the Liveview object
+     * @brief Destructor
      * 
      */
     ~CyclicTask();
 
     /**
-     * @brief 
+     * @brief Start cyclic task
      * 
-     * @return int 
+     * @return int TODO
      */
     void Start();
 
     /**
-     * @brief 
+     * @brief Stop cyclic task
      * 
      * @return int 
      */
     void Stop();
 
     /**
-     * @brief 
+     * @brief Check if the cyclic task is running
      * 
      * @return int 
      */
     bool IsRunning();
 
-    /**
-     * @brief 
-     * 
-     */
-    void ThreadLoop();
-
-    /**
-     * @brief 
-     * 
-     */
-    virtual void ExecutionCycle() = 0;
-
-protected:
+private:
     std::unique_ptr<std::thread> m_thread;
     std::atomic<bool> m_running;
     std::string m_task_name;
     uint32_t m_loop_period_ms;
+
+    /* Private funtions */
+    void ThreadLoop();
+    virtual void ExecutionCycle() = 0;
 };
 
 #endif /* CYCLIC_TASK_H_ */

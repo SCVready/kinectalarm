@@ -57,7 +57,10 @@
         "chrono": "cpp",
         "ctime": "cpp",
         "ratio": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "condition_variable": "cpp",
+        "iomanip": "cpp",
+        "mutex": "cpp"
     },
     "kanban": {
         "openOnStartup": true

@@ -29,6 +29,7 @@ CyclicTask::~CyclicTask()
 
 void CyclicTask::Start()
 {
+    //TODO catch exceptions, return value
     if(!m_running)
     {
         m_running = true;

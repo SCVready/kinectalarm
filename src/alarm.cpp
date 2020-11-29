@@ -80,7 +80,7 @@ int Alarm::Init()
     /* Redis db initialization */
     if(init_redis_db())
     {
-        LOG(LOG_ERR,"Error: couldn't intialize Redis db\n");
+        LOG(LOG_ERR,"Error: couldn't initialize Redis db\n");
         m_kinect->Term();
         return -1;
     }
@@ -88,7 +88,7 @@ int Alarm::Init()
     /* Initialize redis vars */
     if(InitVarsRedis())
     {
-        LOG(LOG_ERR,"Error: couldn't intialize variables in Redis db\n");
+        LOG(LOG_ERR,"Error: couldn't initialize variables in Redis db\n");
         m_kinect->Term();
         return -1;
     }
@@ -96,7 +96,7 @@ int Alarm::Init()
     /* Kinect initialization */
     if(m_kinect->Init())
     {
-        LOG(LOG_ERR,"Error: couldn't intialize Kinect\n");
+        LOG(LOG_ERR,"Error: couldn't initialize Kinect\n");
         m_kinect->Term();
         return -1;
     }
@@ -159,10 +159,10 @@ int Alarm::StartDetection()
         /* Update Redis DB */
         redis_set_int((char *) "det_status", 1);
 
+        m_detection->Start(det_conf.curr_det_num);
+
         /* Update led */
         UpdateLed();
-
-        m_detection->Start(det_conf.curr_det_num);
 
         /* Publish event */
         redis_publish("event_info","Detection started");
@@ -183,10 +183,10 @@ int Alarm::StopDetection()
         /* Update Redis DB */
         redis_set_int((char *) "det_status", 0);
 
+        m_detection->Stop();
+
         /* Update led */
         UpdateLed();
-
-        m_detection->Stop();
 
         /* Publish event */
         redis_publish("event_info","Detection stopped");
@@ -218,10 +218,10 @@ int Alarm::StartLiveview()
         /* Update redis db */
         redis_set_int((char *) "lvw_status", 1);
 
+        m_liveview->Start();
+
         /* Update led */
         UpdateLed();
-
-        m_liveview->Start();
 
         /* Publish event */
         redis_publish("event_info","Liveview started");
@@ -240,10 +240,10 @@ int Alarm::StopLiveview()
         /* Update Redis DB */
         redis_set_int((char *) "lvw_status", 0);
 
+        m_liveview->Stop();
+
         /* Update led */
         UpdateLed();
-
-        m_liveview->Stop();
 
         /* Publish event */
         redis_publish("event_info","Liveview stopped");
@@ -259,12 +259,10 @@ int Alarm::StopLiveview()
 
 void Alarm::UpdateLed()
 {
-    if(m_liveview->IsRunning() && m_detection->IsRunning())
-        m_kinect->ChangeLedColor((freenect_led_options)4);
-    else if(m_detection->IsRunning())
+    if(m_detection->IsRunning())
         m_kinect->ChangeLedColor(LED_YELLOW);
     else if(m_liveview->IsRunning())
-        m_kinect->ChangeLedColor((freenect_led_options)5);
+        m_kinect->ChangeLedColor(LED_GREEN);
     else
         m_kinect->ChangeLedColor(LED_OFF);
 }
@@ -472,6 +470,9 @@ void AlarmDetectionObserver::IntrusionStopped(uint32_t det_num, uint32_t frame_n
     char filepath[PATH_MAX];
     sprintf(filepath_vid,"%s/%u_%s",DETECTION_PATH,det_num,"capture_vid.mp4");
     sprintf(filepath,"%s/%u_capture.zip",DETECTION_PATH,det_num);
+
+    /* Update kinect led */
+    m_alarm.UpdateLed();
 
     /* Publish event */
     char message[255];

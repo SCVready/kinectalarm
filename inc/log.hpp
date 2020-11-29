@@ -17,10 +17,10 @@
 /*******************************************************************
  * Macros
  *******************************************************************/
-#ifdef DEBUG
-    #define LOG(log_level,format, ...) printf(format, ## __VA_ARGS__)
-#else
+#ifdef NDEBUG
     #define LOG(log_level,format, ...) syslog(log_level,format, ## __VA_ARGS__)
+#else
+    #define LOG(log_level,format, ...) printf(format, ## __VA_ARGS__)
 #endif
 
 

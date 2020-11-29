@@ -1,14 +1,19 @@
 {
     "configurations": [
-      {
-        "name": "Linux",
-        "intelliSenseMode": "gcc-x64",
-        "includePath": ["/opt/sdk/presenceos/sysroots/cortexa7t2hf-neon-vfpv4-poky-linux-gnueabi/usr/include",
-                        "/opt/sdk/presenceos/sysroots/cortexa7t2hf-neon-vfpv4-poky-linux-gnueabi/usr/include/c++/8.2.0"],
-        "compilerPath": "/opt/sdk/presenceos/sysroots/x86_64-pokysdk-linux/usr/bin/arm-poky-linux-gnueabi/arm-poky-linux-gnueabi-g++",
-        "cStandard": "c11",
-        "cppStandard": "c++17"
-      }
+        {
+            "name": "Linux",
+            "intelliSenseMode": "gcc-x64",
+            "includePath": [
+                "/opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/usr/include",
+                "/opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/usr/include/c++/8.2.0",
+                "/opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/usr/include/c++/8.2.0/tr1",
+                "/opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/usr/include/c++/8.2.0/x86_64-poky-linux",
+                "${workspaceRoot}/inc"
+            ],
+            "compilerPath": "/opt/sdk/presenceos_native/sysroots/x86_64-pokysdk-linux/usr/bin/x86_64-poky-linux/x86_64-poky-linux-g++",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
     ],
     "version": 4
-  }
+}

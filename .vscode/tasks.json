@@ -25,14 +25,14 @@
         "type": "shell",
         "label": "make test native",
         "dependsOn" : [],
-        "command" : "cd test; source /opt/sdk/presenceos_native/environment-setup-core2-64-poky-linux; mkdir -p build; cd build; cmake -DCMAKE_BUILD_TYPE=Debug ..; make -j32; patchelf --set-interpreter /opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/lib/ld-linux-x86-64.so.2 --set-rpath /opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/lib/:/opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/usr/lib/ ./kinect_tests",
+        "command" : "cd test; source /opt/sdk/presenceos_native/native-environment-setup-core2-64-poky-linux; mkdir -p build; cd build; cmake -DCMAKE_BUILD_TYPE=Debug ..; make -j32",
       },
       {
         "type": "shell",
         "label": "sync",
         "dependsOn" : ["make"],
         "dependsOrder": "sequence",
-        "command" : "rsync -rlptzv --progress --delete --exclude=.git --exclude=.vscode ${workspaceRoot} root@192.168.0.18:/home/root/",
+        "command" : "rsync -rlptzv --progress --delete --exclude=.git --exclude={'.vscode','test'} ${workspaceRoot} root@192.168.0.18:/home/root/",
       },
       {
         "type": "shell",

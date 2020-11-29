@@ -8,8 +8,7 @@
 /*******************************************************************
  * Includes
  *******************************************************************/
-#include <cstdlib>
-
+#include <cmath>
 #include <libfreenect/libfreenect.h>
 #include <libfreenect/libfreenect_sync.h>
 
@@ -22,7 +21,7 @@
  *******************************************************************/
 
 KinectFrame::KinectFrame(uint32_t width, uint32_t height) :
-    m_width(width), m_height(height)
+    m_timestamp(0), m_width(width), m_height(height)
 {
     m_data.resize(width * height);
 }
@@ -32,12 +31,19 @@ KinectFrame::~KinectFrame()
     ;
 }
 
-void KinectFrame::Fill(uint16_t* frame_data)
+KinectFrame& KinectFrame::operator=(const KinectFrame& other)
+{
+    this->Fill(other.GetDataPointer());
+    this->m_timestamp = other.m_timestamp;
+    return *this;
+}
+
+void KinectFrame::Fill(const uint16_t* frame_data)
 {
     m_data.assign(frame_data, frame_data + (m_width * m_height));
 }
 
-uint16_t* KinectFrame::GetDataPointer()
+const uint16_t*  KinectFrame::GetDataPointer() const
 {
     return m_data.data();
 }
@@ -46,11 +52,11 @@ uint32_t KinectFrame::ComputeDifferences(KinectFrame& other, uint32_t tolerance)
 {
     uint32_t count = 0;
 
-    for(int i = 0; i <(DEPTH_WIDTH*DEPTH_HEIGHT);i++)
+    for(int i = 0; i < (DEPTH_WIDTH * DEPTH_HEIGHT); i++)
     {
-        if(m_data[i] != 0x07FF && other.m_data[i] != 0x07FF)
+        if((m_data[i] != BLANK_DEPTH_PIXEL) && (other.m_data[i] != BLANK_DEPTH_PIXEL))
         {
-            if((abs(m_data[i] - other.m_data[i])) > tolerance)
+            if((std::abs(static_cast<int32_t>(m_data[i]) - other.m_data[i])) > tolerance)
             {
                 count++;
             }
@@ -58,30 +64,3 @@ uint32_t KinectFrame::ComputeDifferences(KinectFrame& other, uint32_t tolerance)
     }
     return count;
 }
-
-#if 0
-
-uint32_t Alarm::CompareDepthFrameToReferenceDepthFrame()
-{
-    uint32_t cont = 0;
-
-    pthread_mutex_lock(&diff_depth_frame_lock);
-    for(int i = 0; i <(DEPTH_WIDTH*DEPTH_HEIGHT);i++)
-    {
-
-        if(depth_frame[i] == 0x07FF || reff_depth_frame[i] == 0x07FF)
-            diff_depth_frame[i] = 0;
-        else
-        {
-            diff_depth_frame[i] =abs(depth_frame[i] - reff_depth_frame[i]);
-            if(diff_depth_frame[i] > det_conf.tolerance)
-                cont++;
-            else
-                diff_depth_frame[i] = 0;
-        }
-    }
-    pthread_mutex_unlock(&diff_depth_frame_lock);
-    return cont;
-}
-
-#endif
