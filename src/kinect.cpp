@@ -140,7 +140,7 @@ int Kinect::Term()
         {
             if (0 != freenect_close_device(m_kinect_dev))
             {
-                LOG(LOG_ERROR,"freenect_close_device() failed\n");
+                LOG(LOG_ERR,"freenect_close_device() failed\n");
                 retval = -1;
             }
         }
@@ -149,7 +149,7 @@ int Kinect::Term()
         {
             if (0 != freenect_shutdown(m_kinect_ctx))
             {
-                LOG(LOG_ERROR,"freenect_shutdown() failed\n");
+                LOG(LOG_ERR,"freenect_shutdown() failed\n");
                 retval = -1;
             }
         }
@@ -170,15 +170,15 @@ int Kinect::Start()
 
     if(0 != freenect_start_video(m_kinect_dev))
     {
-        LOG(LOG_ERROR,"freenect_start_video() failed\n");
+        LOG(LOG_ERR,"freenect_start_video() failed\n");
     }
     else if(0 != freenect_start_depth(m_kinect_dev))
     {
-        LOG(LOG_ERROR,"freenect_start_video() failed\n");
+        LOG(LOG_ERR,"freenect_start_video() failed\n");
     }
     else if(0 != CyclicTask::Start())
     {
-        LOG(LOG_ERROR,"CyclicTask::Start() failed\n");
+        LOG(LOG_ERR,"CyclicTask::Start() failed\n");
     }
     else
     {
@@ -197,17 +197,17 @@ int Kinect::Stop()
     /* Call parent Stop to stop the execution thread*/
     if( 0 != CyclicTask::Stop())
     {
-        LOG(LOG_ERROR,"CyclicTask::Stop() failed\n");
+        LOG(LOG_ERR,"CyclicTask::Stop() failed\n");
         retval = -1;
     }
     if(0 != freenect_stop_depth(m_kinect_dev))
     {
-        LOG(LOG_ERROR,"freenect_stop_depth() failed\n");
+        LOG(LOG_ERR,"freenect_stop_depth() failed\n");
         retval = -1;
     }
     if(0 != freenect_stop_video(m_kinect_dev))
     {
-        LOG(LOG_ERROR,"freenect_stop_depth() failed\n");
+        LOG(LOG_ERR,"freenect_stop_depth() failed\n");
         retval = -1;
     }
 
