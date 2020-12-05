@@ -38,7 +38,7 @@ void Detection::Start(uint32_t detection_num)
     m_detection_num = detection_num;
 
     /* Get Reference Depth frame */
-    m_kinect->GetDepthFrame(m_depth_frame_reff);
+    m_kinect->GetDepthFrame(*m_depth_frame_reff);
     LOG(LOG_INFO,"Detection: Depth reference frame\n");
 
     /* Call parent Start to start the execution thread*/
@@ -48,7 +48,7 @@ void Detection::Start(uint32_t detection_num)
 void Detection::ExecutionCycle()
 {
     /* Get depth frame */
-    m_kinect->GetDepthFrame(m_depth_frame);
+    m_kinect->GetDepthFrame(*m_depth_frame);
 
     uint32_t diff = m_depth_frame->ComputeDifferences((*m_depth_frame_reff.get()),10);
 
@@ -110,7 +110,7 @@ RefreshReferenceFrame::RefreshReferenceFrame(std::shared_ptr<Kinect> kinect,
 void RefreshReferenceFrame::ExecutionCycle()
 {
     /*TODO: m_depth_frame_reff atomic*/
-    m_kinect->GetDepthFrame(m_depth_frame_reff);
+    m_kinect->GetDepthFrame(*m_depth_frame_reff);
 }
 
 TakeVideoFrames::TakeVideoFrames(Detection& detection,
@@ -141,7 +141,7 @@ uint32_t TakeVideoFrames::Stop()
 void TakeVideoFrames::ExecutionCycle()
 {
     /*TODO: m_depth_frame_reff atomic*/
-    m_kinect->GetVideoFrame(m_frame);
+    m_kinect->GetVideoFrame(*m_frame);
     LOG(LOG_DEBUG,"TakeVideoFrames cycle: frame taken\n");
 
     m_detection.m_detection_observer->IntrusionFrame(m_frame, m_curr_detection_num, m_frame_counter++);

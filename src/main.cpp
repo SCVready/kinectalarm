@@ -66,12 +66,6 @@ void signalHandler(int signal)
 
 int main(int argc, char** argv)
 {
-#ifndef DEBUG
-    printf("RELEASE BUILD\n");
-#else
-    printf("DEBUG BUILD\n");
-#endif
-
     /* Handle signals */
     signal(SIGINT, signalHandler);
     signal(SIGTERM, signalHandler);
@@ -80,6 +74,12 @@ int main(int argc, char** argv)
     /* Set up syslog */
     setlogmask(LOG_UPTO(LOG_DEBUG));
     openlog ("kinect_alarm", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+
+#ifndef DEBUG
+    LOG(LOG_NOTICE, "RELEASE BUILD %s\n", KINECTALARM_VERSION);
+#else
+    LOG(LOG_NOTICE, "DEBUG BUILD %s\n", KINECTALARM_VERSION);
+#endif
 
     /* Alarm Class creation */
     class Alarm alarm;

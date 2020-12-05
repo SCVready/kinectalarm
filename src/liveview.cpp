@@ -28,7 +28,7 @@ Liveview::~Liveview()
 
 void Liveview::ExecutionCycle()
 {
-    m_kinect->GetVideoFrame(m_frame);
+    m_kinect->GetVideoFrame(*m_frame);
     LOG(LOG_INFO,"Liveview cycle: frame taken\n");
 
     m_liveview_observer->NewFrame(m_frame);
