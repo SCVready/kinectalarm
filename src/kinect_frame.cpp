@@ -19,11 +19,17 @@
 /*******************************************************************
  * Class definition
  *******************************************************************/
-
 KinectFrame::KinectFrame(uint32_t width, uint32_t height) :
     m_timestamp(0), m_width(width), m_height(height)
 {
-    m_data.resize(width * height);
+    m_data.resize(m_width * m_height);
+}
+
+KinectFrame::KinectFrame(const KinectFrame& kinect_frame) :
+    m_timestamp(0), m_width(kinect_frame.m_width), m_height(kinect_frame.m_height)
+{
+    m_data.resize(m_width * m_height);
+    *this = kinect_frame;
 }
 
 KinectFrame::~KinectFrame()

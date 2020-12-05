@@ -44,14 +44,14 @@
 volatile bool kinect_alarm_running = true;
 
 /*******************************************************************
- * Funtion declaration
+ * Function declaration
  *******************************************************************/
 int MessageProcess(class Alarm *alarm, char *command);
 void OnMessage(redisAsyncContext *c, void *reply, void *privdata);
 void* RefreshWatchdog(void *x_void_ptr);
 
 /*******************************************************************
- * Funtion definition
+ * Function definition
  *******************************************************************/
 void signalHandler(int signal)
 {

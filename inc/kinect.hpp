@@ -23,11 +23,6 @@
 #include "global_parameters.hpp"
 
 /*******************************************************************
- * Defines
- *******************************************************************/
-#define MAX_TILT_WAIT 10 /* Seconds to wait until the kinect's tilting is complete */
-
-/*******************************************************************
  * Class declaration
  *******************************************************************/
 class Kinect : public CyclicTask
@@ -72,37 +67,29 @@ public:
     /**
      * @brief Synchonous function to get a depth frame.
      * 
-     * @param[in/out] depth_frame : pointer to an already allocated memory
-     *                              array. It will be filled with the frame content
-     * @param[in/out] timestamp : to provide the function with the timestamp of the last
-     *                            frame you have. It will be updated with the 
-     *                            timestamp of the provided frame.
+     * @param[in/out] frame : reference to a frame object
      */
-    void GetDepthFrame(std::shared_ptr<KinectFrame> frame);
+    void GetDepthFrame(KinectFrame& frame);
 
     /**
      * @brief Synchonous function to get a depth frame.
      * 
-     * @param[in/out] video_frame : pointer to an already allocated memory
-     *                              array. It will be filled with the frame info
-     * @param[in/out] timestamp : to provide te function the timestamp of the last
-     *                            frame you have. It will be updated with the 
-     *                            timestamp of the provided frame.
+     * @param[in/out] frame : reference to a frame object
      */
-    void GetVideoFrame(std::shared_ptr<KinectFrame> frame);
+    void GetVideoFrame(KinectFrame& frame);
 
     /**
      * @brief To get change kinect's tilt
      * 
-     * @param[in] tilt_angle : wanted kinect's tilt angle, range [-61,61]
+     * @param[in] tilt_angle : kinect's tilt angle relative ground , range [-61,61]
      * 
      */
-    bool ChangeTilt(double tilt_angle);
+    int ChangeTilt(double tilt_angle);
 
     /**
      * @brief To get change kinect's led color
      * 
-     * @param[in] color : wanted color
+     * @param[in] color : kinect led color options
      * 
      * @return 0 on success
      */

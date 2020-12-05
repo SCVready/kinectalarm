@@ -25,9 +25,9 @@ class KinectFrame
 {
 public:
     KinectFrame(uint32_t width, uint32_t height);
+    KinectFrame(const KinectFrame& kinect_frame);
     ~KinectFrame();
     KinectFrame& operator=(const KinectFrame& kinect);
-
     void Fill(const uint16_t* frame_data);
     const uint16_t* GetDataPointer() const;
     uint32_t ComputeDifferences(KinectFrame& frame, uint32_t tolerance);

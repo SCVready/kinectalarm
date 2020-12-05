@@ -38,16 +38,16 @@ public:
     /**
      * @brief Start cyclic task
      * 
-     * @return int TODO
+     * @return int
      */
-    void Start();
+    int Start();
 
     /**
      * @brief Stop cyclic task
      * 
      * @return int 
      */
-    void Stop();
+    int Stop();
 
     /**
      * @brief Check if the cyclic task is running

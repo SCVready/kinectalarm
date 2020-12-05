@@ -14,7 +14,6 @@
 /*******************************************************************
  * Class definition
  *******************************************************************/
-
 Liveview::Liveview(std::shared_ptr<Kinect> kinect, std::shared_ptr<LiveviewObserver> liveview_observer, uint32_t loop_period_ms) :
     CyclicTask("Liveview", loop_period_ms),
     m_kinect(kinect),

@@ -13,7 +13,6 @@
 /*******************************************************************
  * Class definition
  *******************************************************************/
-
 Detection::Detection(std::shared_ptr<Kinect> kinect, std::shared_ptr<DetectionObserver> detection_observer, uint32_t loop_period_ms) :
     CyclicTask("Detection", loop_period_ms),
     m_current_state(State::Idle),

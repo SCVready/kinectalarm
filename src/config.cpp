@@ -11,7 +11,7 @@
 #include "config.hpp"
 
 /*******************************************************************
- * Funtion definition
+ * Function definition
  *******************************************************************/
 int write_status(struct sDet_conf det_conf,struct sLvw_conf lvw_conf)
 {

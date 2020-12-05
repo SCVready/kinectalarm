@@ -12,7 +12,7 @@
 #include "global_parameters.hpp"
 
 /*******************************************************************
- * Funtion definition
+ * Function definition
  *******************************************************************/
 bool save_depth_frame_to_jpeg(const uint16_t* depth_frame,char *filepath)
 {

@@ -27,30 +27,43 @@ CyclicTask::~CyclicTask()
     ;
 }
 
-void CyclicTask::Start()
+int CyclicTask::Start()
 {
-    //TODO catch exceptions, return value
+    int retval = 0;
+
     if(!m_running)
     {
         m_running = true;
 
-        m_thread = std::make_unique<std::thread>(&CyclicTask::ThreadLoop,this);
+        try
+        {
+            m_thread = std::make_unique<std::thread>(&CyclicTask::ThreadLoop,this);
+        }
+        catch(const std::exception& e)
+        {
+            LOG(LOG_ERR,"%s thread creation failed: %s\n", m_task_name.c_str(), e.what());
+            retval = -1;
+        }
 
-        LOG(LOG_INFO,"Starting %s thread\n",m_task_name.c_str());
+        LOG(LOG_INFO,"Starting %s thread\n", m_task_name.c_str());
     }
     else
     {
-        LOG(LOG_INFO,"%s thread is already started\n",m_task_name.c_str());
+        LOG(LOG_INFO,"%s thread is already started\n", m_task_name.c_str());
     }
+
+    return retval;
 }
 
-void CyclicTask::Stop()
+int CyclicTask::Stop()
 {
+    int retval = 0;
+
     if(m_running)
     {
         m_running = false;
 
-        m_thread->join();
+        m_thread->join(); /* TODO conditional variable */
 
         LOG(LOG_INFO,"Stoping %s thread\n",m_task_name.c_str());
     }
@@ -58,6 +71,8 @@ void CyclicTask::Stop()
     {
         LOG(LOG_INFO,"%s thread is already stoped\n",m_task_name.c_str());
     }
+
+    return retval;
 }
 
 bool CyclicTask::IsRunning()

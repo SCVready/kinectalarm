@@ -8,7 +8,6 @@
 /*******************************************************************
  * Includes
  *******************************************************************/
-#include <unistd.h>//todo remove
 #include <chrono>
 
 #include "log.hpp"
@@ -48,12 +47,13 @@ int Kinect::Init()
     /* Check if it's already initialize */
     if(m_is_kinect_initialized)
     {
+        LOG(LOG_INFO,"Kinect is already initialized\n");
         retval = 0;
     }
     else
     {
         /* Library freenect init */
-        if (0 != freenect_init(&m_kinect_ctx, NULL))
+        if (0 != freenect_init(&m_kinect_ctx, nullptr))
         {
             LOG(LOG_ERR,"freenect_init() failed\n");
         }
@@ -77,7 +77,19 @@ int Kinect::Init()
             }
             else
             {
+                freenect_device_attributes* attribute_list;
+
                 LOG(LOG_INFO,"Kinect device found\n");
+
+                if (1 > freenect_list_device_attributes(m_kinect_ctx, &attribute_list))
+                {
+                    LOG(LOG_WARNING,"freenect_list_device_attributes() failed\n");
+                }
+                else
+                {
+                    LOG(LOG_INFO,"Kinect device with camera_serial: %s\n", attribute_list->camera_serial);
+                    freenect_free_device_attributes(attribute_list);
+                }
 
                 /* Open the first device */
                 if (0 != freenect_open_device(m_kinect_ctx, &m_kinect_dev, 0))
@@ -102,6 +114,8 @@ int Kinect::Init()
                     /* Set kinect init flag to true */
                     m_is_kinect_initialized = true;
                     retval = 0;
+
+                    LOG(LOG_INFO,"Kinect initialization successful\n");
                 }
             }
         }
@@ -111,48 +125,98 @@ int Kinect::Init()
 
 int Kinect::Term()
 {
-    LOG(LOG_INFO,"Shutting down kinect\n");
+    int retval = 0;
 
-    /* Stop everything and shutdown */
-    if(m_kinect_dev)
+    if(!m_is_kinect_initialized)
     {
-        freenect_close_device(m_kinect_dev);
-        freenect_shutdown(m_kinect_ctx);
+        LOG(LOG_INFO,"Kinect is already terminated\n");
+    }
+    else
+    {
+        LOG(LOG_INFO,"Shutting down kinect\n");
+
+        /* Stop everything and shutdown */
+        if(m_kinect_dev)
+        {
+            if (0 != freenect_close_device(m_kinect_dev))
+            {
+                LOG(LOG_ERROR,"freenect_close_device() failed\n");
+                retval = -1;
+            }
+        }
+
+        if(m_kinect_ctx)
+        {
+            if (0 != freenect_shutdown(m_kinect_ctx))
+            {
+                LOG(LOG_ERROR,"freenect_shutdown() failed\n");
+                retval = -1;
+            }
+        }
+
+        m_is_kinect_initialized = false;
     }
 
-    /* Initialize flag to false */
-    m_is_kinect_initialized = false;
-
-    return 0;
+    return retval;
 }
 
 int Kinect::Start()
 {
+    int retval = -1;
+
     /* Initialize frame time-stamps */
     m_depth_frame->m_timestamp = 0;
     m_video_frame->m_timestamp = 0;
 
-    freenect_start_video(m_kinect_dev);
-    freenect_start_depth(m_kinect_dev);
+    if(0 != freenect_start_video(m_kinect_dev))
+    {
+        LOG(LOG_ERROR,"freenect_start_video() failed\n");
+    }
+    else if(0 != freenect_start_depth(m_kinect_dev))
+    {
+        LOG(LOG_ERROR,"freenect_start_video() failed\n");
+    }
+    else if(0 != CyclicTask::Start())
+    {
+        LOG(LOG_ERROR,"CyclicTask::Start() failed\n");
+    }
+    else
+    {
+        LOG(LOG_INFO,"Kinect started successfully\n");
+        retval = 0;
+    }
+    
 
-    /* Call parent Start to start the execution thread*/
-    CyclicTask::Start();
-
-    return 0;
+    return retval;
 }
 
 int Kinect::Stop()
 {
-    /* Call parent Stop to start the execution thread*/
-    CyclicTask::Stop();
+    int retval = 0;
 
-    if(m_kinect_dev)
+    /* Call parent Stop to stop the execution thread*/
+    if( 0 != CyclicTask::Stop())
     {
-        freenect_stop_depth(m_kinect_dev);
-        freenect_stop_video(m_kinect_dev);
+        LOG(LOG_ERROR,"CyclicTask::Stop() failed\n");
+        retval = -1;
+    }
+    if(0 != freenect_stop_depth(m_kinect_dev))
+    {
+        LOG(LOG_ERROR,"freenect_stop_depth() failed\n");
+        retval = -1;
+    }
+    if(0 != freenect_stop_video(m_kinect_dev))
+    {
+        LOG(LOG_ERROR,"freenect_stop_depth() failed\n");
+        retval = -1;
     }
 
-    return 0;
+    if(retval == 0)
+    {
+        LOG(LOG_INFO,"Kinect stopped successfully\n");
+    }
+
+    return retval;
 }
 
 void Kinect::ExecutionCycle()
@@ -160,12 +224,12 @@ void Kinect::ExecutionCycle()
     freenect_process_events(m_kinect_ctx);
 }
 
-void Kinect::GetDepthFrame(std::shared_ptr<KinectFrame> frame)
+void Kinect::GetDepthFrame(KinectFrame& frame)
 {
     std::unique_lock<std::mutex> ulock(m_depth_mutex);
 
     /* Compare the given timestamp with the current, if it's the same must wait to the next frame */
-    if(frame->m_timestamp == m_depth_frame->m_timestamp)
+    if(frame.m_timestamp == m_depth_frame->m_timestamp)
     {
         if(m_depth_cv.wait_for(ulock, std::chrono::seconds(1)) == std::cv_status::timeout)
         {
@@ -173,15 +237,15 @@ void Kinect::GetDepthFrame(std::shared_ptr<KinectFrame> frame)
         }
     }
 
-    *frame = *m_depth_frame;
+    frame = *m_depth_frame;
 }
 
-void Kinect::GetVideoFrame(std::shared_ptr<KinectFrame> frame)
+void Kinect::GetVideoFrame(KinectFrame& frame)
 {
     std::unique_lock<std::mutex> ulock(m_video_mutex);
 
     /*  Compare the given timestamp with the current, if it's the same must wait to the next frame */
-    if(frame->m_timestamp == m_video_frame->m_timestamp)
+    if(frame.m_timestamp == m_video_frame->m_timestamp)
     {
         if(m_video_cv.wait_for(ulock, std::chrono::seconds(1)) == std::cv_status::timeout)
         {
@@ -189,7 +253,7 @@ void Kinect::GetVideoFrame(std::shared_ptr<KinectFrame> frame)
         }
     }
 
-    *frame = *m_video_frame;
+    frame = *m_video_frame;
 }
 
 void Kinect::DepthCallback(freenect_device* dev, void* data, uint32_t timestamp)
@@ -208,7 +272,7 @@ void Kinect::VideoCallback(freenect_device* dev, void* data, uint32_t timestamp)
     m_video_cv.notify_all();
 }
 
-bool Kinect::ChangeTilt(double tilt_angle)
+int Kinect::ChangeTilt(double tilt_angle)
 {
     int retval = 0; 
 
@@ -217,6 +281,11 @@ bool Kinect::ChangeTilt(double tilt_angle)
         LOG(LOG_WARNING,"freenect_set_tilt_degs() failed\n");
         retval = -1;
     }
+    else
+    {
+        LOG(LOG_DEBUG,"Kinect::ChangeTilt() success\n");
+    }
+
     return retval;
 }
 
@@ -227,6 +296,10 @@ int Kinect::ChangeLedColor(freenect_led_options color)
     {
         LOG(LOG_WARNING,"freenect_set_led() failed\n");
         retval = -1;
+    }
+    else
+    {
+        LOG(LOG_DEBUG,"Kinect::ChangeLedColor() success\n");
     }
     return retval;
 }

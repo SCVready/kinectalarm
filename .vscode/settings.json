@@ -60,7 +60,8 @@
         "thread": "cpp",
         "condition_variable": "cpp",
         "iomanip": "cpp",
-        "mutex": "cpp"
+        "mutex": "cpp",
+        "future": "cpp"
     },
     "kanban": {
         "openOnStartup": true

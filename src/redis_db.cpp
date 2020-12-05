@@ -13,8 +13,8 @@
 /*******************************************************************
  * Global variables
  *******************************************************************/
-redisContext *c				= NULL;
-redisAsyncContext *c_async	= NULL;
+redisContext *c             = NULL;
+redisAsyncContext *c_async  = NULL;
 pthread_mutex_t redis_context_mutex;
 struct event_base *base;
 
@@ -202,6 +202,3 @@ int async_redis_event_loopbreak()
     event_base_loopbreak(base);
     return 0;
 }
-
-
-
