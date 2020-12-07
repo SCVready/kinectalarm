@@ -31,7 +31,7 @@ Alarm::Alarm()
     /* LiveView config */
     lvw_conf.is_active      = false;
     lvw_conf.tilt           = 0;
-    lvw_conf.brightness     = 0;
+    lvw_conf.brightness     = 750;
     lvw_conf.contrast       = 0;
 
     /* New implementation */
