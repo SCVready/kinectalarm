@@ -12,4 +12,8 @@ add_executable(kinect_tests
 
 target_link_libraries(kinect_tests gtest gtest_main pthread gmock)
 
+######## Compile definitions ########
+target_compile_definitions(kinect_tests PRIVATE __STDC_CONSTANT_MACROS)
+target_compile_definitions(kinect_tests PRIVATE "$<$<CONFIG:DEBUG>:DEBUG>")
+
 target_include_directories(kinect_tests PRIVATE "../inc")

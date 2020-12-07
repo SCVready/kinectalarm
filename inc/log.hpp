@@ -23,6 +23,4 @@
     #define LOG(log_level,format, ...) printf(format, ## __VA_ARGS__)
 #endif
 
-
-
 #endif /* SRC_LOG_H_ */

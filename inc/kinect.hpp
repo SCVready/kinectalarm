@@ -32,7 +32,7 @@ public:
      * @brief Constructor
      * 
      */
-    Kinect();
+    Kinect(uint32_t timeout_ms);
 
     /**
      * @brief Destructor
@@ -103,9 +103,11 @@ private:
     /* Flags */
     bool m_is_kinect_initialized;
 
+    /* Get frames timeout in ms */
+    static uint32_t m_timeout_ms;
+
     /* Frames */
-    static std::unique_ptr<KinectFrame> m_depth_frame;
-    static std::unique_ptr<KinectFrame> m_video_frame;
+    static std::unique_ptr<KinectFrame> m_depth_frame, m_video_frame;
 
     /* Concurrency safe */
     static std::mutex m_depth_mutex, m_video_mutex;

@@ -11,6 +11,11 @@
 #include "alarm.hpp"
 
 /*******************************************************************
+ * Defines
+ *******************************************************************/
+#define KINECT_GETFRAMES_TIMEOUT_MS 1000
+
+/*******************************************************************
  * Class definition
  *******************************************************************/
 Alarm::Alarm()
@@ -30,7 +35,7 @@ Alarm::Alarm()
     lvw_conf.contrast       = 0;
 
     /* New implementation */
-    m_kinect             = std::make_shared<Kinect>();
+    m_kinect             = std::make_shared<Kinect>(KINECT_GETFRAMES_TIMEOUT_MS);
     m_liveview_observer  = std::make_shared<AlarmLiveviewObserver>(*this);
     m_liveview           = std::make_unique<Liveview>(m_kinect, m_liveview_observer, 100);
     m_detection_observer = std::make_shared<AlarmDetectionObserver>(*this);

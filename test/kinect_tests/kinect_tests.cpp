@@ -1,4 +1,13 @@
+/**
+ * @author Alejandro Solozabal
+ *
+ * @file kinect_test.cpp
+ *
+ */
 
+/*******************************************************************
+ * Includes
+ *******************************************************************/
 #include <future>
 #include <functional>
 #include <atomic>
@@ -7,6 +16,15 @@
 #include "../../inc/kinect.hpp"
 #include "mocks/libfreenect_mock.hpp"
 
+/*******************************************************************
+ * Defines
+ *******************************************************************/
+#define KINECT_GETFRAMES_TIMEOUT_MS 10
+#define KINECT_FRAMES_UPDATE_CYCLE_MS 1
+
+/*******************************************************************
+ * Test class definition
+ *******************************************************************/
 using ::testing::_;
 using ::testing::Return; 
 using ::testing::NiceMock;
@@ -21,7 +39,7 @@ public:
     Kinect kinect;
     std::thread update_frames_thread;
 
-    KinectTest()
+    KinectTest() : kinect(KINECT_GETFRAMES_TIMEOUT_MS)
     {
         libfreenect_mock = new NiceMock<MockLibFreenect>();
     }
@@ -45,7 +63,7 @@ public:
         {
             while(kinect_update_frame)
             {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                std::this_thread::sleep_for(std::chrono::milliseconds(KINECT_FRAMES_UPDATE_CYCLE_MS));
                 SetKinectsLastDepthFrame(frame);
             }
         };
@@ -61,10 +79,14 @@ public:
 private:
 };
 
+
+/*******************************************************************
+ * Test cases
+ *******************************************************************/
 TEST_F(KinectTest, Contructor)
 {
     ASSERT_NO_THROW(
-        Kinect kinect;
+        Kinect kinect(KINECT_GETFRAMES_TIMEOUT_MS);
     );
 }
 
@@ -259,8 +281,6 @@ TEST_F(KinectTest, GetDepthFrameWithSameTimestampWaitsNextFrame)
     SetKinectsLastDepthFrame(initial_frame);
 
     StartUpdatingKinectsLastDepthFrame(updated_frame);
-
-    kinect.GetDepthFrame(frame);
 
     kinect.GetDepthFrame(frame);
 

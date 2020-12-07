@@ -22,18 +22,22 @@ std::unique_ptr<KinectFrame> Kinect::m_video_frame;
 std::mutex Kinect::m_depth_mutex, Kinect::m_video_mutex;
 std::condition_variable Kinect::m_depth_cv, Kinect::m_video_cv;
 
+uint32_t Kinect::m_timeout_ms;
+
 /*******************************************************************
  * Class definition
  *******************************************************************/
-Kinect::Kinect() : CyclicTask("Kinect", 0)
+Kinect::Kinect(uint32_t timeout_ms) : CyclicTask("Kinect", 0)
 {
     /* Members initialization */
     m_is_kinect_initialized = false;
     m_kinect_ctx            = NULL;
     m_kinect_dev            = NULL;
+    m_timeout_ms            = timeout_ms;
 
     m_depth_frame = std::make_unique<KinectFrame>(DEPTH_WIDTH, DEPTH_HEIGHT);
     m_video_frame = std::make_unique<KinectFrame>(VIDEO_WIDTH, VIDEO_HEIGHT);
+
 }
 
 Kinect::~Kinect()
@@ -231,9 +235,9 @@ void Kinect::GetDepthFrame(KinectFrame& frame)
     /* Compare the given timestamp with the current, if it's the same must wait to the next frame */
     if(frame.m_timestamp == m_depth_frame->m_timestamp)
     {
-        if(m_depth_cv.wait_for(ulock, std::chrono::seconds(1)) == std::cv_status::timeout)
+        if(m_depth_cv.wait_for(ulock, std::chrono::milliseconds(m_timeout_ms)) == std::cv_status::timeout)
         {
-            LOG(LOG_WARNING,"GetDepthFrame() failed to acquire a frame in 1 second\n");
+            LOG(LOG_WARNING,"GetDepthFrame() failed to acquire a frame in %u ms\n", m_timeout_ms);
         }
     }
 
@@ -247,9 +251,9 @@ void Kinect::GetVideoFrame(KinectFrame& frame)
     /*  Compare the given timestamp with the current, if it's the same must wait to the next frame */
     if(frame.m_timestamp == m_video_frame->m_timestamp)
     {
-        if(m_video_cv.wait_for(ulock, std::chrono::seconds(1)) == std::cv_status::timeout)
+        if(m_video_cv.wait_for(ulock, std::chrono::milliseconds(m_timeout_ms)) == std::cv_status::timeout)
         {
-            LOG(LOG_WARNING,"GetVideoFrame() failed to acquire a frame in 1 second\n");
+            LOG(LOG_WARNING,"GetVideoFrame() failed to acquire a frame in %u ms\n", m_timeout_ms);
         }
     }
 
