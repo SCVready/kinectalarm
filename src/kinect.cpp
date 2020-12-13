@@ -169,8 +169,8 @@ int Kinect::Start()
     int retval = -1;
 
     /* Initialize frame time-stamps */
-    m_depth_frame->m_timestamp = 0;
-    m_video_frame->m_timestamp = 0;
+    m_depth_frame->SetTimestamp(0);
+    m_video_frame->SetTimestamp(0);
 
     if(0 != freenect_start_video(m_kinect_dev))
     {
@@ -233,7 +233,7 @@ void Kinect::GetDepthFrame(KinectFrame& frame)
     std::unique_lock<std::mutex> ulock(m_depth_mutex);
 
     /* Compare the given timestamp with the current, if it's the same must wait to the next frame */
-    if(frame.m_timestamp == m_depth_frame->m_timestamp)
+    if(frame.GetTimestamp() == m_depth_frame->GetTimestamp())
     {
         if(m_depth_cv.wait_for(ulock, std::chrono::milliseconds(m_timeout_ms)) == std::cv_status::timeout)
         {
@@ -249,7 +249,7 @@ void Kinect::GetVideoFrame(KinectFrame& frame)
     std::unique_lock<std::mutex> ulock(m_video_mutex);
 
     /*  Compare the given timestamp with the current, if it's the same must wait to the next frame */
-    if(frame.m_timestamp == m_video_frame->m_timestamp)
+    if(frame.GetTimestamp() == m_video_frame->GetTimestamp())
     {
         if(m_video_cv.wait_for(ulock, std::chrono::milliseconds(m_timeout_ms)) == std::cv_status::timeout)
         {
@@ -263,16 +263,14 @@ void Kinect::GetVideoFrame(KinectFrame& frame)
 void Kinect::DepthCallback(freenect_device* dev, void* data, uint32_t timestamp)
 {
     std::unique_lock<std::mutex> ulock(m_depth_mutex);
-    m_depth_frame->Fill(static_cast<uint16_t*>(data));
-    m_depth_frame->m_timestamp = timestamp;
+    m_depth_frame->Fill(static_cast<uint16_t*>(data), timestamp);
     m_depth_cv.notify_all();
 }
 
 void Kinect::VideoCallback(freenect_device* dev, void* data, uint32_t timestamp)
 {
     std::unique_lock<std::mutex> ulock(m_video_mutex);
-    m_video_frame->Fill(static_cast<uint16_t*>(data));
-    m_video_frame->m_timestamp = timestamp;
+    m_video_frame->Fill(static_cast<uint16_t*>(data), timestamp);
     m_video_cv.notify_all();
 }
 

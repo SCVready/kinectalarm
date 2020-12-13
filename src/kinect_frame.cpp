@@ -39,14 +39,14 @@ KinectFrame::~KinectFrame()
 
 KinectFrame& KinectFrame::operator=(const KinectFrame& other)
 {
-    this->Fill(other.GetDataPointer());
-    this->m_timestamp = other.m_timestamp;
+    this->Fill(other.GetDataPointer(), other.GetTimestamp());
     return *this;
 }
 
-void KinectFrame::Fill(const uint16_t* frame_data)
+void KinectFrame::Fill(const uint16_t* frame_data, uint32_t timestamp)
 {
     m_data.assign(frame_data, frame_data + (m_width * m_height));
+    m_timestamp = timestamp;
 }
 
 const uint16_t*  KinectFrame::GetDataPointer() const
@@ -58,7 +58,7 @@ uint32_t KinectFrame::ComputeDifferences(KinectFrame& other, uint32_t tolerance)
 {
     uint32_t count = 0;
 
-    for(int i = 0; i < (DEPTH_WIDTH * DEPTH_HEIGHT); i++)
+    for(uint32_t i = 0; i < (m_width * m_height); i++)
     {
         if((m_data[i] != BLANK_DEPTH_PIXEL) && (other.m_data[i] != BLANK_DEPTH_PIXEL))
         {
@@ -69,4 +69,14 @@ uint32_t KinectFrame::ComputeDifferences(KinectFrame& other, uint32_t tolerance)
         }
     }
     return count;
+}
+
+uint32_t KinectFrame::GetTimestamp() const
+{
+    return m_timestamp;
+}
+
+void KinectFrame::SetTimestamp(uint32_t timestamp)
+{
+    m_timestamp = timestamp;
 }

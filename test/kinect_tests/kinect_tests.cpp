@@ -54,7 +54,7 @@ public:
     {
         libfreenect_mock->m_depth_cb(libfreenect_mock->m_dev,
                                      const_cast<void*>(reinterpret_cast<const void*>(frame.GetDataPointer())),
-                                     frame.m_timestamp);
+                                     frame.GetTimestamp());
     }
 
     void StartUpdatingKinectsLastDepthFrame(KinectFrame& frame)
@@ -229,8 +229,8 @@ TEST_F(KinectTest, GetDepthFrameWithDifferentTimestamp)
     KinectFrame frame(DEPTH_WIDTH, DEPTH_HEIGHT);
     KinectFrame test_frame(DEPTH_WIDTH, DEPTH_HEIGHT);
 
-    frame.m_timestamp      = 1111;
-    test_frame.m_timestamp = 2222;
+    frame.SetTimestamp(1111);
+    test_frame.SetTimestamp(2222);
 
     ASSERT_EQ(kinect.Init(), 0);
     ASSERT_EQ(kinect.Start(), 0);
@@ -239,7 +239,7 @@ TEST_F(KinectTest, GetDepthFrameWithDifferentTimestamp)
 
     kinect.GetDepthFrame(frame);
 
-    EXPECT_EQ(frame.m_timestamp, 2222);
+    EXPECT_EQ(frame.GetTimestamp(), 2222);
 
     ASSERT_EQ(kinect.Stop(), 0);
 }
@@ -249,8 +249,8 @@ TEST_F(KinectTest, GetDepthFrameWithSameTimestampTimeout)
     KinectFrame frame(DEPTH_WIDTH, DEPTH_HEIGHT);
     KinectFrame test_frame(DEPTH_WIDTH, DEPTH_HEIGHT);
 
-    frame.m_timestamp      = 1111;
-    test_frame.m_timestamp = 1111;
+    frame.SetTimestamp(1111);
+    test_frame.SetTimestamp(1111);
 
     ASSERT_EQ(kinect.Init(), 0);
     ASSERT_EQ(kinect.Start(), 0);
@@ -268,9 +268,9 @@ TEST_F(KinectTest, GetDepthFrameWithSameTimestampWaitsNextFrame)
     KinectFrame initial_frame(DEPTH_WIDTH, DEPTH_HEIGHT);
     KinectFrame updated_frame(DEPTH_WIDTH, DEPTH_HEIGHT);
 
-    frame.m_timestamp         = 1111;
-    initial_frame.m_timestamp = 1111;
-    updated_frame.m_timestamp = 2222;
+    frame.SetTimestamp(1111);
+    initial_frame.SetTimestamp(1111);
+    updated_frame.SetTimestamp(2222);
 
     ASSERT_EQ(kinect.Init(), 0);
     ASSERT_EQ(kinect.Start(), 0);
@@ -286,7 +286,7 @@ TEST_F(KinectTest, GetDepthFrameWithSameTimestampWaitsNextFrame)
 
     StopUpdatingKinectsLastDepthFrame();
 
-    EXPECT_EQ(frame.m_timestamp, 2222);
+    EXPECT_EQ(frame.GetTimestamp(), 2222);
 
     EXPECT_EQ(kinect.Stop(), 0);
 }
