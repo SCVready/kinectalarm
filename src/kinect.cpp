@@ -16,8 +16,8 @@
 /*******************************************************************
  * Static variables
  *******************************************************************/
-std::unique_ptr<KinectFrame> Kinect::m_depth_frame;
-std::unique_ptr<KinectFrame> Kinect::m_video_frame;
+std::unique_ptr<KinectDepthFrame> Kinect::m_depth_frame;
+std::unique_ptr<KinectVideoFrame> Kinect::m_video_frame;
 
 std::mutex Kinect::m_depth_mutex, Kinect::m_video_mutex;
 std::condition_variable Kinect::m_depth_cv, Kinect::m_video_cv;
@@ -35,9 +35,8 @@ Kinect::Kinect(uint32_t timeout_ms) : CyclicTask("Kinect", 0)
     m_kinect_dev            = NULL;
     m_timeout_ms            = timeout_ms;
 
-    m_depth_frame = std::make_unique<KinectFrame>(DEPTH_WIDTH, DEPTH_HEIGHT);
-    m_video_frame = std::make_unique<KinectFrame>(VIDEO_WIDTH, VIDEO_HEIGHT);
-
+    m_depth_frame = std::make_unique<KinectDepthFrame>(DEPTH_WIDTH, DEPTH_HEIGHT);
+    m_video_frame = std::make_unique<KinectVideoFrame>(VIDEO_WIDTH, VIDEO_HEIGHT);
 }
 
 Kinect::~Kinect()
@@ -228,7 +227,7 @@ void Kinect::ExecutionCycle()
     freenect_process_events(m_kinect_ctx);
 }
 
-void Kinect::GetDepthFrame(KinectFrame& frame)
+void Kinect::GetDepthFrame(KinectDepthFrame& frame)
 {
     std::unique_lock<std::mutex> ulock(m_depth_mutex);
 
@@ -244,7 +243,7 @@ void Kinect::GetDepthFrame(KinectFrame& frame)
     frame = *m_depth_frame;
 }
 
-void Kinect::GetVideoFrame(KinectFrame& frame)
+void Kinect::GetVideoFrame(KinectVideoFrame& frame)
 {
     std::unique_lock<std::mutex> ulock(m_video_mutex);
 

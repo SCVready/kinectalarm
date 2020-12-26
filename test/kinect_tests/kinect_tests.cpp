@@ -50,14 +50,14 @@ public:
         delete static_cast<NiceMock<MockLibFreenect>*>(libfreenect_mock);
     }
 
-    void SetKinectsLastDepthFrame(KinectFrame& frame)
+    void SetKinectsLastDepthFrame(KinectDepthFrame& frame)
     {
         libfreenect_mock->m_depth_cb(libfreenect_mock->m_dev,
                                      const_cast<void*>(reinterpret_cast<const void*>(frame.GetDataPointer())),
                                      frame.GetTimestamp());
     }
 
-    void StartUpdatingKinectsLastDepthFrame(KinectFrame& frame)
+    void StartUpdatingKinectsLastDepthFrame(KinectDepthFrame& frame)
     {
         auto func = [this, &frame]
         {
@@ -226,51 +226,51 @@ TEST_F(KinectTest, StopFailsOnFreenectStopVideo)
 
 TEST_F(KinectTest, GetDepthFrameWithDifferentTimestamp)
 {
-    KinectFrame frame(DEPTH_WIDTH, DEPTH_HEIGHT);
-    KinectFrame test_frame(DEPTH_WIDTH, DEPTH_HEIGHT);
+    KinectDepthFrame depth_frame(DEPTH_WIDTH, DEPTH_HEIGHT);
+    KinectDepthFrame test_depth_frame(DEPTH_WIDTH, DEPTH_HEIGHT);
 
-    frame.SetTimestamp(1111);
-    test_frame.SetTimestamp(2222);
+    depth_frame.SetTimestamp(1111);
+    test_depth_frame.SetTimestamp(2222);
 
     ASSERT_EQ(kinect.Init(), 0);
     ASSERT_EQ(kinect.Start(), 0);
 
-    SetKinectsLastDepthFrame(test_frame);
+    SetKinectsLastDepthFrame(test_depth_frame);
 
-    kinect.GetDepthFrame(frame);
+    kinect.GetDepthFrame(depth_frame);
 
-    EXPECT_EQ(frame.GetTimestamp(), 2222);
+    EXPECT_EQ(depth_frame.GetTimestamp(), 2222);
 
     ASSERT_EQ(kinect.Stop(), 0);
 }
 
 TEST_F(KinectTest, GetDepthFrameWithSameTimestampTimeout)
 {
-    KinectFrame frame(DEPTH_WIDTH, DEPTH_HEIGHT);
-    KinectFrame test_frame(DEPTH_WIDTH, DEPTH_HEIGHT);
+    KinectDepthFrame depth_frame(DEPTH_WIDTH, DEPTH_HEIGHT);
+    KinectDepthFrame test_depth_frame(DEPTH_WIDTH, DEPTH_HEIGHT);
 
-    frame.SetTimestamp(1111);
-    test_frame.SetTimestamp(1111);
+    depth_frame.SetTimestamp(1111);
+    test_depth_frame.SetTimestamp(1111);
 
     ASSERT_EQ(kinect.Init(), 0);
     ASSERT_EQ(kinect.Start(), 0);
 
-    SetKinectsLastDepthFrame(test_frame);
+    SetKinectsLastDepthFrame(test_depth_frame);
 
-    kinect.GetDepthFrame(frame);
+    kinect.GetDepthFrame(depth_frame);
 
     ASSERT_EQ(kinect.Stop(), 0);
 }
 
 TEST_F(KinectTest, GetDepthFrameWithSameTimestampWaitsNextFrame)
 {
-    KinectFrame frame(DEPTH_WIDTH, DEPTH_HEIGHT);
-    KinectFrame initial_frame(DEPTH_WIDTH, DEPTH_HEIGHT);
-    KinectFrame updated_frame(DEPTH_WIDTH, DEPTH_HEIGHT);
+    KinectDepthFrame depth_frame(DEPTH_WIDTH, DEPTH_HEIGHT);
+    KinectDepthFrame initial_depth_frame(DEPTH_WIDTH, DEPTH_HEIGHT);
+    KinectDepthFrame updated_depth_frame(DEPTH_WIDTH, DEPTH_HEIGHT);
 
-    frame.SetTimestamp(1111);
-    initial_frame.SetTimestamp(1111);
-    updated_frame.SetTimestamp(2222);
+    depth_frame.SetTimestamp(1111);
+    initial_depth_frame.SetTimestamp(1111);
+    updated_depth_frame.SetTimestamp(2222);
 
     ASSERT_EQ(kinect.Init(), 0);
     ASSERT_EQ(kinect.Start(), 0);
@@ -278,15 +278,15 @@ TEST_F(KinectTest, GetDepthFrameWithSameTimestampWaitsNextFrame)
     EXPECT_CALL(*libfreenect_mock, freenect_process_events(_)).
         WillRepeatedly(Return(0));
 
-    SetKinectsLastDepthFrame(initial_frame);
+    SetKinectsLastDepthFrame(initial_depth_frame);
 
-    StartUpdatingKinectsLastDepthFrame(updated_frame);
+    StartUpdatingKinectsLastDepthFrame(updated_depth_frame);
 
-    kinect.GetDepthFrame(frame);
+    kinect.GetDepthFrame(depth_frame);
 
     StopUpdatingKinectsLastDepthFrame();
 
-    EXPECT_EQ(frame.GetTimestamp(), 2222);
+    EXPECT_EQ(depth_frame.GetTimestamp(), 2222);
 
     EXPECT_EQ(kinect.Stop(), 0);
 }

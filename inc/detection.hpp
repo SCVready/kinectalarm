@@ -31,7 +31,7 @@ class DetectionObserver
 public:
     virtual void IntrusionStarted() = 0;
     virtual void IntrusionStopped(uint32_t det_num, uint32_t frame_num) = 0;
-    virtual void IntrusionFrame(std::shared_ptr<KinectFrame> frame, uint32_t det_num, uint32_t frame_num) = 0;
+    virtual void IntrusionFrame(std::shared_ptr<KinectVideoFrame> frame, uint32_t det_num, uint32_t frame_num) = 0;
 };
 
 class Detection : public CyclicTask
@@ -64,8 +64,8 @@ private:
 
     State m_current_state;
     std::chrono::time_point<std::chrono::system_clock> m_intrusion_cooldown;
-    std::shared_ptr<KinectFrame> m_depth_frame_reff;
-    std::shared_ptr<KinectFrame> m_depth_frame;
+    std::shared_ptr<KinectDepthFrame> m_depth_frame_reff;
+    std::shared_ptr<KinectDepthFrame> m_depth_frame;
     uint32_t m_timestamp;
     std::shared_ptr<Kinect> m_kinect;
     uint8_t* liveview_jpeg;
@@ -79,11 +79,11 @@ class RefreshReferenceFrame : public CyclicTask
 {
 public:
     RefreshReferenceFrame(std::shared_ptr<Kinect> kinect,
-                          std::shared_ptr<KinectFrame> depth_frame_reff,
+                          std::shared_ptr<KinectDepthFrame> depth_frame_reff,
                           uint32_t loop_period_ms);
     void ExecutionCycle() override;
 private:
-    std::shared_ptr<KinectFrame> m_depth_frame_reff;
+    std::shared_ptr<KinectDepthFrame> m_depth_frame_reff;
     std::shared_ptr<Kinect> m_kinect;
 };
 
@@ -98,7 +98,7 @@ public:
     uint32_t Stop();
 private:
     Detection& m_detection;
-    std::shared_ptr<KinectFrame> m_frame;
+    std::shared_ptr<KinectVideoFrame> m_frame;
     std::shared_ptr<Kinect> m_kinect;
     uint32_t m_curr_detection_num;
     uint32_t m_frame_counter;

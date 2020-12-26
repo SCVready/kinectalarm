@@ -443,12 +443,12 @@ AlarmLiveviewObserver::AlarmLiveviewObserver(Alarm& alarm) :
     ;
 }
 
-void AlarmLiveviewObserver::NewFrame(std::shared_ptr<KinectFrame> frame)
+void AlarmLiveviewObserver::NewFrame(std::shared_ptr<KinectVideoFrame> frame)
 {
     static std::vector<uint8_t> liveview_jpeg;
 
     /* Convert to jpeg */
-    save_video_frame_to_jpeg_inmemory(frame->GetDataPointer(), liveview_jpeg, m_alarm.lvw_conf.brightness, m_alarm.lvw_conf.contrast);
+    frame->SaveToJpegInMemory(liveview_jpeg, m_alarm.lvw_conf.brightness, m_alarm.lvw_conf.contrast);
 
     /* Convert to base64 */
     char *base64_jpeg_frame = base64encode(&m_alarm.m_c, liveview_jpeg.data(), liveview_jpeg.size());
@@ -499,14 +499,14 @@ void AlarmDetectionObserver::IntrusionStopped(uint32_t det_num, uint32_t frame_n
     system(command);
 }
 
-void AlarmDetectionObserver::IntrusionFrame(std::shared_ptr<KinectFrame> frame, uint32_t det_num, uint32_t frame_num)
+void AlarmDetectionObserver::IntrusionFrame(std::shared_ptr<KinectVideoFrame> frame, uint32_t det_num, uint32_t frame_num)
 {
     /* Save the frame to JPEG */
     char filepath[PATH_MAX];
-    
+
     sprintf(filepath,"%s/%u_capture_%d.jpeg",DETECTION_PATH, det_num, frame_num);
 
-    if(save_video_frame_to_jpeg(frame->GetDataPointer(), filepath, m_alarm.lvw_conf.brightness, m_alarm.lvw_conf.contrast))
+    if(frame->SaveToJpegInFile(filepath, m_alarm.lvw_conf.brightness, m_alarm.lvw_conf.contrast))
     {
         LOG(LOG_ERR,"Error saving video frame\n");
     }

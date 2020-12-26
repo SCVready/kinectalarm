@@ -31,7 +31,6 @@
 #include "kinect.hpp"
 #include "log.hpp"
 #include "config.hpp"
-#include "jpeg.hpp"
 #include "redis_db.hpp"
 #include "sqlite_db.hpp"
 #include "video_stream.hpp"
@@ -101,7 +100,7 @@ public:
     AlarmDetectionObserver(Alarm& alarm);
     void IntrusionStarted() override;
     void IntrusionStopped(uint32_t det_num, uint32_t frame_num) override;
-    void IntrusionFrame(std::shared_ptr<KinectFrame> frame, uint32_t det_num, uint32_t frame_num) override;
+    void IntrusionFrame(std::shared_ptr<KinectVideoFrame> frame, uint32_t det_num, uint32_t frame_num) override;
 private:
     Alarm& m_alarm;
 };
@@ -110,7 +109,7 @@ class AlarmLiveviewObserver : public LiveviewObserver
 {
 public:
     AlarmLiveviewObserver(Alarm& alarm);
-    void NewFrame(std::shared_ptr<KinectFrame> frame) override;
+    void NewFrame(std::shared_ptr<KinectVideoFrame> frame) override;
 private:
     Alarm& m_alarm;
 };

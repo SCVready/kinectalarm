@@ -69,14 +69,14 @@ public:
      * 
      * @param[in/out] frame : reference to a frame object
      */
-    void GetDepthFrame(KinectFrame& frame);
+    void GetDepthFrame(KinectDepthFrame& frame);
 
     /**
      * @brief Synchonous function to get a depth frame.
      * 
      * @param[in/out] frame : reference to a frame object
      */
-    void GetVideoFrame(KinectFrame& frame);
+    void GetVideoFrame(KinectVideoFrame& frame);
 
     /**
      * @brief To get change kinect's tilt
@@ -107,7 +107,8 @@ private:
     static uint32_t m_timeout_ms;
 
     /* Frames */
-    static std::unique_ptr<KinectFrame> m_depth_frame, m_video_frame;
+    static std::unique_ptr<KinectDepthFrame> m_depth_frame;
+    static std::unique_ptr<KinectVideoFrame> m_video_frame;
 
     /* Concurrency safe */
     static std::mutex m_depth_mutex, m_video_mutex;

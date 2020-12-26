@@ -20,8 +20,8 @@ Detection::Detection(std::shared_ptr<Kinect> kinect, std::shared_ptr<DetectionOb
     m_detection_num(0),
     m_detection_observer(detection_observer)
 {
-    m_depth_frame_reff        = std::make_unique<KinectFrame>(DEPTH_WIDTH,DEPTH_HEIGHT);
-    m_depth_frame             = std::make_unique<KinectFrame>(DEPTH_WIDTH,DEPTH_HEIGHT);
+    m_depth_frame_reff        = std::make_unique<KinectDepthFrame>(DEPTH_WIDTH,DEPTH_HEIGHT);
+    m_depth_frame             = std::make_unique<KinectDepthFrame>(DEPTH_WIDTH,DEPTH_HEIGHT);
     m_refresh_reference_frame = std::make_unique<RefreshReferenceFrame>(kinect, m_depth_frame_reff, 1000);
     m_take_video_frames       = std::make_unique<TakeVideoFrames>(*this, kinect, 200);
 }
@@ -99,7 +99,7 @@ void Detection::ExecutionCycle()
 }
 
 RefreshReferenceFrame::RefreshReferenceFrame(std::shared_ptr<Kinect> kinect,
-                                             std::shared_ptr<KinectFrame> depth_frame_reff,
+                                             std::shared_ptr<KinectDepthFrame> depth_frame_reff,
                                              uint32_t loop_period_ms) :
     CyclicTask("RefreshReferenceFrame", loop_period_ms),
     m_depth_frame_reff(depth_frame_reff),
@@ -122,7 +122,7 @@ TakeVideoFrames::TakeVideoFrames(Detection& detection,
     m_curr_detection_num(0),
     m_frame_counter(0)
 {
-    m_frame = std::make_unique<KinectFrame>(VIDEO_WIDTH, VIDEO_HEIGHT);
+    m_frame = std::make_unique<KinectVideoFrame>(VIDEO_WIDTH, VIDEO_HEIGHT);
 }
 
 void TakeVideoFrames::Start(uint32_t curr_detection_num)

@@ -11,6 +11,7 @@
 /*******************************************************************
  * Includes
  *******************************************************************/
+#include <string>
 #include <vector>
 
 /*******************************************************************
@@ -26,7 +27,6 @@ class KinectFrame
 public:
     /**
      * @brief Constructor
-     *
      *
      * @param[in] width : pixel width of the frame
      * @param[in] height : pixel height of the frame
@@ -66,19 +66,6 @@ public:
      */
     const uint16_t* GetDataPointer() const;
 
-    /* TODO: its only valid for depth frames */
-    /* TODO: its only valid for frames with same dimensions */
-    /**
-     * @brief Compute differences betwen two depth frames. It done by comparing pixel by pixel the absolute difference
-     *        and returning the number of pixels that exceed the tolerance
-     *
-     * @param[in] frame : frame to compare with
-     * @param[in] tolerance : minumum distance value betwen pixel 
-     *
-     * @return number of pixel that exceeded tolerance
-     */
-    uint32_t ComputeDifferences(KinectFrame& frame, uint32_t tolerance);
-
     /**
      * @brief Get the timestamp associated with the frame
      * 
@@ -93,11 +80,66 @@ public:
      */
     void SetTimestamp(uint32_t timestamp);
 
-private:
+    /**
+     * @brief Save the frame to file in JPEG format.
+     *
+     * @param[in] path : path for saving the JPEG file
+     * @param[in] brightness : brightness adjusts for the JPEG image
+     * @param[in] contrast : contrast adjusts for the JPEG image
+     *
+     * @return number of pixel that exceeded tolerance
+     */
+    virtual int SaveToJpegInFile(std::string path, int32_t brightness, int32_t contrast) = 0;
+
+    /**
+     * @brief Save the frame to memory in JPEG format.
+     *
+     * @param[in] jpeg_frame : vector object where the JPEG image will be saved
+     * @param[in] brightness : brightness adjusts for the JPEG image
+     * @param[in] contrast : contrast adjusts for the JPEG image
+     *
+     * @return number of pixel that exceeded tolerance
+     */
+    virtual int SaveToJpegInMemory(std::vector<uint8_t>& jpeg_frame, int32_t brightness, int32_t contrast)  = 0;
+
+protected:
     uint32_t m_timestamp;
     uint32_t m_width;
     uint32_t m_height;
     std::vector<uint16_t> m_data;
+};
+
+class KinectDepthFrame : public KinectFrame
+{
+public:
+    KinectDepthFrame(uint32_t width, uint32_t height);
+    KinectDepthFrame(const KinectDepthFrame& kinect_depth_frame);
+    ~KinectDepthFrame();
+
+    int SaveToJpegInFile(std::string path, int32_t brightness, int32_t contrast) override;
+    int SaveToJpegInMemory(std::vector<uint8_t>& jpeg_frame, int32_t brightness, int32_t contrast) override;
+
+    /**
+     * @brief Compute differences betwen two depth frames. It done by comparing pixel by pixel the absolute difference
+     *        and returning the number of pixels that exceed the tolerance
+     *
+     * @param[in] frame : frame to compare with
+     * @param[in] tolerance : minumum distance value betwen pixel 
+     *
+     * @return number of pixel that exceeded tolerance
+     */
+    uint32_t ComputeDifferences(KinectDepthFrame& frame, uint32_t tolerance);
+};
+
+class KinectVideoFrame : public KinectFrame
+{
+public:
+    KinectVideoFrame(uint32_t width, uint32_t height);
+    KinectVideoFrame(const KinectVideoFrame& kinect_depth_frame);
+    ~KinectVideoFrame();
+
+    int SaveToJpegInFile(std::string path, int32_t brightness, int32_t contrast) override;
+    int SaveToJpegInMemory(std::vector<uint8_t>& jpeg_frame, int32_t brightness, int32_t contrast) override;
 };
 
 #endif /* KINECT_FRAMES_H_ */

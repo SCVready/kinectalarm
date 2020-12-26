@@ -19,7 +19,7 @@ Liveview::Liveview(std::shared_ptr<Kinect> kinect, std::shared_ptr<LiveviewObser
     m_kinect(kinect),
     m_liveview_observer(liveview_observer)
 {
-    m_frame = std::make_unique<KinectFrame>(VIDEO_WIDTH,VIDEO_HEIGHT);
+    m_frame = std::make_unique<KinectVideoFrame>(VIDEO_WIDTH,VIDEO_HEIGHT);
 }
 
 Liveview::~Liveview()
