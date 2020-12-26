@@ -28,6 +28,7 @@
 #include <memory>
 
 #include "global_parameters.hpp"
+#include "kinect_interface.hpp"
 #include "kinect.hpp"
 #include "log.hpp"
 #include "config.hpp"
@@ -109,7 +110,7 @@ class AlarmLiveviewObserver : public LiveviewObserver
 {
 public:
     AlarmLiveviewObserver(Alarm& alarm);
-    void NewFrame(std::shared_ptr<KinectVideoFrame> frame) override;
+    void NewFrame(KinectVideoFrame& frame) override;
 private:
     Alarm& m_alarm;
 };
@@ -232,7 +233,7 @@ private:
     struct sBase64encode_context m_c;
 
     /* Kinect object */
-    std::shared_ptr<Kinect> m_kinect;
+    std::shared_ptr<IKinect> m_kinect;
 
     /* Liveview object */
     std::unique_ptr<Liveview> m_liveview;

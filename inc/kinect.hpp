@@ -17,6 +17,7 @@
 #include <libfreenect/libfreenect.h>
 #include <libfreenect/libfreenect_sync.h>
 
+#include "kinect_interface.hpp"
 #include "cyclic_task.hpp"
 #include "kinect_frame.hpp"
 #include "common.hpp"
@@ -25,75 +26,21 @@
 /*******************************************************************
  * Class declaration
  *******************************************************************/
-class Kinect : public CyclicTask
+class Kinect : public IKinect, public CyclicTask
 {
 public:
-    /**
-     * @brief Constructor
-     * 
-     */
-    Kinect(uint32_t timeout_ms);
-
-    /**
-     * @brief Destructor
-     * 
-     */
+    Kinect();
     virtual ~Kinect();
 
-    /**
-     * @brief Initialization
-     * 
-     */
-    int Init();
-
-    /**
-     * @brief Termination
-     * 
-     */
-    int Term();
-
-    /**
-     * @brief Run kinect image capture
-     * 
-     */
-    int Start();
-
-    /**
-     * @brief Stop kinect image capture
-     * 
-     */
-    int Stop();
-
-    /**
-     * @brief Synchonous function to get a depth frame.
-     * 
-     * @param[in/out] frame : reference to a frame object
-     */
-    void GetDepthFrame(KinectDepthFrame& frame);
-
-    /**
-     * @brief Synchonous function to get a depth frame.
-     * 
-     * @param[in/out] frame : reference to a frame object
-     */
-    void GetVideoFrame(KinectVideoFrame& frame);
-
-    /**
-     * @brief To get change kinect's tilt
-     * 
-     * @param[in] tilt_angle : kinect's tilt angle relative ground , range [-61,61]
-     * 
-     */
-    int ChangeTilt(double tilt_angle);
-
-    /**
-     * @brief To get change kinect's led color
-     * 
-     * @param[in] color : kinect led color options
-     * 
-     * @return 0 on success
-     */
-    int ChangeLedColor(freenect_led_options color);
+    int Init(uint32_t timeout_ms) override;
+    int Term() override;
+    int Start() override;
+    int Stop() override;
+    bool IsRunning() override;
+    void GetDepthFrame(KinectDepthFrame& frame) override;
+    void GetVideoFrame(KinectVideoFrame& frame) override;
+    int ChangeTilt(double tilt_angle) override;
+    int ChangeLedColor(freenect_led_options color) override;
 
 private:
     /* Freenect context strucutres */

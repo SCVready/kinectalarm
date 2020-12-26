@@ -13,7 +13,7 @@
 /*******************************************************************
  * Class definition
  *******************************************************************/
-Detection::Detection(std::shared_ptr<Kinect> kinect, std::shared_ptr<DetectionObserver> detection_observer, uint32_t loop_period_ms) :
+Detection::Detection(std::shared_ptr<IKinect> kinect, std::shared_ptr<DetectionObserver> detection_observer, uint32_t loop_period_ms) :
     CyclicTask("Detection", loop_period_ms),
     m_current_state(State::Idle),
     m_kinect(kinect),
@@ -98,7 +98,7 @@ void Detection::ExecutionCycle()
     }
 }
 
-RefreshReferenceFrame::RefreshReferenceFrame(std::shared_ptr<Kinect> kinect,
+RefreshReferenceFrame::RefreshReferenceFrame(std::shared_ptr<IKinect> kinect,
                                              std::shared_ptr<KinectDepthFrame> depth_frame_reff,
                                              uint32_t loop_period_ms) :
     CyclicTask("RefreshReferenceFrame", loop_period_ms),
@@ -114,7 +114,7 @@ void RefreshReferenceFrame::ExecutionCycle()
 }
 
 TakeVideoFrames::TakeVideoFrames(Detection& detection,
-                                 std::shared_ptr<Kinect> kinect,
+                                 std::shared_ptr<IKinect> kinect,
                                  uint32_t loop_period_ms) :
     CyclicTask("TakeVideoFrames", loop_period_ms),
     m_detection(detection),

@@ -35,7 +35,7 @@ Alarm::Alarm()
     lvw_conf.contrast       = 0;
 
     /* New implementation */
-    m_kinect             = std::make_shared<Kinect>(KINECT_GETFRAMES_TIMEOUT_MS);
+    m_kinect             = std::make_shared<Kinect>();
     m_liveview_observer  = std::make_shared<AlarmLiveviewObserver>(*this);
     m_liveview           = std::make_unique<Liveview>(m_kinect, m_liveview_observer, 100);
     m_detection_observer = std::make_shared<AlarmDetectionObserver>(*this);
@@ -99,7 +99,7 @@ int Alarm::Init()
     }
 
     /* Kinect initialization */
-    if(m_kinect->Init())
+    if(m_kinect->Init(KINECT_GETFRAMES_TIMEOUT_MS))
     {
         LOG(LOG_ERR,"Error: couldn't initialize Kinect\n");
         m_kinect->Term();
@@ -443,12 +443,12 @@ AlarmLiveviewObserver::AlarmLiveviewObserver(Alarm& alarm) :
     ;
 }
 
-void AlarmLiveviewObserver::NewFrame(std::shared_ptr<KinectVideoFrame> frame)
+void AlarmLiveviewObserver::NewFrame(KinectVideoFrame& frame)
 {
     static std::vector<uint8_t> liveview_jpeg;
 
     /* Convert to jpeg */
-    frame->SaveToJpegInMemory(liveview_jpeg, m_alarm.lvw_conf.brightness, m_alarm.lvw_conf.contrast);
+    frame.SaveToJpegInMemory(liveview_jpeg, m_alarm.lvw_conf.brightness, m_alarm.lvw_conf.contrast);
 
     /* Convert to base64 */
     char *base64_jpeg_frame = base64encode(&m_alarm.m_c, liveview_jpeg.data(), liveview_jpeg.size());

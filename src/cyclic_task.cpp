@@ -19,12 +19,10 @@ CyclicTask::CyclicTask(std::string task_name, uint32_t loop_period_ms) :
     m_task_name(task_name),
     m_loop_period_ms(loop_period_ms)
 {
-    ;
 }
 
 CyclicTask::~CyclicTask()
 {
-    ;
 }
 
 int CyclicTask::Start()

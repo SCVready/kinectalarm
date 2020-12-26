@@ -118,7 +118,8 @@ int KinectDepthFrame::SaveToJpegInFile(std::string path, int32_t brightness, int
 
 int KinectDepthFrame::SaveToJpegInMemory(std::vector<uint8_t>& jpeg_frame, int32_t brightness, int32_t contrast)
 {
-    return 0;
+    /* TODO */
+    return 1;
 }
 
 KinectVideoFrame::KinectVideoFrame(uint32_t width, uint32_t height) : KinectFrame(width, height)

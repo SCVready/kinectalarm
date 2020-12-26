@@ -39,7 +39,7 @@ public:
     Kinect kinect;
     std::thread update_frames_thread;
 
-    KinectTest() : kinect(KINECT_GETFRAMES_TIMEOUT_MS)
+    KinectTest() : kinect()
     {
         libfreenect_mock = new NiceMock<MockLibFreenect>();
     }
@@ -86,13 +86,13 @@ private:
 TEST_F(KinectTest, Contructor)
 {
     ASSERT_NO_THROW(
-        Kinect kinect(KINECT_GETFRAMES_TIMEOUT_MS);
+        Kinect kinect();
     );
 }
 
 TEST_F(KinectTest, InitializationSuccess)
 {
-    ASSERT_EQ(kinect.Init(), 0);
+    ASSERT_EQ(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 }
 
 TEST_F(KinectTest, InitializationFailsOnFreenectInit)
@@ -100,7 +100,7 @@ TEST_F(KinectTest, InitializationFailsOnFreenectInit)
     EXPECT_CALL(*libfreenect_mock, freenect_init(_,_)).
         WillOnce(Return(-1));
 
-    ASSERT_NE(kinect.Init(), 0);
+    ASSERT_NE(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 }
 
 TEST_F(KinectTest, InitializationFailsOnFreenectNumDevices)
@@ -108,7 +108,7 @@ TEST_F(KinectTest, InitializationFailsOnFreenectNumDevices)
     EXPECT_CALL(*libfreenect_mock, freenect_num_devices(_)).
         WillOnce(Return(-1));
 
-    ASSERT_NE(kinect.Init(), 0);
+    ASSERT_NE(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 }
 
 TEST_F(KinectTest, InitializationNoDevicesFound)
@@ -116,7 +116,7 @@ TEST_F(KinectTest, InitializationNoDevicesFound)
     EXPECT_CALL(*libfreenect_mock, freenect_num_devices(_)).
         WillOnce(Return(0));
 
-    ASSERT_NE(kinect.Init(), 0);
+    ASSERT_NE(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 }
 
 TEST_F(KinectTest, InitializationFailsOnFreenectOpenDevice)
@@ -124,7 +124,7 @@ TEST_F(KinectTest, InitializationFailsOnFreenectOpenDevice)
     EXPECT_CALL(*libfreenect_mock, freenect_open_device(_,_,_)).
         WillOnce(Return(-1));
 
-    ASSERT_NE(kinect.Init(), 0);
+    ASSERT_NE(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 }
 
 TEST_F(KinectTest, InitializationFailsOnFreenectSetDeptMode)
@@ -132,7 +132,7 @@ TEST_F(KinectTest, InitializationFailsOnFreenectSetDeptMode)
     EXPECT_CALL(*libfreenect_mock, freenect_set_depth_mode(_,_)).
         WillOnce(Return(-1));
 
-    ASSERT_NE(kinect.Init(), 0);
+    ASSERT_NE(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 }
 
 TEST_F(KinectTest, InitializationFailsOnFreenectSetVideoMode)
@@ -140,18 +140,18 @@ TEST_F(KinectTest, InitializationFailsOnFreenectSetVideoMode)
     EXPECT_CALL(*libfreenect_mock, freenect_set_video_mode(_,_)).
         WillOnce(Return(-1));
 
-    ASSERT_NE(kinect.Init(), 0);
+    ASSERT_NE(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 }
 
 TEST_F(KinectTest, InitializationMultipleCallsSuccess)
 {
-    EXPECT_EQ(kinect.Init(), 0);
-    ASSERT_EQ(kinect.Init(), 0);
+    EXPECT_EQ(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
+    ASSERT_EQ(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 }
 
 TEST_F(KinectTest, TermSuccess)
 {
-    EXPECT_EQ(kinect.Init(), 0);
+    EXPECT_EQ(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 
     EXPECT_CALL(*libfreenect_mock, freenect_close_device(_)).
         WillOnce(Return(0));
@@ -168,7 +168,7 @@ TEST_F(KinectTest, TermWithoutInitSuccess)
 
 TEST_F(KinectTest, StartAndStopSuccess)
 {
-    ASSERT_EQ(kinect.Init(), 0);
+    ASSERT_EQ(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 
     EXPECT_CALL(*libfreenect_mock, freenect_process_events(_)).
         WillRepeatedly(Return(0));
@@ -182,7 +182,7 @@ TEST_F(KinectTest, StartAndStopSuccess)
 
 TEST_F(KinectTest, StartFailsOnFreenectStartVideo)
 {
-    ASSERT_EQ(kinect.Init(), 0);
+    ASSERT_EQ(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 
     EXPECT_CALL(*libfreenect_mock, freenect_start_video(_)).
         WillOnce(Return(-1));
@@ -192,7 +192,7 @@ TEST_F(KinectTest, StartFailsOnFreenectStartVideo)
 
 TEST_F(KinectTest, StartFailsOnFreenectStartDepth)
 {
-    ASSERT_EQ(kinect.Init(), 0);
+    ASSERT_EQ(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 
     EXPECT_CALL(*libfreenect_mock, freenect_start_depth(_)).
         WillOnce(Return(-1));
@@ -202,7 +202,7 @@ TEST_F(KinectTest, StartFailsOnFreenectStartDepth)
 
 TEST_F(KinectTest, StopFailsOnFreenectStopDepth)
 {
-    ASSERT_EQ(kinect.Init(), 0);
+    ASSERT_EQ(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 
     ASSERT_EQ(kinect.Start(), 0);
 
@@ -214,7 +214,7 @@ TEST_F(KinectTest, StopFailsOnFreenectStopDepth)
 
 TEST_F(KinectTest, StopFailsOnFreenectStopVideo)
 {
-    ASSERT_EQ(kinect.Init(), 0);
+    ASSERT_EQ(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 
     ASSERT_EQ(kinect.Start(), 0);
 
@@ -232,7 +232,7 @@ TEST_F(KinectTest, GetDepthFrameWithDifferentTimestamp)
     depth_frame.SetTimestamp(1111);
     test_depth_frame.SetTimestamp(2222);
 
-    ASSERT_EQ(kinect.Init(), 0);
+    ASSERT_EQ(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
     ASSERT_EQ(kinect.Start(), 0);
 
     SetKinectsLastDepthFrame(test_depth_frame);
@@ -252,7 +252,7 @@ TEST_F(KinectTest, GetDepthFrameWithSameTimestampTimeout)
     depth_frame.SetTimestamp(1111);
     test_depth_frame.SetTimestamp(1111);
 
-    ASSERT_EQ(kinect.Init(), 0);
+    ASSERT_EQ(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
     ASSERT_EQ(kinect.Start(), 0);
 
     SetKinectsLastDepthFrame(test_depth_frame);
@@ -272,7 +272,7 @@ TEST_F(KinectTest, GetDepthFrameWithSameTimestampWaitsNextFrame)
     initial_depth_frame.SetTimestamp(1111);
     updated_depth_frame.SetTimestamp(2222);
 
-    ASSERT_EQ(kinect.Init(), 0);
+    ASSERT_EQ(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
     ASSERT_EQ(kinect.Start(), 0);
 
     EXPECT_CALL(*libfreenect_mock, freenect_process_events(_)).
@@ -293,7 +293,7 @@ TEST_F(KinectTest, GetDepthFrameWithSameTimestampWaitsNextFrame)
 
 TEST_F(KinectTest, ChangeTiltSuccess)
 {
-    ASSERT_EQ(kinect.Init(), 0);
+    ASSERT_EQ(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 
     EXPECT_CALL(*libfreenect_mock, freenect_set_tilt_degs(_,_)).
         WillOnce(Return(0));
@@ -303,7 +303,7 @@ TEST_F(KinectTest, ChangeTiltSuccess)
 
 TEST_F(KinectTest, ChangeTiltFailsOnFreenectSetTiltDegs)
 {
-    ASSERT_EQ(kinect.Init(), 0);
+    ASSERT_EQ(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 
     EXPECT_CALL(*libfreenect_mock, freenect_set_tilt_degs(_,_)).
         WillOnce(Return(-1));
@@ -313,7 +313,7 @@ TEST_F(KinectTest, ChangeTiltFailsOnFreenectSetTiltDegs)
 
 TEST_F(KinectTest, ChangeLedColorSuccess)
 {
-    ASSERT_EQ(kinect.Init(), 0);
+    ASSERT_EQ(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 
     EXPECT_CALL(*libfreenect_mock, freenect_set_led(_,LED_GREEN)).
         WillOnce(Return(0));
@@ -323,7 +323,7 @@ TEST_F(KinectTest, ChangeLedColorSuccess)
 
 TEST_F(KinectTest, ChangeLedColorFailsOnFreenectSetTiltDegs)
 {
-    ASSERT_EQ(kinect.Init(), 0);
+    ASSERT_EQ(kinect.Init(KINECT_GETFRAMES_TIMEOUT_MS), 0);
 
     EXPECT_CALL(*libfreenect_mock, freenect_set_led(_,LED_GREEN)).
         WillOnce(Return(-1));
