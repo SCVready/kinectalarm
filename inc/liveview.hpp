@@ -20,6 +20,14 @@
 #include "cyclic_task.hpp"
 
 /*******************************************************************
+ * Struct declaration
+ *******************************************************************/
+struct LiveviewConfig
+{
+    uint32_t video_frame_interval_ms;
+};
+
+/*******************************************************************
  * Class declaration
  *******************************************************************/
 class LiveviewObserver
@@ -35,7 +43,7 @@ public:
      * @brief Construct a new Liveview object
      * 
      */
-    Liveview(std::shared_ptr<IKinect> kinect, std::shared_ptr<LiveviewObserver> liveview_observer, uint32_t loop_period_ms);
+    Liveview(std::shared_ptr<IKinect> kinect, std::shared_ptr<LiveviewObserver> liveview_observer, LiveviewConfig liveview_config);
 
     /**
      * @brief Destroy the Liveview object
@@ -43,9 +51,12 @@ public:
      */
     ~Liveview();
 
+    void UpdateConfig(LiveviewConfig liveview_config);
+
     void ExecutionCycle() override;
 
 private:
+    LiveviewConfig m_liveview_config;
     std::shared_ptr<IKinect> m_kinect;
     std::shared_ptr<KinectVideoFrame> m_frame;
     std::shared_ptr<LiveviewObserver> m_liveview_observer;

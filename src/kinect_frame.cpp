@@ -41,11 +41,12 @@ KinectFrame& KinectFrame::operator=(const KinectFrame& other)
 
 void KinectFrame::Fill(const uint16_t* frame_data, uint32_t timestamp)
 {
+    std::lock_guard<std::mutex> lock_guard(m_mutex);
     m_data.assign(frame_data, frame_data + (m_width * m_height));
     m_timestamp = timestamp;
 }
 
-const uint16_t*  KinectFrame::GetDataPointer() const
+const uint16_t* KinectFrame::GetDataPointer() const
 {
     return m_data.data();
 }
@@ -74,6 +75,7 @@ KinectDepthFrame::~KinectDepthFrame()
 
 uint32_t KinectDepthFrame::ComputeDifferences(KinectDepthFrame& other, uint32_t tolerance)
 {
+    std::lock_guard<std::mutex> lock_guard(m_mutex);
     uint32_t count = 0;
 
     for(uint32_t i = 0; i < (m_width * m_height); i++)
@@ -91,6 +93,7 @@ uint32_t KinectDepthFrame::ComputeDifferences(KinectDepthFrame& other, uint32_t 
 
 int KinectDepthFrame::SaveToJpegInFile(std::string path, int32_t brightness, int32_t contrast)
 {
+    std::lock_guard<std::mutex> lock_guard(m_mutex);
     int retval = 0;
     FIBITMAP *depth_bitmap;
     std::vector<uint8_t> bmap(m_width * m_height);
@@ -136,6 +139,7 @@ KinectVideoFrame::~KinectVideoFrame()
 
 int KinectVideoFrame::SaveToJpegInFile(std::string path, int32_t brightness, int32_t contrast)
 {
+    std::lock_guard<std::mutex> lock_guard(m_mutex);
     int retval = 0;
     FIBITMAP *video_bitmap;
     std::vector<uint8_t> bmap(m_width * m_height);
@@ -162,6 +166,7 @@ int KinectVideoFrame::SaveToJpegInFile(std::string path, int32_t brightness, int
 
 int KinectVideoFrame::SaveToJpegInMemory(std::vector<uint8_t>& jpeg_frame, int32_t brightness, int32_t contrast)
 {
+    std::lock_guard<std::mutex> lock_guard(m_mutex);
     int retval = 0;
     FIBITMAP *video_bitmap;
     FIMEMORY *fi_memory = NULL;

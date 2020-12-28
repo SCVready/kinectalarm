@@ -16,10 +16,16 @@
 #define DETECTION_PATH "/var/detections"
 #define CONFIG_PATH    "/etc/kinectalarm/kinectalarm.conf"
 
-#define DEPTH_WIDTH    640 /* Depth image's width resolution */
-#define DEPTH_HEIGHT   480 /* Depth image's height resolution */
-#define VIDEO_WIDTH    640 /* Video image's width resolution */
-#define VIDEO_HEIGHT   480 /* Video image's height resolution */
+#define DETECTION_THRESHOLD    2000
+#define DEPTH_CHANGE_TOLERANCE 10
+#define MAX_NUM_DETECTIONS     100
+#define NUM_DETECTIONS_FRAMES  5
+#define FRAME_INTERVAL_US      200000
+
+#define DEPTH_WIDTH    640 /* Fix depth image's width resolution */
+#define DEPTH_HEIGHT   480 /* Fix depth image's height resolution */
+#define VIDEO_WIDTH    640 /* Fix video image's width resolution */
+#define VIDEO_HEIGHT   480 /* Fix video image's height resolution */
 
 
 #endif /* GLOBAL_PARAMETERS_H_ */

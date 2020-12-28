@@ -13,36 +13,77 @@
 /*******************************************************************
  * Class definition
  *******************************************************************/
-Detection::Detection(std::shared_ptr<IKinect> kinect, std::shared_ptr<DetectionObserver> detection_observer, uint32_t loop_period_ms) :
-    CyclicTask("Detection", loop_period_ms),
+Detection::Detection(std::shared_ptr<IKinect> kinect, std::shared_ptr<DetectionObserver> detection_observer, DetectionConfig detection_config) :
+    CyclicTask("Detection", detection_config.take_depth_frame_interval_ms),
+    m_detection_config(detection_config),
     m_current_state(State::Idle),
     m_kinect(kinect),
     m_detection_num(0),
     m_detection_observer(detection_observer)
 {
-    m_depth_frame_reff        = std::make_unique<KinectDepthFrame>(DEPTH_WIDTH,DEPTH_HEIGHT);
+    m_depth_frame_ref         = std::make_unique<KinectDepthFrame>(DEPTH_WIDTH,DEPTH_HEIGHT);
     m_depth_frame             = std::make_unique<KinectDepthFrame>(DEPTH_WIDTH,DEPTH_HEIGHT);
-    m_refresh_reference_frame = std::make_unique<RefreshReferenceFrame>(kinect, m_depth_frame_reff, 1000);
-    m_take_video_frames       = std::make_unique<TakeVideoFrames>(*this, kinect, 200);
+    m_refresh_reference_frame = std::make_unique<RefreshReferenceFrame>(kinect, m_depth_frame_ref, detection_config.refresh_reference_interval_ms);
+    m_take_video_frames       = std::make_unique<TakeVideoFrames>(*this, kinect, detection_config.take_video_frame_interval_ms);
 }
 
 Detection::~Detection()
 {
 }
 
-void Detection::Start(uint32_t detection_num)
+int Detection::Start(uint32_t detection_num)
 {
+    int retval = -1;
+
     /* Reset intrusion variables */
     m_current_state = State::Idle;
-
     m_detection_num = detection_num;
 
     /* Get Reference Depth frame */
-    m_kinect->GetDepthFrame(*m_depth_frame_reff);
+    m_kinect->GetDepthFrame(*m_depth_frame_ref);
     LOG(LOG_INFO,"Detection: Depth reference frame\n");
 
-    /* Call parent Start to start the execution thread*/
-    CyclicTask::Start();
+    if(0 != CyclicTask::Start())
+    {
+        LOG(LOG_ERR,"CyclicTask::Start() failed\n");
+    }
+    else
+    {
+        LOG(LOG_INFO,"Detection started successfully\n");
+        retval = 0;
+    }
+
+    return retval;
+}
+
+int Detection::Stop()
+{
+    int retval = 0;
+
+    m_take_video_frames->Stop();
+    m_refresh_reference_frame->Stop();
+
+    /* Call parent Stop to stop the execution thread*/
+    if(0 != CyclicTask::Stop())
+    {
+        LOG(LOG_ERR,"CyclicTask::Stop() failed\n");
+        retval = -1;
+    }
+    else
+    {
+        LOG(LOG_INFO,"Detection stopped successfully\n");
+    }
+
+    return retval;
+}
+
+void Detection::UpdateConfig(DetectionConfig detection_config)
+{
+    m_detection_config = detection_config;
+
+    CyclicTask::ChangeLoopInterval(detection_config.take_depth_frame_interval_ms);
+    m_refresh_reference_frame->ChangeLoopInterval(detection_config.refresh_reference_interval_ms);
+    m_take_video_frames->ChangeLoopInterval(detection_config.take_video_frame_interval_ms);
 }
 
 void Detection::ExecutionCycle()
@@ -50,11 +91,11 @@ void Detection::ExecutionCycle()
     /* Get depth frame */
     m_kinect->GetDepthFrame(*m_depth_frame);
 
-    uint32_t diff = m_depth_frame->ComputeDifferences((*m_depth_frame_reff.get()),10);
+    uint32_t diff = m_depth_frame->ComputeDifferences((*m_depth_frame_ref.get()), m_detection_config.sensitivity);
 
     LOG(LOG_DEBUG,"Detection: Diff %d\n", diff);
 
-    bool detected_movement = diff > 2000 ? true : false; 
+    bool detected_movement = diff > m_detection_config.threshold ? true : false; 
 
     switch (m_current_state)
     {
@@ -72,7 +113,7 @@ void Detection::ExecutionCycle()
         if(!detected_movement)
         {
             m_current_state = State::Cooldown;
-            m_intrusion_cooldown = std::chrono::system_clock::now() + std::chrono::milliseconds(2000);
+            m_cooldown_abs_time = std::chrono::system_clock::now() + std::chrono::milliseconds(m_detection_config.cooldown_ms);
         }
         break;
     case State::Cooldown:
@@ -82,7 +123,7 @@ void Detection::ExecutionCycle()
         }
         else
         {
-            if(std::chrono::system_clock::now() > m_intrusion_cooldown)
+            if(std::chrono::system_clock::now() > m_cooldown_abs_time)
             {
                 uint32_t num_frames = m_take_video_frames->Stop();
                 m_refresh_reference_frame->Stop();
@@ -102,15 +143,14 @@ RefreshReferenceFrame::RefreshReferenceFrame(std::shared_ptr<IKinect> kinect,
                                              std::shared_ptr<KinectDepthFrame> depth_frame_reff,
                                              uint32_t loop_period_ms) :
     CyclicTask("RefreshReferenceFrame", loop_period_ms),
-    m_depth_frame_reff(depth_frame_reff),
+    m_depth_frame_ref(depth_frame_reff),
     m_kinect(kinect)
 {
 }
 
 void RefreshReferenceFrame::ExecutionCycle()
 {
-    /*TODO: m_depth_frame_reff atomic*/
-    m_kinect->GetDepthFrame(*m_depth_frame_reff);
+    m_kinect->GetDepthFrame(*m_depth_frame_ref);
 }
 
 TakeVideoFrames::TakeVideoFrames(Detection& detection,
@@ -140,7 +180,6 @@ uint32_t TakeVideoFrames::Stop()
 
 void TakeVideoFrames::ExecutionCycle()
 {
-    /*TODO: m_depth_frame_reff atomic*/
     m_kinect->GetVideoFrame(*m_frame);
     LOG(LOG_DEBUG,"TakeVideoFrames cycle: frame taken\n");
 

@@ -10,7 +10,7 @@
  *******************************************************************/
 #include <gtest/gtest.h>
 
-#include "mocks/kinect_mock.hpp"
+#include "../mocks/kinect_mock.hpp"
 #include "mocks/liveview_observer_mock.hpp"
 #include "../../inc/liveview.hpp"
 
@@ -29,6 +29,7 @@ class LiveviewTest : public ::testing::Test
 public:
     LiveviewTest()
     {
+        liveview_config.video_frame_interval_ms = 100;
         kinect_mock = std::make_shared<StrictMock<KinectMock>>();
         liveview_observer_mock = std::make_shared<StrictMock<LiveviewObserverMock>>();
     }
@@ -38,9 +39,9 @@ public:
     }
 
 protected:
+    LiveviewConfig liveview_config;
     std::shared_ptr<KinectMock> kinect_mock;
     std::shared_ptr<LiveviewObserverMock> liveview_observer_mock;
-    uint32_t loop_period_ms = 100;
 };
 
 /*******************************************************************
@@ -49,13 +50,13 @@ protected:
 TEST_F(LiveviewTest, Contructor)
 {
     ASSERT_NO_THROW(
-        Liveview liveview(kinect_mock, liveview_observer_mock, loop_period_ms);
+        Liveview liveview(kinect_mock, liveview_observer_mock, liveview_config);
     );
 }
 
 TEST_F(LiveviewTest, GetAndPushFrames)
 {
-    Liveview liveview(kinect_mock, liveview_observer_mock, loop_period_ms);
+    Liveview liveview(kinect_mock, liveview_observer_mock, liveview_config);
     KinectVideoFrame kinect_video_frame(1920,1080);
 
     EXPECT_CALL(*kinect_mock, GetVideoFrame(_)).

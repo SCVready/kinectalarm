@@ -27,7 +27,7 @@ public:
      * @brief Constructor
      * 
      */
-    CyclicTask(std::string task_name, uint32_t loop_period_ms);
+    CyclicTask(std::string task_name, uint32_t loop_interval_ms);
 
     /**
      * @brief Destructor
@@ -56,11 +56,17 @@ public:
      */
     bool IsRunning();
 
+    /**
+     * @brief Change the loop interval of the task
+     * 
+     */
+    void ChangeLoopInterval(uint32_t loop_interval_ms);
+
 private:
     std::unique_ptr<std::thread> m_thread;
     std::atomic<bool> m_running;
     std::string m_task_name;
-    uint32_t m_loop_period_ms;
+    std::atomic<uint32_t> m_loop_interval_ms;
 
     /* Private funtions */
     void ThreadLoop();

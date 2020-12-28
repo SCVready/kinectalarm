@@ -13,6 +13,7 @@
  *******************************************************************/
 #include <string>
 #include <vector>
+#include <mutex>
 
 /*******************************************************************
  * Defines
@@ -103,6 +104,7 @@ public:
     virtual int SaveToJpegInMemory(std::vector<uint8_t>& jpeg_frame, int32_t brightness, int32_t contrast)  = 0;
 
 protected:
+    std::mutex m_mutex;
     uint32_t m_timestamp;
     uint32_t m_width;
     uint32_t m_height;

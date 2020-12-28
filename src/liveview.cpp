@@ -14,8 +14,9 @@
 /*******************************************************************
  * Class definition
  *******************************************************************/
-Liveview::Liveview(std::shared_ptr<IKinect> kinect, std::shared_ptr<LiveviewObserver> liveview_observer, uint32_t loop_period_ms) :
-    CyclicTask("Liveview", loop_period_ms),
+Liveview::Liveview(std::shared_ptr<IKinect> kinect, std::shared_ptr<LiveviewObserver> liveview_observer, LiveviewConfig liveview_config) :
+    CyclicTask("Liveview", liveview_config.video_frame_interval_ms),
+    m_liveview_config(liveview_config),
     m_kinect(kinect),
     m_liveview_observer(liveview_observer)
 {
@@ -24,6 +25,13 @@ Liveview::Liveview(std::shared_ptr<IKinect> kinect, std::shared_ptr<LiveviewObse
 
 Liveview::~Liveview()
 {
+}
+
+void Liveview::UpdateConfig(LiveviewConfig liveview_config)
+{
+    m_liveview_config = liveview_config;
+
+    CyclicTask::ChangeLoopInterval(liveview_config.video_frame_interval_ms);
 }
 
 void Liveview::ExecutionCycle()

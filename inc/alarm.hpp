@@ -39,17 +39,7 @@
 #include "liveview.hpp"
 #include "detection.hpp"
 
-/*******************************************************************
- * Defines
- *******************************************************************/
-#define DETECTION_THRESHOLD    2000
-#define DEPTH_CHANGE_TOLERANCE 10
-#define MAX_NUM_DETECTIONS     100
-#define NUM_DETECTIONS_FRAMES  5
-#define FRAME_INTERVAL_US      200000
 
-#define NUM_DET_PARAMETERS 6 /* TODO: move to another location */
-#define NUM_LVW_PARAMETERS 1 /* TODO: move to another location */
 
 /*******************************************************************
  * Structures

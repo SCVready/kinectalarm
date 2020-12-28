@@ -35,11 +35,22 @@ Alarm::Alarm()
     lvw_conf.contrast       = 0;
 
     /* New implementation */
+    DetectionConfig detection_config;
+    detection_config.threshold = 2000;
+    detection_config.sensitivity = 10;
+    detection_config.cooldown_ms = 2000;
+    detection_config.refresh_reference_interval_ms = 1000;
+    detection_config.take_depth_frame_interval_ms = 10;
+    detection_config.take_video_frame_interval_ms = 200;
+
+    LiveviewConfig liveview_config;
+    liveview_config.video_frame_interval_ms = 100;
+
     m_kinect             = std::make_shared<Kinect>();
     m_liveview_observer  = std::make_shared<AlarmLiveviewObserver>(*this);
-    m_liveview           = std::make_unique<Liveview>(m_kinect, m_liveview_observer, 100);
+    m_liveview           = std::make_unique<Liveview>(m_kinect, m_liveview_observer, liveview_config);
     m_detection_observer = std::make_shared<AlarmDetectionObserver>(*this);
-    m_detection          = std::make_unique<Detection>(m_kinect, m_detection_observer, 10);
+    m_detection          = std::make_unique<Detection>(m_kinect, m_detection_observer, detection_config);
 }
 
 Alarm::~Alarm()
@@ -53,7 +64,7 @@ int Alarm::Init()
     /* SQLite initialization */
     if(init_sqlite_db())
     {
-        LOG(LOG_ERR,"Error: couldn't intialize SQLite\n");
+        LOG(LOG_ERR,"Error: couldn't initialize SQLite\n");
         m_kinect->Term();
         return -1;
     }
@@ -122,7 +133,7 @@ int Alarm::Init()
     /* Adjust kinect's tilt */
     if(m_kinect->ChangeTilt(lvw_conf.tilt))
     {
-        LOG(LOG_ERR,"Fallo al cambiar la inclinacion de kinect\n");
+        LOG(LOG_ERR,"Error: couldn't change Kinect's tilt\n");
         m_kinect->Term();
         return -1;
     }
@@ -380,7 +391,7 @@ int Alarm::ChangeTilt(double tilt)
     m_kinect->ChangeTilt(tilt);
     redis_set_int((char *) "tilt", (int) tilt);
     ChangeLvwStatus(TILT,tilt);
-    LOG(LOG_INFO,"Changed Kinect's titl to: %d\n",(int)tilt);
+    LOG(LOG_INFO,"Changed Kinect's tilt to: %d\n",(int)tilt);
 
     return 0;
 }

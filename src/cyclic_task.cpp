@@ -17,7 +17,7 @@
 CyclicTask::CyclicTask(std::string task_name, uint32_t loop_period_ms) :
     m_running(false),
     m_task_name(task_name),
-    m_loop_period_ms(loop_period_ms)
+    m_loop_interval_ms(loop_period_ms)
 {
 }
 
@@ -78,13 +78,18 @@ bool CyclicTask::IsRunning()
     return m_running;
 }
 
+void CyclicTask::ChangeLoopInterval(uint32_t loop_interval_ms)
+{
+    m_loop_interval_ms = loop_interval_ms;
+}
+
 void CyclicTask::ThreadLoop()
 {
     auto sleep_abs_time = std::chrono::system_clock::now();
     while(m_running)
     {
         ExecutionCycle();
-        sleep_abs_time += std::chrono::milliseconds(m_loop_period_ms);
+        sleep_abs_time += std::chrono::milliseconds(m_loop_interval_ms);
         std::this_thread::sleep_until(sleep_abs_time);
         /* TODO: Sleep with conditional variable */
     }

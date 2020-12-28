@@ -188,7 +188,6 @@ int Kinect::Start()
         LOG(LOG_INFO,"Kinect started successfully\n");
         retval = 0;
     }
-    
 
     return retval;
 }

@@ -1,6 +1,6 @@
 #include <gmock/gmock.h>
 
-#include "../../../inc/kinect.hpp"
+#include "../../inc/kinect.hpp"
 
 using ::testing::_;
 using ::testing::SaveArg;

@@ -27,7 +27,7 @@ target_include_directories(kinect_frame_tests PRIVATE "../inc")
 ######## Liveview class ########
 add_executable(liveview_tests
                liveview_tests/liveview_tests.cpp
-               liveview_tests/mocks/kinect_mock.cpp
+               mocks/kinect_mock.cpp
                liveview_tests/mocks/liveview_observer_mock.cpp
                ../src/liveview.cpp
                ../src/cyclic_task.cpp
@@ -36,3 +36,16 @@ target_link_libraries(liveview_tests gtest gtest_main pthread gmock freeimage)
 target_compile_definitions(liveview_tests PRIVATE __STDC_CONSTANT_MACROS)
 target_compile_definitions(liveview_tests PRIVATE "$<$<CONFIG:DEBUG>:DEBUG>")
 target_include_directories(liveview_tests PRIVATE "../inc")
+
+######## Liveview class ########
+add_executable(detection_tests
+               detection_tests/detection_tests.cpp
+               mocks/kinect_mock.cpp
+               detection_tests/mocks/detection_observer_mock.cpp
+               ../src/detection.cpp
+               ../src/cyclic_task.cpp
+               ../src/kinect_frame.cpp)
+target_link_libraries(detection_tests gtest gtest_main pthread gmock freeimage)
+target_compile_definitions(detection_tests PRIVATE __STDC_CONSTANT_MACROS)
+target_compile_definitions(detection_tests PRIVATE "$<$<CONFIG:DEBUG>:DEBUG>")
+target_include_directories(detection_tests PRIVATE "../inc")

@@ -21,6 +21,19 @@
 #include "cyclic_task.hpp"
 
 /*******************************************************************
+ * Struct declaration
+ *******************************************************************/
+struct DetectionConfig
+{
+    uint16_t threshold;
+    uint16_t sensitivity;
+    uint32_t cooldown_ms;
+    uint32_t refresh_reference_interval_ms;
+    uint32_t take_depth_frame_interval_ms;
+    uint32_t take_video_frame_interval_ms;
+};
+
+/*******************************************************************
  * Class declaration
  *******************************************************************/
 class RefreshReferenceFrame;
@@ -42,7 +55,7 @@ public:
      * @brief Construct a new Detection object
      * 
      */
-    Detection(std::shared_ptr<IKinect> kinect, std::shared_ptr<DetectionObserver> detection_observer, uint32_t loop_period_ms);
+    Detection(std::shared_ptr<IKinect> kinect, std::shared_ptr<DetectionObserver> detection_observer, DetectionConfig detection_config);
 
     /**
      * @brief Destroy the Detection object
@@ -50,7 +63,11 @@ public:
      */
     ~Detection();
 
-    void Start(uint32_t detection_num);
+    int Start(uint32_t detection_num);
+
+    int Stop();
+
+    void UpdateConfig(DetectionConfig detection_config);
 
     void ExecutionCycle() override;
 
@@ -62,9 +79,10 @@ private:
         Cooldown
     };
 
+    DetectionConfig m_detection_config;
     State m_current_state;
-    std::chrono::time_point<std::chrono::system_clock> m_intrusion_cooldown;
-    std::shared_ptr<KinectDepthFrame> m_depth_frame_reff;
+    std::chrono::time_point<std::chrono::system_clock> m_cooldown_abs_time;
+    std::shared_ptr<KinectDepthFrame> m_depth_frame_ref;
     std::shared_ptr<KinectDepthFrame> m_depth_frame;
     uint32_t m_timestamp;
     std::shared_ptr<IKinect> m_kinect;
@@ -83,7 +101,7 @@ public:
                           uint32_t loop_period_ms);
     void ExecutionCycle() override;
 private:
-    std::shared_ptr<KinectDepthFrame> m_depth_frame_reff;
+    std::shared_ptr<KinectDepthFrame> m_depth_frame_ref;
     std::shared_ptr<IKinect> m_kinect;
 };
 
