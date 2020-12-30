@@ -32,7 +32,7 @@ public:
      * @brief Initialization
      * 
      */
-    virtual int Init(uint32_t timeout_ms) = 0;
+    virtual int Init() = 0;
 
     /**
      * @brief Termination

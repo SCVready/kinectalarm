@@ -29,10 +29,10 @@
 class Kinect : public IKinect, public CyclicTask
 {
 public:
-    Kinect();
+    Kinect(uint32_t timeout_ms);
     virtual ~Kinect();
 
-    int Init(uint32_t timeout_ms) override;
+    int Init() override;
     int Term() override;
     int Start() override;
     int Stop() override;

@@ -18,7 +18,7 @@ public:
     KinectMock();
     virtual ~KinectMock();
 
-    MOCK_METHOD(int, Init, (uint32_t timeout_ms));
+    MOCK_METHOD(int, Init, ());
     MOCK_METHOD(int, Term, ());
     MOCK_METHOD(int, Start, ());
     MOCK_METHOD(int, Stop, ());

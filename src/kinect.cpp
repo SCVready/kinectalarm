@@ -27,9 +27,10 @@ uint32_t Kinect::m_timeout_ms;
 /*******************************************************************
  * Class definition
  *******************************************************************/
-Kinect::Kinect() : CyclicTask("Kinect", 0)
+Kinect::Kinect(uint32_t timeout_ms) : CyclicTask("Kinect", 0)
 {
     /* Members initialization */
+    m_timeout_ms            = timeout_ms;
     m_is_kinect_initialized = false;
     m_kinect_ctx            = NULL;
     m_kinect_dev            = NULL;
@@ -41,11 +42,9 @@ Kinect::~Kinect()
 {
 }
 
-int Kinect::Init(uint32_t timeout_ms)
+int Kinect::Init()
 {
     int retval = -1;
-
-    m_timeout_ms = timeout_ms;
 
     /* Check if it's already initialize */
     if(m_is_kinect_initialized)

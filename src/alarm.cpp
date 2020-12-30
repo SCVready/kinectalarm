@@ -46,7 +46,7 @@ Alarm::Alarm()
     LiveviewConfig liveview_config;
     liveview_config.video_frame_interval_ms = 100;
 
-    m_kinect             = std::make_shared<Kinect>();
+    m_kinect             = std::make_shared<Kinect>(KINECT_GETFRAMES_TIMEOUT_MS);
     m_liveview_observer  = std::make_shared<AlarmLiveviewObserver>(*this);
     m_liveview           = std::make_unique<Liveview>(m_kinect, m_liveview_observer, liveview_config);
     m_detection_observer = std::make_shared<AlarmDetectionObserver>(*this);
@@ -110,7 +110,7 @@ int Alarm::Init()
     }
 
     /* Kinect initialization */
-    if(m_kinect->Init(KINECT_GETFRAMES_TIMEOUT_MS))
+    if(m_kinect->Init())
     {
         LOG(LOG_ERR,"Error: couldn't initialize Kinect\n");
         m_kinect->Term();
