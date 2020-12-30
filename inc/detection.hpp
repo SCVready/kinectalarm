@@ -19,6 +19,7 @@
 #include "log.hpp"
 #include "kinect_interface.hpp"
 #include "cyclic_task.hpp"
+#include "alarm_module_interface.hpp"
 
 /*******************************************************************
  * Struct declaration
@@ -43,11 +44,11 @@ class DetectionObserver
 {
 public:
     virtual void IntrusionStarted() = 0;
-    virtual void IntrusionStopped(uint32_t det_num, uint32_t frame_num) = 0;
-    virtual void IntrusionFrame(std::shared_ptr<KinectVideoFrame> frame, uint32_t det_num, uint32_t frame_num) = 0;
+    virtual void IntrusionStopped(uint32_t frame_num) = 0;
+    virtual void IntrusionFrame(std::shared_ptr<KinectVideoFrame> frame, uint32_t frame_num) = 0;
 };
 
-class Detection : public CyclicTask
+class Detection : public IAlarmModule, public CyclicTask
 {
     friend TakeVideoFrames;
 public:
@@ -63,9 +64,13 @@ public:
      */
     ~Detection();
 
-    int Start(uint32_t detection_num);
+    int Start() override;
 
-    int Stop();
+    int Stop() override;
+
+    bool IsRunning() override;
+
+    void UpdateConfig(AlarmModuleConfig config) override;
 
     void UpdateConfig(DetectionConfig detection_config);
 
@@ -89,7 +94,6 @@ private:
     uint8_t* liveview_jpeg;
     std::unique_ptr<RefreshReferenceFrame> m_refresh_reference_frame;
     std::unique_ptr<TakeVideoFrames> m_take_video_frames;
-    uint32_t m_detection_num;
     std::shared_ptr<DetectionObserver> m_detection_observer;
 };
 
@@ -112,13 +116,12 @@ public:
                     std::shared_ptr<IKinect> kinect,
                     uint32_t loop_period_ms);
     void ExecutionCycle() override;
-    void Start(uint32_t curr_detection_num);
+    void Start();
     uint32_t Stop();
 private:
     Detection& m_detection;
     std::shared_ptr<KinectVideoFrame> m_frame;
     std::shared_ptr<IKinect> m_kinect;
-    uint32_t m_curr_detection_num;
     uint32_t m_frame_counter;
 };
 

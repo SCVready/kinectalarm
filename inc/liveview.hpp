@@ -18,6 +18,7 @@
 #include "log.hpp"
 #include "kinect_interface.hpp"
 #include "cyclic_task.hpp"
+#include "alarm_module_interface.hpp"
 
 /*******************************************************************
  * Struct declaration
@@ -36,7 +37,7 @@ public:
     virtual void NewFrame(KinectVideoFrame& frame) = 0;
 };
 
-class Liveview : public CyclicTask
+class Liveview : public IAlarmModule, public CyclicTask
 {
 public:
     /**
@@ -50,6 +51,14 @@ public:
      * 
      */
     ~Liveview();
+
+    int Start() override;
+
+    int Stop() override;
+
+    bool IsRunning() override;
+
+    void UpdateConfig(AlarmModuleConfig config) override;
 
     void UpdateConfig(LiveviewConfig liveview_config);
 

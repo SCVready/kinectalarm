@@ -90,8 +90,8 @@ class AlarmDetectionObserver : public DetectionObserver
 public:
     AlarmDetectionObserver(Alarm& alarm);
     void IntrusionStarted() override;
-    void IntrusionStopped(uint32_t det_num, uint32_t frame_num) override;
-    void IntrusionFrame(std::shared_ptr<KinectVideoFrame> frame, uint32_t det_num, uint32_t frame_num) override;
+    void IntrusionStopped(uint32_t frame_num) override;
+    void IntrusionFrame(std::shared_ptr<KinectVideoFrame> frame, uint32_t frame_num) override;
 private:
     Alarm& m_alarm;
 };
@@ -226,16 +226,20 @@ private:
     std::shared_ptr<IKinect> m_kinect;
 
     /* Liveview object */
-    std::unique_ptr<Liveview> m_liveview;
+    std::shared_ptr<IAlarmModule> m_liveview;
+
+    /* Detection object */
+    std::shared_ptr<IAlarmModule> m_detection;
 
     /* Liveview observer object */
     std::shared_ptr<AlarmLiveviewObserver> m_liveview_observer;
 
-    /* Detection object */
-    std::unique_ptr<Detection> m_detection;
-
     /* Detection observer object */
     std::shared_ptr<AlarmDetectionObserver> m_detection_observer;
+
+    DetectionConfig m_detection_config;
+
+    LiveviewConfig m_liveview_config;
 
     /* State & config structs */
     struct sDet_conf det_conf;

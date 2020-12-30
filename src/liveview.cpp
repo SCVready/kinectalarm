@@ -27,6 +27,26 @@ Liveview::~Liveview()
 {
 }
 
+int Liveview::Start()
+{
+    return CyclicTask::Start();
+}
+
+int Liveview::Stop()
+{
+    return CyclicTask::Stop();
+}
+
+bool Liveview::IsRunning()
+{
+    return CyclicTask::IsRunning();
+}
+
+void Liveview::UpdateConfig(AlarmModuleConfig config)
+{
+    ;
+}
+
 void Liveview::UpdateConfig(LiveviewConfig liveview_config)
 {
     m_liveview_config = liveview_config;

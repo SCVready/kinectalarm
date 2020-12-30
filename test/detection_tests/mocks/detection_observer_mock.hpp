@@ -19,6 +19,6 @@ public:
     virtual ~DetectionObserverMock();
 
     MOCK_METHOD(void, IntrusionStarted, ());
-    MOCK_METHOD(void, IntrusionStopped, (uint32_t det_num, uint32_t frame_num));
-    MOCK_METHOD(void, IntrusionFrame, (std::shared_ptr<KinectVideoFrame> frame, uint32_t det_num, uint32_t frame_num));
+    MOCK_METHOD(void, IntrusionStopped, (uint32_t frame_num));
+    MOCK_METHOD(void, IntrusionFrame, (std::shared_ptr<KinectVideoFrame> frame, uint32_t frame_num));
 };

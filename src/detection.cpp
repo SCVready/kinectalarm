@@ -18,7 +18,6 @@ Detection::Detection(std::shared_ptr<IKinect> kinect, std::shared_ptr<DetectionO
     m_detection_config(detection_config),
     m_current_state(State::Idle),
     m_kinect(kinect),
-    m_detection_num(0),
     m_detection_observer(detection_observer)
 {
     m_depth_frame_ref         = std::make_unique<KinectDepthFrame>(DEPTH_WIDTH,DEPTH_HEIGHT);
@@ -31,13 +30,12 @@ Detection::~Detection()
 {
 }
 
-int Detection::Start(uint32_t detection_num)
+int Detection::Start()
 {
     int retval = -1;
 
     /* Reset intrusion variables */
     m_current_state = State::Idle;
-    m_detection_num = detection_num;
 
     /* Get Reference Depth frame */
     m_kinect->GetDepthFrame(*m_depth_frame_ref);
@@ -77,6 +75,16 @@ int Detection::Stop()
     return retval;
 }
 
+bool Detection::IsRunning()
+{
+    return CyclicTask::IsRunning();
+}
+
+void Detection::UpdateConfig(AlarmModuleConfig config)
+{
+    ;
+}
+
 void Detection::UpdateConfig(DetectionConfig detection_config)
 {
     m_detection_config = detection_config;
@@ -103,7 +111,7 @@ void Detection::ExecutionCycle()
         if(detected_movement)
         {
             m_detection_observer->IntrusionStarted();
-            m_take_video_frames->Start(m_detection_num);
+            m_take_video_frames->Start();
             m_refresh_reference_frame->Start();
             m_current_state = State::Intrusion;
             LOG(LOG_WARNING,"Detection: Intrusion started\n");
@@ -128,8 +136,7 @@ void Detection::ExecutionCycle()
                 uint32_t num_frames = m_take_video_frames->Stop();
                 m_refresh_reference_frame->Stop();
                 LOG(LOG_WARNING,"Detection: Intrusion Stopped\n");
-                m_detection_observer->IntrusionStopped(m_detection_num, num_frames);
-                m_detection_num++;
+                m_detection_observer->IntrusionStopped(num_frames);
                 m_current_state = State::Idle;
             }
         }
@@ -159,15 +166,13 @@ TakeVideoFrames::TakeVideoFrames(Detection& detection,
     CyclicTask("TakeVideoFrames", loop_period_ms),
     m_detection(detection),
     m_kinect(kinect),
-    m_curr_detection_num(0),
     m_frame_counter(0)
 {
     m_frame = std::make_unique<KinectVideoFrame>(VIDEO_WIDTH, VIDEO_HEIGHT);
 }
 
-void TakeVideoFrames::Start(uint32_t curr_detection_num)
+void TakeVideoFrames::Start()
 {
-    m_curr_detection_num = curr_detection_num;
     m_frame_counter = 0;
     CyclicTask::Start();
 }
@@ -183,5 +188,5 @@ void TakeVideoFrames::ExecutionCycle()
     m_kinect->GetVideoFrame(*m_frame);
     LOG(LOG_DEBUG,"TakeVideoFrames cycle: frame taken\n");
 
-    m_detection.m_detection_observer->IntrusionFrame(m_frame, m_curr_detection_num, m_frame_counter++);
+    m_detection.m_detection_observer->IntrusionFrame(m_frame, m_frame_counter++);
 }

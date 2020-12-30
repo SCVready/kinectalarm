@@ -37,7 +37,7 @@ target_compile_definitions(liveview_tests PRIVATE __STDC_CONSTANT_MACROS)
 target_compile_definitions(liveview_tests PRIVATE "$<$<CONFIG:DEBUG>:DEBUG>")
 target_include_directories(liveview_tests PRIVATE "../inc")
 
-######## Liveview class ########
+######## Detection class ########
 add_executable(detection_tests
                detection_tests/detection_tests.cpp
                mocks/kinect_mock.cpp
@@ -49,3 +49,20 @@ target_link_libraries(detection_tests gtest gtest_main pthread gmock freeimage)
 target_compile_definitions(detection_tests PRIVATE __STDC_CONSTANT_MACROS)
 target_compile_definitions(detection_tests PRIVATE "$<$<CONFIG:DEBUG>:DEBUG>")
 target_include_directories(detection_tests PRIVATE "../inc")
+
+######## Alarm class ########
+add_executable(alarm_tests
+               alarm_tests/fakes/redis_db_fake.cpp
+               alarm_tests/fakes/sqlite_db_fake.cpp
+               alarm_tests/fakes/config_fake.cpp
+               alarm_tests/fakes/common_fake.cpp
+               alarm_tests/fakes/kinect_factory_fake.cpp
+               alarm_tests/fakes/alarm_module_factory_fake.cpp
+               alarm_tests/mocks/alarm_module_mock.cpp
+               mocks/kinect_mock.cpp
+               ../src/alarm.cpp
+               alarm_tests/alarm_tests.cpp)
+target_link_libraries(alarm_tests gtest gtest_main pthread gmock)
+target_compile_definitions(alarm_tests PRIVATE __STDC_CONSTANT_MACROS)
+target_compile_definitions(alarm_tests PRIVATE "$<$<CONFIG:DEBUG>:DEBUG>")
+target_include_directories(alarm_tests PRIVATE "../inc")

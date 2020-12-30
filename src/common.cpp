@@ -46,25 +46,6 @@ int delete_all_files_from_dir(const char *path)
     return 0;
 }
 
-struct timespec timeAdd(struct timespec t1, struct timespec t2)
-{
-    long sec = t2.tv_sec + t1.tv_sec;
-    long nsec = t2.tv_nsec + t1.tv_nsec;
-    if (nsec >= BILLION) {
-        nsec -= BILLION;
-        sec++;
-    }
-    return (struct timespec){ .tv_sec = sec, .tv_nsec = nsec };
-}
-
-struct timespec timeSub(struct timespec t1, struct timespec t2)
-{
-    long sec = t1.tv_sec - t2.tv_sec;
-    long nsec = t1.tv_nsec - t2.tv_nsec;
-    long res = sec*BILLION + nsec;
-    return (struct timespec){ .tv_sec = 0, .tv_nsec = res };
-}
-
 bool both_are_spaces(char lhs, char rhs)
 {
     return (lhs == rhs) && (lhs == ' ');
@@ -109,7 +90,7 @@ int deinit_base64encode(struct sBase64encode_context *c)
     return 0;
 }
 
-char* base64encode(struct sBase64encode_context *c, const void *data, int length)
+const char* base64encode(struct sBase64encode_context *c, const void *data, int length)
 {
     /* Reset bio structures */
     BIO_reset(c->b64_bio);
@@ -129,7 +110,7 @@ char* base64encode(struct sBase64encode_context *c, const void *data, int length
 }
 
 #if 0
-char* base64decode(const void *b64_decode_this, int decode_this_many_bytes)
+const char* base64decode(const void *b64_decode_this, int decode_this_many_bytes)
 {
     /* Declares two OpenSSL BIOs: a base64 filter and a memory BIO*/
     BIO *b64_bio, *mem_bio;

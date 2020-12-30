@@ -9,6 +9,8 @@
  * Includes
  *******************************************************************/
 #include "alarm.hpp"
+#include "kinect_factory.hpp"
+#include "alarm_module_factory.hpp"
 
 /*******************************************************************
  * Defines
@@ -35,22 +37,21 @@ Alarm::Alarm()
     lvw_conf.contrast       = 0;
 
     /* New implementation */
-    DetectionConfig detection_config;
-    detection_config.threshold = 2000;
-    detection_config.sensitivity = 10;
-    detection_config.cooldown_ms = 2000;
-    detection_config.refresh_reference_interval_ms = 1000;
-    detection_config.take_depth_frame_interval_ms = 10;
-    detection_config.take_video_frame_interval_ms = 200;
+    m_detection_config.threshold = 2000;
+    m_detection_config.sensitivity = 10;
+    m_detection_config.cooldown_ms = 2000;
+    m_detection_config.refresh_reference_interval_ms = 1000;
+    m_detection_config.take_depth_frame_interval_ms = 10;
+    m_detection_config.take_video_frame_interval_ms = 200;
 
-    LiveviewConfig liveview_config;
-    liveview_config.video_frame_interval_ms = 100;
+    m_liveview_config.video_frame_interval_ms = 100;
 
-    m_kinect             = std::make_shared<Kinect>(KINECT_GETFRAMES_TIMEOUT_MS);
-    m_liveview_observer  = std::make_shared<AlarmLiveviewObserver>(*this);
-    m_liveview           = std::make_unique<Liveview>(m_kinect, m_liveview_observer, liveview_config);
     m_detection_observer = std::make_shared<AlarmDetectionObserver>(*this);
-    m_detection          = std::make_unique<Detection>(m_kinect, m_detection_observer, detection_config);
+    m_liveview_observer  = std::make_shared<AlarmLiveviewObserver>(*this);
+
+    m_kinect    = KinectFactory::Create(KINECT_GETFRAMES_TIMEOUT_MS);
+    m_detection = AlarmModuleFactory::CreateDetectionModule(m_kinect, m_detection_observer, m_detection_config);
+    m_liveview  = AlarmModuleFactory::CreateLiveviewModule(m_kinect, m_liveview_observer, m_liveview_config);
 }
 
 Alarm::~Alarm()
@@ -175,7 +176,7 @@ int Alarm::StartDetection()
         /* Update Redis DB */
         redis_set_int((char *) "det_status", 1);
 
-        m_detection->Start(det_conf.curr_det_num);
+        m_detection->Start();
 
         /* Update led */
         UpdateLed();
@@ -462,7 +463,7 @@ void AlarmLiveviewObserver::NewFrame(KinectVideoFrame& frame)
     frame.SaveToJpegInMemory(liveview_jpeg, m_alarm.lvw_conf.brightness, m_alarm.lvw_conf.contrast);
 
     /* Convert to base64 */
-    char *base64_jpeg_frame = base64encode(&m_alarm.m_c, liveview_jpeg.data(), liveview_jpeg.size());
+    const char *base64_jpeg_frame = base64encode(&m_alarm.m_c, liveview_jpeg.data(), liveview_jpeg.size());
 
     /* Publish in redis channel */
     redis_publish("liveview", base64_jpeg_frame);;
@@ -480,42 +481,42 @@ void AlarmDetectionObserver::IntrusionStarted()
     m_alarm.m_kinect->ChangeLedColor(LED_RED);
 }
 
-void AlarmDetectionObserver::IntrusionStopped(uint32_t det_num, uint32_t frame_num)
+void AlarmDetectionObserver::IntrusionStopped(uint32_t frame_num)
 {
     char filepath_vid[PATH_MAX];
     char filepath[PATH_MAX];
-    sprintf(filepath_vid,"%s/%u_%s",DETECTION_PATH,det_num,"capture_vid.mp4");
-    sprintf(filepath,"%s/%u_capture.zip",DETECTION_PATH,det_num);
+    sprintf(filepath_vid,"%s/%u_%s",DETECTION_PATH, m_alarm.det_conf.curr_det_num, "capture_vid.mp4");
+    sprintf(filepath,"%s/%u_capture.zip", DETECTION_PATH, m_alarm.det_conf.curr_det_num);
 
     /* Update kinect led */
     m_alarm.UpdateLed();
 
     /* Publish event */
     char message[255];
-    sprintf(message, "newdet %u %u %u", det_num, 1000, frame_num);
+    sprintf(message, "newdet %u %u %u", m_alarm.det_conf.curr_det_num, 1000, frame_num);
     redis_publish("new_det",message);
 
     /* Update SQLite db */
-    insert_entry_det_table_sqlite_db(det_num,1000, frame_num, filepath, filepath_vid);
+    insert_entry_det_table_sqlite_db(m_alarm.det_conf.curr_det_num,1000, frame_num, filepath, filepath_vid);
 
     /* Update Redis db */
-    redis_set_int((char *) "det_numdet", det_num);
+    redis_set_int((char *) "det_numdet", m_alarm.det_conf.curr_det_num);
 
     /* Change Status */
-    m_alarm.ChangeDetStatus(CURR_DET_NUM, det_num + 1);
+    m_alarm.ChangeDetStatus(CURR_DET_NUM, m_alarm.det_conf.curr_det_num + 1);
 
     /* Package detections */
     char command[PATH_MAX];
-    sprintf(command,"cd %s;zip -q %u_capture.zip %u*",DETECTION_PATH, det_num, det_num);
+    sprintf(command,"cd %s;zip -q %u_capture.zip %u*",DETECTION_PATH, m_alarm.det_conf.curr_det_num, m_alarm.det_conf.curr_det_num);
     system(command);
 }
 
-void AlarmDetectionObserver::IntrusionFrame(std::shared_ptr<KinectVideoFrame> frame, uint32_t det_num, uint32_t frame_num)
+void AlarmDetectionObserver::IntrusionFrame(std::shared_ptr<KinectVideoFrame> frame, uint32_t frame_num)
 {
     /* Save the frame to JPEG */
     char filepath[PATH_MAX];
 
-    sprintf(filepath,"%s/%u_capture_%d.jpeg",DETECTION_PATH, det_num, frame_num);
+    sprintf(filepath,"%s/%u_capture_%d.jpeg",DETECTION_PATH, m_alarm.det_conf.curr_det_num, frame_num);
 
     if(frame->SaveToJpegInFile(filepath, m_alarm.lvw_conf.brightness, m_alarm.lvw_conf.contrast))
     {

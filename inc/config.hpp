@@ -21,7 +21,7 @@
 #include "sqlite_db.hpp"
 
 /*******************************************************************
- * Funtion declaration
+ * Function declaration
  *******************************************************************/
 int write_status(struct sDet_conf det_conf,struct sLvw_conf lvw_conf);
 int read_status(struct sDet_conf *det_conf,struct sLvw_conf *lvw_conf);

@@ -9,6 +9,7 @@
  * Includes
  *******************************************************************/
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include "../../inc/kinect_frame.hpp"
 

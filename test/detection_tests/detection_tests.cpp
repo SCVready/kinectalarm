@@ -9,6 +9,7 @@
  * Includes
  *******************************************************************/
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include "../mocks/kinect_mock.hpp"
 #include "mocks/detection_observer_mock.hpp"
@@ -78,7 +79,7 @@ TEST_F(DetectionTest, StartsTakingDepthFrames)
     EXPECT_CALL(*kinect_mock, GetDepthFrame(_)).
         WillRepeatedly(SetArgReferee<0>(kinect_frame_ref));
 
-    ASSERT_EQ(detection.Start(0), 0);
+    ASSERT_EQ(detection.Start(), 0);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
@@ -104,11 +105,11 @@ TEST_F(DetectionTest, DetectionOccursSuccess)
     EXPECT_CALL(*kinect_mock, GetVideoFrame(_)).
         WillRepeatedly(SetArgReferee<0>(kinect_video_frame_1));
 
-    EXPECT_CALL(*detection_observer_mock, IntrusionFrame(_, _, _)).Times(AtLeast(1));
+    EXPECT_CALL(*detection_observer_mock, IntrusionFrame(_, _)).Times(AtLeast(1));
 
-    EXPECT_CALL(*detection_observer_mock, IntrusionStopped(_, _)).Times(1);
+    EXPECT_CALL(*detection_observer_mock, IntrusionStopped(_)).Times(1);
 
-    ASSERT_EQ(detection.Start(0), 0);
+    ASSERT_EQ(detection.Start(), 0);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
