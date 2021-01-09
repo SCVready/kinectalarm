@@ -8,6 +8,8 @@
 /*******************************************************************
  * Includes
  *******************************************************************/
+#include <chrono>
+
 #include "cyclic_task.hpp"
 
 /*******************************************************************
@@ -61,7 +63,9 @@ int CyclicTask::Stop()
     {
         m_running = false;
 
-        m_thread->join(); /* TODO conditional variable */
+        m_condition_variable.notify_one();
+
+        m_thread->join();
 
         LOG(LOG_INFO,"Stoping %s thread\n",m_task_name.c_str());
     }
@@ -85,12 +89,14 @@ void CyclicTask::ChangeLoopInterval(uint32_t loop_interval_ms)
 
 void CyclicTask::ThreadLoop()
 {
-    auto sleep_abs_time = std::chrono::system_clock::now();
+    std::unique_lock<std::mutex> unique_lock(m_mutex);
+
+    auto sleep_abs_time = std::chrono::steady_clock::now();
+
     while(m_running)
     {
         ExecutionCycle();
         sleep_abs_time += std::chrono::milliseconds(m_loop_interval_ms);
-        std::this_thread::sleep_until(sleep_abs_time);
-        /* TODO: Sleep with conditional variable */
+        m_condition_variable.wait_until(unique_lock, sleep_abs_time);
     }
 }

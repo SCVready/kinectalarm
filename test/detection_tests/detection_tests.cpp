@@ -111,7 +111,7 @@ TEST_F(DetectionTest, DetectionOccursSuccess)
 
     ASSERT_EQ(detection.Start(), 0);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
 
     ASSERT_EQ(detection.Stop(), 0);
 }

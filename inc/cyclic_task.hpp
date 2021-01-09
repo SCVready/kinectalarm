@@ -14,6 +14,8 @@
 #include <thread>
 #include <atomic>
 #include <string>
+#include <condition_variable>
+#include <mutex>
 
 #include "log.hpp"
 
@@ -67,6 +69,8 @@ private:
     std::atomic<bool> m_running;
     std::string m_task_name;
     std::atomic<uint32_t> m_loop_interval_ms;
+    std::mutex m_mutex;
+    std::condition_variable m_condition_variable;
 
     /* Private funtions */
     void ThreadLoop();
