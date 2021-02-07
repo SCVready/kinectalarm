@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 
 project(UnitTesting)
 
+set(CMAKE_CXX_STANDARD 17)
+
 ######## Kinect class ########
 add_executable(kinect_tests
                kinect_tests/kinect_tests.cpp
@@ -66,3 +68,13 @@ target_link_libraries(alarm_tests gtest gtest_main pthread gmock)
 target_compile_definitions(alarm_tests PRIVATE __STDC_CONSTANT_MACROS)
 target_compile_definitions(alarm_tests PRIVATE "$<$<CONFIG:DEBUG>:DEBUG>")
 target_include_directories(alarm_tests PRIVATE "../inc")
+
+######## MessageBroker class ########
+add_executable(message_broker_tests
+               ../src/message_broker.cpp
+               message_broker_tests/mocks/message_broker_mock.cpp
+               message_broker_tests/message_broker_tests.cpp)
+target_link_libraries(message_broker_tests gtest gtest_main pthread gmock hiredis event event_pthreads)
+target_compile_definitions(message_broker_tests PRIVATE __STDC_CONSTANT_MACROS)
+target_compile_definitions(message_broker_tests PRIVATE "$<$<CONFIG:DEBUG>:DEBUG>")
+target_include_directories(message_broker_tests PRIVATE "../inc")
