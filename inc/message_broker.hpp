@@ -57,6 +57,8 @@ public:
 
     int SetVariable(const Variable& variable) override;
 
+    int Clear() override;
+
     int CallObservers(const std::string& channel, const std::string& message);
 private:
     redisContext *m_context = nullptr;

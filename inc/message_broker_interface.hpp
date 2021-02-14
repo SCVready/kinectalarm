@@ -30,8 +30,12 @@ enum class DataType
 /* */
 using Value = std::variant<int32_t, float, std::string>;
 
-/* Name, type and value */
-using Variable = std::tuple<std::string, DataType, Value>;
+struct Variable
+{
+    const std::string name;
+    const DataType data_type;
+    Value value;
+};
 
 /* */
 using ListOfVariables = std::vector<Variable>;
@@ -84,6 +88,13 @@ public:
      * @return 0 if ok
      */
     virtual int SetVariable(const Variable& variable) = 0;
+
+    /**
+     * @brief Clear DB
+     * 
+     * @return 0 if ok
+     */
+    virtual int Clear() = 0;
 };
 
 #endif /* IMESSAGE_BROKER__H_ */

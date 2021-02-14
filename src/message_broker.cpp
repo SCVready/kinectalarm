@@ -49,6 +49,8 @@ void OnMessage(redisAsyncContext *redis_context, void *replay, void *data)
         }
         LOG(LOG_DEBUG, "\n");
 
+        /*TODO check the first string: it must be "message"*/
+
         if(reply->elements >= 3)
         {
             if(reply->element[1]->type == REDIS_REPLY_STRING &&
@@ -172,7 +174,8 @@ int MessageBroker::Subscribe(const std::string& channel, std::shared_ptr<IChanne
             
         }
 
-        Publish(channel,{}); /*TODO: this is a dummy message. Investigate why the first message is not sent*/
+        LOG(LOG_INFO,"Reddis subscription success: channel %s observer %p\n", channel.c_str(), observer.get());
+        //Publish(channel,{}); /*TODO: this is a dummy message. Investigate why the first message is not sent*/
 
         retval = 0;
     }
@@ -223,6 +226,8 @@ int MessageBroker::UnRegisterObserver(const std::string& channel, std::shared_pt
                     m_observer_map.erase(map_it);
                 }
                 ret = 0;
+
+                LOG(LOG_INFO,"Reddis observer unregistered successfully, channel %s observer %p\n", channel.c_str(), observer.get());
             }
         }
     }
@@ -246,7 +251,31 @@ int MessageBroker::CallObservers(const std::string& channel, const std::string& 
 
 int MessageBroker::Unsubscribe(const std::string& channel, const std::shared_ptr<IChannelMessageObserver> observer)
 {
-    return 0;
+    int retval = 0;
+
+    if(0 != UnRegisterObserver(channel, observer))
+    {
+        retval = -1;
+    }
+
+    if (m_observer_map.end() == m_observer_map.find(channel))
+    {
+        redisReply *reply = nullptr;
+
+        reply = (redisReply *) redisCommand(m_context, "UNSUBSCRIBE %s", channel.c_str());
+        if(reply != nullptr && reply->type == REDIS_REPLY_ERROR)
+        {
+            retval = -1;
+        }
+        freeReplyObject(reply);
+    }
+
+    if(0 == retval)
+    {
+        LOG(LOG_INFO,"Reddis Unsubscription success: channel %s observer %p\n", channel.c_str(), observer.get());
+    }
+
+    return retval;
 }
 int MessageBroker::Publish(const std::string& channel, const std::string& message)
 {
@@ -264,12 +293,83 @@ int MessageBroker::Publish(const std::string& channel, const std::string& messag
 
     return retval;
 }
+#include <iostream>
 int MessageBroker::GetVariable(Variable& variable)
 {
-    return 0;
+    int retval = 0;
+
+    redisReply *reply = (redisReply *) redisCommand(m_context,"GET %s",variable.name.c_str());
+    if(reply->type != REDIS_REPLY_STRING)
+    {
+        retval = -1;
+    }
+    else
+    {
+        try
+        {
+            switch(variable.data_type)
+            {
+                case DataType::Integer:
+                variable.value = std::stoi(std::string(reply->str), nullptr);
+                break;
+                case DataType::Float:
+                variable.value = std::stof(std::string(reply->str), nullptr);
+                break;
+                case DataType::String:
+                variable.value = reply->str;
+                break;
+            }
+        }
+        catch(...)
+        {
+            retval = -1;
+        }
+    }
+
+    freeReplyObject(reply);
+    return retval;
 }
 
 int MessageBroker::SetVariable(const Variable& variable)
 {
-    return 0;
+    int retval = 0;
+
+    std::string value;
+    switch(variable.data_type)
+    {
+        case DataType::Integer:
+           value = std::to_string(std::get<int>(variable.value));
+           break;
+        case DataType::Float:
+           value = std::to_string(std::get<float>(variable.value));
+           break;
+        case DataType::String:
+           value = std::get<std::string>(variable.value);
+           break;
+    }
+
+    redisReply *reply = (redisReply *) redisCommand(m_context,"SET %s %s", variable.name.c_str(), value.c_str());
+    if(reply->type == REDIS_REPLY_ERROR)
+    {
+        retval = -1;
+    }
+
+    freeReplyObject(reply);
+
+    return retval;
+}
+
+int MessageBroker::Clear()
+{
+    int retval = 0;
+
+    redisReply *reply = (redisReply *) redisCommand(m_context,"flushall");
+    if(reply->type != REDIS_REPLY_STRING)
+    {
+        retval = -1;
+    }
+
+    freeReplyObject(reply);
+
+    return retval;
 }
