@@ -1,4 +1,4 @@
-#include "message_broker_mock.hpp"
+#include "message_broker_observer_mock.hpp"
 
 ChannelMessageObserverMock::ChannelMessageObserverMock()
 {

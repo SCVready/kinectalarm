@@ -14,7 +14,7 @@
 #include <memory>
 
 #include "../../inc/message_broker.hpp"
-#include "mocks/message_broker_mock.hpp"
+#include "mocks/message_broker_observer_mock.hpp"
 
 /*******************************************************************
  * Test class definition

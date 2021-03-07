@@ -72,9 +72,18 @@ target_include_directories(alarm_tests PRIVATE "../inc")
 ######## MessageBroker class ########
 add_executable(message_broker_tests
                ../src/message_broker.cpp
-               message_broker_tests/mocks/message_broker_mock.cpp
+               message_broker_tests/mocks/message_broker_observer_mock.cpp
                message_broker_tests/message_broker_tests.cpp)
 target_link_libraries(message_broker_tests gtest gtest_main pthread gmock hiredis event event_pthreads)
 target_compile_definitions(message_broker_tests PRIVATE __STDC_CONSTANT_MACROS)
 target_compile_definitions(message_broker_tests PRIVATE "$<$<CONFIG:DEBUG>:DEBUG>")
 target_include_directories(message_broker_tests PRIVATE "../inc")
+
+######## StatePersistence class ########
+add_executable(state_persistence_tests
+               ../src/state_persistence.cpp
+               state_persistence_tests/state_persistence_tests.cpp)
+target_link_libraries(state_persistence_tests gtest gtest_main pthread gmock sqlite3)
+target_compile_definitions(state_persistence_tests PRIVATE __STDC_CONSTANT_MACROS)
+target_compile_definitions(state_persistence_tests PRIVATE "$<$<CONFIG:DEBUG>:DEBUG>")
+target_include_directories(state_persistence_tests PRIVATE "../inc")

@@ -173,9 +173,7 @@ int MessageBroker::Subscribe(const std::string& channel, std::shared_ptr<IChanne
             }
             
         }
-
         LOG(LOG_INFO,"Reddis subscription success: channel %s observer %p\n", channel.c_str(), observer.get());
-        //Publish(channel,{}); /*TODO: this is a dummy message. Investigate why the first message is not sent*/
 
         retval = 0;
     }

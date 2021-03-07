@@ -45,7 +45,7 @@ public:
 
     MessageBroker(const std::string path) noexcept(false);
 
-    ~MessageBroker() ;
+    ~MessageBroker();
 
     int Subscribe(const std::string& channel, const std::shared_ptr<IChannelMessageObserver> observer) override;
 

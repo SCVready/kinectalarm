@@ -30,6 +30,7 @@ enum class DataType
 /* */
 using Value = std::variant<int32_t, float, std::string>;
 
+/* */
 struct Variable
 {
     const std::string name;
