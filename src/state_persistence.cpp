@@ -15,6 +15,12 @@
 /*******************************************************************
  * Class definition
  *******************************************************************/
+const std::map<DataType, std::string> DataTable::m_data_type_map{
+    {DataType::Integer, "INTEGER"},
+    {DataType::Float,   "CHAR(50)"},
+    {DataType::String,  "CHAR(50)"}
+};
+
 Database::Database(const std::string path) :
     m_path(path)
 {
@@ -40,31 +46,21 @@ int Database::RemoveDatabase()
     return 0;
 }
 
-DataTable::DataTable(std::weak_ptr<Database> data_base,const std::string& name, ListOfVariables list_variables) :
+DataTable::DataTable(std::weak_ptr<Database> data_base,const std::string& name, Entry list_variables) :
     m_name(name),
     m_data_base(data_base),
     m_list_variables(list_variables)
 {
-    std::shared_ptr<Database> l_data_base = m_data_base.lock();
-    std::string create_command;
-    char *error_message = nullptr;
+    std::string command;
 
-    if(l_data_base == nullptr && l_data_base->m_sqlite_database == nullptr)
+    if(0 != FormCreateTableMessage(command))
     {
-        LOG(LOG_ERR,"Cannot create DataTable object, database is nullptr\n");
+        LOG(LOG_ERR,"Error forming CreateTable message\n");
     }
-    else
+    else if(0 != ExecuteSqlCommand(command))
     {
-        FormCreateTableMessage(create_command);
-
-        /* Execute SQL statement */
-        if(SQLITE_OK != sqlite3_exec(l_data_base->m_sqlite_database, create_command.c_str(), NULL, 0, &error_message))
-        {
-            LOG(LOG_ERR,"SQL error: %s\n", error_message);
-            sqlite3_free(error_message);
-
-            throw std::exception();
-        };
+        LOG(LOG_ERR,"Failed to create table\n");
+        throw std::exception();
     }
 }
 
@@ -72,26 +68,21 @@ DataTable::~DataTable()
 {
 }
 
-const std::map<DataType, std::string> DataTable::m_data_type_map{
-    {DataType::Integer, "INTEGER"},
-    {DataType::Float,   "CHAR(50)"},
-    {DataType::String,  "CHAR(50)"}
-};
-
 int DataTable::FormCreateTableMessage(std::string& command)
 {
     int ret_val = 0;
+
     /*
-        "CREATE TABLE IF NOT EXISTS DETECTIONS("
-        "ID             INTEGER    PRIMARY KEY,"
-        "DATE           DATETIME   NOT NULL,"
-        "DURATION       INTEGER    NOT NULL,"
-        "FILENAME_IMG   CHAR(50)   NOT NULL,"
-        "FILENAME_VID   CHAR(50)   NOT NULL);"
-    */
+     *  CREATE TABLE IF NOT EXISTS tablename(
+     *     ID             INTEGER    PRIMARY KEY,
+     *     DATE           DATETIME   NOT NULL,
+     *     DURATION       INTEGER    NOT NULL,
+     *     FILENAME_IMG   CHAR(50)   NOT NULL,
+     *     FILENAME_VID   CHAR(50)   NOT NULL);
+     */
     command = "CREATE TABLE IF NOT EXISTS " + m_name +  "(";
 
-    for(auto it = m_list_variables.begin(); it < m_list_variables.end(); std::advance(it,1))
+    for(auto it = m_list_variables.begin(); it != m_list_variables.end(); std::advance(it,1))
     {
         command += it->name + " " + m_data_type_map.at(it->data_type) + " ";
 
@@ -110,10 +101,324 @@ int DataTable::FormCreateTableMessage(std::string& command)
         }
     }
     command += ");";
+
     return ret_val;
 }
 
 int DataTable::DeleteTable()
 {
-    return 0;
+    int ret_val = 0;
+    std::string command;
+    if(0 != FormDeleteTableMessage(command))
+    {
+        LOG(LOG_ERR,"Error forming DeleteTable message\n");
+    }
+    else if(0 != ExecuteSqlCommand(command))
+    {
+        LOG(LOG_ERR,"Failed to delete table\n");
+        ret_val = -1;
+    }
+
+    return ret_val;
+}
+
+int DataTable::FormDeleteTableMessage(std::string& command)
+{
+    int ret_val = 0;
+
+    /*
+     * DROP TABLE IF EXISTS tablename;
+     */
+
+    command = "DROP TABLE IF EXISTS " + m_name ;
+
+    return ret_val;
+}
+
+int DataTable::ExecuteSqlCommand(const std::string& command)
+{
+    int ret_val = 0;
+    char *error_message = nullptr;
+    std::shared_ptr<Database> l_data_base = m_data_base.lock();
+
+    if(l_data_base == nullptr && l_data_base->m_sqlite_database == nullptr)
+    {
+        LOG(LOG_ERR,"ExecuteSqlCommand failed, database is nullptr\n");
+    }
+    else
+    {
+        /* Execute SQL statement */
+        if(SQLITE_OK != sqlite3_exec(l_data_base->m_sqlite_database, command.c_str(), NULL, 0, &error_message))
+        {
+            LOG(LOG_ERR,"SQL command error: %s\n", error_message);
+            sqlite3_free(error_message);
+
+            ret_val = 1;
+        };
+    }
+
+    return ret_val;
+}
+
+int DataTable::ExecuteSqlRequest(const std::string& command, sqlite3_stmt **response)
+{
+    int ret_val = 0;
+    char *error_message = nullptr;
+    std::shared_ptr<Database> l_data_base = m_data_base.lock();
+
+    if(l_data_base == nullptr && l_data_base->m_sqlite_database == nullptr)
+    {
+        LOG(LOG_ERR,"ExecuteSqlRequest failed, database is nullptr\n");
+    }
+    else
+    {
+        if (SQLITE_OK != sqlite3_prepare_v2(l_data_base->m_sqlite_database, command.c_str(), -1, response, 0))
+        {
+            LOG(LOG_ERR,"SQL command error: %s\n", sqlite3_errmsg(l_data_base->m_sqlite_database));
+            ret_val = -1;
+        }
+    }
+
+    return ret_val;
+}
+
+int DataTable::NumberItems(int& number_items)
+{
+    int ret_val = -1;
+    char *error_message = nullptr;
+    std::string command;
+    std::shared_ptr<Database> l_data_base = m_data_base.lock();
+    sqlite3_stmt *response;
+
+    if(0 != FormNumberItemsMessage(command))
+    {
+        LOG(LOG_ERR,"Error forming NumberItems message\n");
+    }
+    else if(0 != ExecuteSqlRequest(command, &response))
+    {
+        LOG(LOG_ERR,"Failed to request number of items\n");
+    }
+    else if (0 != HandleNumberItemsResponse(&response, number_items))
+    {
+        LOG(LOG_ERR,"Failed to parse the response\n");
+    }
+    else
+    {
+        ret_val = 0;
+    }
+
+    return ret_val;
+}
+
+int DataTable::FormNumberItemsMessage(std::string& command)
+{
+    int ret_val = 0;
+
+    /*
+     * SELECT count(*) FROM tablename;
+     */
+
+    command = "SELECT count(*) FROM " + m_name ;
+
+    return ret_val;
+}
+
+int DataTable::HandleNumberItemsResponse(sqlite3_stmt **response, int& number_items)
+{
+    int ret_val = 0;
+
+    if(SQLITE_ROW != sqlite3_step(*response))
+    {
+        ret_val = -1;
+    }
+    else
+    {
+        number_items = sqlite3_column_int(*response, 0);
+    }
+
+    sqlite3_finalize(*response);
+
+    return ret_val;
+}
+
+int DataTable::InsertItem(const Entry& item)
+{
+    int ret_val = 0;
+    std::string command;
+
+    if(0 != FormInsertItemMessage(command, item))
+    {
+        LOG(LOG_ERR,"Error forming InsertItem message\n");
+    }
+    else if(0 != ExecuteSqlCommand(command))
+    {
+        LOG(LOG_ERR,"Failed to delete table\n");
+        ret_val = -1;
+    }
+
+    return ret_val;
+}
+
+int DataTable::FormInsertItemMessage(std::string& command, const Entry& item)
+{
+    int ret_val = 0;
+
+    /*
+     * INSERT INTO {table} ({var1.name}, {var2.name}) VALUES ({var1.value}, {var2.value})
+     */
+
+    command = "INSERT INTO " + m_name +  " (";
+
+    for(auto it = item.cbegin(); it != item.cend(); std::advance(it,1))
+    {
+        command += it->name;
+        if(it != std::prev(item.cend()))
+        {
+            command += ",";
+        }
+    }
+
+    command += ") VALUES (";
+
+    for(auto it = item.cbegin(); it != item.cend(); std::advance(it,1))
+    {
+        command += VariableToString(*it);
+
+        if(it != std::prev(item.cend()))
+        {
+            command += ",";
+        }
+
+    }
+    command += ");";
+
+    return ret_val;
+}
+
+int DataTable::GetItem(Entry& item)
+{
+    int ret_val = -1;
+    char *error_message = nullptr;
+    std::string command;
+    std::shared_ptr<Database> l_data_base = m_data_base.lock();
+    sqlite3_stmt *response;
+
+    if(0 != FormGetItemMessage(command, item))
+    {
+        LOG(LOG_ERR,"Error forming GetItem message\n");
+    }
+    else if(0 != ExecuteSqlRequest(command, &response))
+    {
+        LOG(LOG_ERR,"Failed to request number of items\n");
+    }
+    else if (0 != HandleGetItemResponse(&response, item))
+    {
+        LOG(LOG_ERR,"Failed to parse the response\n");
+    }
+    else
+    {
+        ret_val = 0;
+    }
+
+    return ret_val;
+}
+
+int DataTable::FormGetItemMessage(std::string& command, const Entry& item)
+{
+    int ret_val = 0;
+
+    /*
+     * SELECT * FROM {table} WHERE id={id}
+     */
+
+    if(item.empty())
+    {
+        ret_val = -1;
+    }
+    else
+    {
+        command = "SELECT * FROM " + m_name +  " WHERE " + item.front().name + "=" + VariableToString(item.front());
+    }
+
+    return ret_val;
+}
+
+int DataTable::HandleGetItemResponse(sqlite3_stmt **response, Entry& item)
+{
+    int ret_val = 0;
+    int i = 0;
+
+    if(SQLITE_ROW != sqlite3_step(*response))
+    {
+        LOG(LOG_ERR,"Failed sqlite3_step\n");
+        ret_val = -1;
+    }
+    else
+    {
+        for(auto it = item.begin(); it != item.end(); std::advance(it,1), i++)
+        {
+            std::string string_value = reinterpret_cast<const char *>(sqlite3_column_text(*response, i));
+            StringToVariable(string_value, *it);
+        }
+    }
+
+    sqlite3_finalize(*response);
+
+    return ret_val;
+}
+
+std::string DataTable::VariableToString(const Variable& variable)
+{
+    int ret_val = 0;
+    std::string string_value;
+    try
+    {
+        switch (variable.data_type)
+        {
+            case DataType::Integer:
+                string_value = std::to_string(std::get<int>(variable.value));
+                break;
+            case DataType::Float:
+                string_value = std::to_string(std::get<float>(variable.value));
+                break;
+            case DataType::String:
+                string_value = "'";
+                string_value += std::get<std::string>(variable.value);
+                string_value += "'";
+                break;
+        }
+    }
+    catch(...)
+    {
+        LOG(LOG_ERR,"Failed to convert variable value to string value\n");
+    }
+
+    return string_value;
+}
+
+int DataTable::StringToVariable(const std::string& string_value, Variable& variable)
+{
+    int ret_val = 0;
+    try
+    {
+        switch (variable.data_type)
+        {
+            case DataType::Integer:
+                variable.value = std::stoi(string_value);
+                break;
+            case DataType::Float:
+                variable.value = std::stof(string_value);
+                break;
+            case DataType::String:
+                variable.value = string_value;
+                break;
+        }
+    }
+    catch(...)
+    {
+        LOG(LOG_ERR,"Failed to convert string value to variable value\n");
+        ret_val = -1;
+    }
+
+    return ret_val;
 }

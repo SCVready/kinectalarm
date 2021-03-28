@@ -24,11 +24,11 @@ class Database;
 class DataTable
 {
 public:
-    DataTable(std::weak_ptr<Database> data_base, const std::string& name, ListOfVariables list_variables);
+    DataTable(std::weak_ptr<Database> data_base, const std::string& name, Entry list_variables);
     ~DataTable();
-    int NumberItems();
-    int InsertItem();
-    int GetItem();
+    int NumberItems(int& number_items);
+    int InsertItem(const Entry& item);
+    int GetItem(Entry& item);
     int SetItem();
     int DeleteItem();
     int DeleteAllItems();
@@ -36,11 +36,24 @@ public:
 private:
     const std::string m_name;
     std::weak_ptr<Database> m_data_base;
-    ListOfVariables m_list_variables;
+    Entry m_list_variables;
 
     const static std::map<DataType, std::string> m_data_type_map;
 
+    int ExecuteSqlCommand(const std::string& command);
+    int ExecuteSqlRequest(const std::string& command, sqlite3_stmt **response);
+
     int FormCreateTableMessage(std::string& command);
+    int FormDeleteTableMessage(std::string& command);
+    int FormNumberItemsMessage(std::string& command);
+    int FormInsertItemMessage(std::string& command, const Entry& item);
+    int FormGetItemMessage(std::string& command, const Entry& item);
+
+    int HandleNumberItemsResponse(sqlite3_stmt **response, int& number_items);
+    int HandleGetItemResponse(sqlite3_stmt **response, Entry& item);
+
+    std::string VariableToString(const Variable& variable);
+    int StringToVariable(const std::string& string_value, Variable& variable);
 };
 
 class Database : public IStatePersistence

@@ -39,7 +39,7 @@ struct Variable
 };
 
 /* */
-using ListOfVariables = std::vector<Variable>;
+using Entry = std::vector<Variable>;
 
 /*******************************************************************
  * Class declaration

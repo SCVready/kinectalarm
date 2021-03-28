@@ -38,7 +38,7 @@ struct Variable
 };
 
 /* */
-using ListOfVariables = std::vector<Variable>;
+using Entry = std::vector<Variable>;
 
 /* Initialization parameters */
 struct InitParams{};
