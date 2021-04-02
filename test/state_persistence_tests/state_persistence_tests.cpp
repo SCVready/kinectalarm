@@ -128,3 +128,51 @@ TEST_F(StatePersistenceTest, GetItems)
 
     EXPECT_EQ(val, val_read);
 }
+
+TEST_F(StatePersistenceTest, SetItems)
+{
+    DataTable data_table(m_database, "testtable", m_table1_item_def);
+    EXPECT_EQ(0, data_table.InsertItem(m_table1_item_1));
+
+    Entry m_table1_item_1_mod = m_table1_item_1;
+    m_table1_item_1_mod.back().value = 111.11f;
+
+    EXPECT_EQ(0, data_table.SetItem(m_table1_item_1_mod));
+
+    Entry item1{
+        {"Var0", DataType::Integer,10},
+        {"Var1", DataType::String,},
+        {"Var2", DataType::Float,},
+    };
+
+    EXPECT_EQ(0, data_table.GetItem(item1));
+
+    float val_read = std::get<float>(item1.back().value);
+
+    EXPECT_EQ(111.11f, val_read);
+}
+
+TEST_F(StatePersistenceTest, DeleteItem)
+{
+    int number_items = 0;
+    DataTable data_table(m_database, "testtable", m_table1_item_def);
+    EXPECT_EQ(0, data_table.InsertItem(m_table1_item_1));
+
+    EXPECT_EQ(0, data_table.DeleteItem(m_table1_item_1));
+    EXPECT_EQ(0, data_table.NumberItems(number_items));
+    EXPECT_EQ(0, number_items);
+}
+
+TEST_F(StatePersistenceTest, DeleteAllItems)
+{
+    int number_items = 0;
+    DataTable data_table(m_database, "testtable", m_table1_item_def);
+    EXPECT_EQ(0, data_table.InsertItem(m_table1_item_1));
+    EXPECT_EQ(0, data_table.InsertItem(m_table1_item_2));
+    EXPECT_EQ(0, data_table.NumberItems(number_items));
+    EXPECT_EQ(2, number_items);
+
+    EXPECT_EQ(0, data_table.DeleteAllItems());
+    EXPECT_EQ(0, data_table.NumberItems(number_items));
+    EXPECT_EQ(0, number_items);
+}

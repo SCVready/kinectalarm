@@ -21,7 +21,7 @@
  * Class declaration
  *******************************************************************/
 class Database;
-class DataTable
+class DataTable : public IDataTable
 {
 public:
     DataTable(std::weak_ptr<Database> data_base, const std::string& name, Entry list_variables);
@@ -29,8 +29,8 @@ public:
     int NumberItems(int& number_items);
     int InsertItem(const Entry& item);
     int GetItem(Entry& item);
-    int SetItem();
-    int DeleteItem();
+    int SetItem(const Entry& item);
+    int DeleteItem(const Entry& item);
     int DeleteAllItems();
     int DeleteTable();
 private:
@@ -48,6 +48,9 @@ private:
     int FormNumberItemsMessage(std::string& command);
     int FormInsertItemMessage(std::string& command, const Entry& item);
     int FormGetItemMessage(std::string& command, const Entry& item);
+    int FormSetItemMessage(std::string& command, const Entry& item);
+    int FormDeleteItemMessage(std::string& command, const Entry& item);
+    int FormDeleteAllItemsMessage(std::string& command);
 
     int HandleNumberItemsResponse(sqlite3_stmt **response, int& number_items);
     int HandleGetItemResponse(sqlite3_stmt **response, Entry& item);

@@ -46,6 +46,24 @@ struct InitParams{};
 /*******************************************************************
  * Class declaration
  *******************************************************************/
+class IDataTable
+{
+public:
+    /**
+     * @brief Destructor
+     * 
+     */
+    virtual ~IDataTable() {};
+
+    virtual int NumberItems(int& number_items) = 0;
+    virtual int InsertItem(const Entry& item) = 0;
+    virtual int GetItem(Entry& item) = 0;
+    virtual int SetItem(const Entry& item) = 0;
+    virtual int DeleteItem(const Entry& item) = 0;
+    virtual int DeleteAllItems() = 0;
+    virtual int DeleteTable() = 0;
+};
+
 class IStatePersistence
 {
 public:

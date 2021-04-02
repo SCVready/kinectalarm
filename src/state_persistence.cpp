@@ -422,3 +422,114 @@ int DataTable::StringToVariable(const std::string& string_value, Variable& varia
 
     return ret_val;
 }
+
+int DataTable::SetItem(const Entry& item)
+{
+    int ret_val = 0;
+    std::string command;
+
+    if(0 != FormSetItemMessage(command, item))
+    {
+        LOG(LOG_ERR,"Error forming set Item message\n");
+    }
+    else if(0 != ExecuteSqlCommand(command))
+    {
+        LOG(LOG_ERR,"ExecuteSqlCommand failed\n");
+        ret_val = -1;
+    }
+
+    return ret_val;
+}
+
+int DataTable::FormSetItemMessage(std::string& command, const Entry& item)
+{
+    int ret_val = 0;
+
+    /*
+     * UPDATE {tablename} SET {var2}={val2},{var3}={val3} WHERE {var1}={val1};
+     */
+
+    if(item.empty())
+    {
+        ret_val = -1;
+    }
+    else
+    {
+        command = "UPDATE " + m_name +  " SET ";
+
+        for(auto it = std::next(item.cbegin()); it != item.cend(); std::advance(it,1))
+        {
+            command += it->name + "=" + VariableToString(*it);
+            if(it != std::prev(item.cend()))
+            {
+                command += ",";
+            }
+        }
+
+        command += " WHERE " + item.front().name + "=" + VariableToString(item.front());
+    }
+
+    return ret_val;
+}
+
+int DataTable::DeleteItem(const Entry& item)
+{
+    int ret_val = 0;
+    std::string command;
+
+    if(0 != FormDeleteItemMessage(command, item))
+    {
+        LOG(LOG_ERR,"Error forming set Item message\n");
+    }
+    else if(0 != ExecuteSqlCommand(command))
+    {
+        LOG(LOG_ERR,"ExecuteSqlCommand failed\n");
+        ret_val = -1;
+    }
+
+    return ret_val;
+}
+
+int DataTable::FormDeleteItemMessage(std::string& command, const Entry& item)
+{
+    int ret_val = 0;
+
+    /*
+     * DELETE FROM {datatable} WHERE {var1}={val1};
+     */
+
+    command = "DELETE FROM " + m_name +  " WHERE " + item.front().name + "=" + VariableToString(item.front());
+
+    return ret_val;
+}
+
+int DataTable::DeleteAllItems()
+{
+    int ret_val = 0;
+    std::string command;
+
+    if(0 != FormDeleteAllItemsMessage(command))
+    {
+        LOG(LOG_ERR,"Error forming set Item message\n");
+    }
+    else if(0 != ExecuteSqlCommand(command))
+    {
+        LOG(LOG_ERR,"ExecuteSqlCommand failed\n");
+        ret_val = -1;
+    }
+
+    return ret_val;
+}
+
+int DataTable::FormDeleteAllItemsMessage(std::string& command)
+{
+    int ret_val = 0;
+
+    /*
+     * DELETE FROM {datatable};
+     */
+
+    command = "DELETE FROM " + m_name ;
+
+    return ret_val;
+}
