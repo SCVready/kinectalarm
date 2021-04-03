@@ -11,7 +11,8 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "../mocks/kinect_mock.hpp"
+#include "../common/mocks/kinect_mock.hpp"
+#include "../common/mocks/message_broker_mock.hpp"
 #include "mocks/alarm_module_mock.hpp"
 #include "../../inc/alarm.hpp"
 
@@ -37,13 +38,14 @@ public:
         kinect_mock    = std::make_shared<StrictMock<KinectMock>>();
         detection_mock = std::make_shared<StrictMock<AlarmModuleMock>>();
         liveview_mock  = std::make_shared<StrictMock<AlarmModuleMock>>();
+        m_message_broker_mock = std::make_shared<NiceMock<MessageBrokerMock>>();
     }
 
     ~AlarmTest()
     {
     }
-
 protected:
+    std::shared_ptr<IMessageBroker> m_message_broker_mock;
 };
 
 /*******************************************************************
@@ -52,13 +54,13 @@ protected:
 TEST_F(AlarmTest, Contructor)
 {
     ASSERT_NO_THROW(
-        Alarm alarm;
+        Alarm alarm(m_message_broker_mock);
     );
 }
 
 TEST_F(AlarmTest, Init)
 {
-    Alarm alarm;
+    Alarm alarm(m_message_broker_mock);
 
     EXPECT_CALL(*kinect_mock, Init).
         WillOnce(Return(0));

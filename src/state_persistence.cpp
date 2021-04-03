@@ -46,7 +46,7 @@ int Database::RemoveDatabase()
     return 0;
 }
 
-DataTable::DataTable(std::weak_ptr<Database> data_base,const std::string& name, Entry list_variables) :
+DataTable::DataTable(std::weak_ptr<Database> data_base, const std::string& name, Entry list_variables) :
     m_name(name),
     m_data_base(data_base),
     m_list_variables(list_variables)
@@ -163,7 +163,6 @@ int DataTable::ExecuteSqlCommand(const std::string& command)
 int DataTable::ExecuteSqlRequest(const std::string& command, sqlite3_stmt **response)
 {
     int ret_val = 0;
-    char *error_message = nullptr;
     std::shared_ptr<Database> l_data_base = m_data_base.lock();
 
     if(l_data_base == nullptr && l_data_base->m_sqlite_database == nullptr)
@@ -185,7 +184,6 @@ int DataTable::ExecuteSqlRequest(const std::string& command, sqlite3_stmt **resp
 int DataTable::NumberItems(int& number_items)
 {
     int ret_val = -1;
-    char *error_message = nullptr;
     std::string command;
     std::shared_ptr<Database> l_data_base = m_data_base.lock();
     sqlite3_stmt *response;
@@ -298,7 +296,6 @@ int DataTable::FormInsertItemMessage(std::string& command, const Entry& item)
 int DataTable::GetItem(Entry& item)
 {
     int ret_val = -1;
-    char *error_message = nullptr;
     std::string command;
     std::shared_ptr<Database> l_data_base = m_data_base.lock();
     sqlite3_stmt *response;
@@ -369,7 +366,6 @@ int DataTable::HandleGetItemResponse(sqlite3_stmt **response, Entry& item)
 
 std::string DataTable::VariableToString(const Variable& variable)
 {
-    int ret_val = 0;
     std::string string_value;
     try
     {

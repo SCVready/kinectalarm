@@ -57,6 +57,8 @@ public:
 
     int SetVariable(const Variable& variable) override;
 
+    int SetVariableExpiration(const Variable& variable, int livetime_seconds) override;
+
     int Clear() override;
 
     int CallObservers(const std::string& channel, const std::string& message);

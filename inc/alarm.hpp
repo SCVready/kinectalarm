@@ -28,18 +28,15 @@
 #include <memory>
 
 #include "global_parameters.hpp"
-#include "kinect_interface.hpp"
+#include "message_broker.hpp"
 #include "kinect.hpp"
 #include "log.hpp"
 #include "config.hpp"
-#include "redis_db.hpp"
 #include "sqlite_db.hpp"
 #include "video_stream.hpp"
 #include "video.hpp"
 #include "liveview.hpp"
 #include "detection.hpp"
-
-
 
 /*******************************************************************
  * Structures
@@ -114,7 +111,7 @@ public:
      * @brief Contructor
      * 
      */
-    Alarm();
+    Alarm(std::shared_ptr<IMessageBroker> message_broker);
 
     /**
      * @brief Destructor
@@ -228,14 +225,20 @@ private:
     /* Liveview object */
     std::shared_ptr<IAlarmModule> m_liveview;
 
-    /* Detection object */
-    std::shared_ptr<IAlarmModule> m_detection;
-
     /* Liveview observer object */
     std::shared_ptr<AlarmLiveviewObserver> m_liveview_observer;
 
+    /* Detection object */
+    std::shared_ptr<IAlarmModule> m_detection;
+
     /* Detection observer object */
     std::shared_ptr<AlarmDetectionObserver> m_detection_observer;
+
+    /* MessageBroker object */
+    std::shared_ptr<IMessageBroker> m_message_broker;
+
+    /* MessageBroker observer object */
+    std::shared_ptr<IMessageBroker> m_message_broker_observer;
 
     DetectionConfig m_detection_config;
 

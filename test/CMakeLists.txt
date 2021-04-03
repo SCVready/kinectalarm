@@ -29,7 +29,7 @@ target_include_directories(kinect_frame_tests PRIVATE "../inc")
 ######## Liveview class ########
 add_executable(liveview_tests
                liveview_tests/liveview_tests.cpp
-               mocks/kinect_mock.cpp
+               common/mocks/kinect_mock.cpp
                liveview_tests/mocks/liveview_observer_mock.cpp
                ../src/liveview.cpp
                ../src/cyclic_task.cpp
@@ -42,7 +42,7 @@ target_include_directories(liveview_tests PRIVATE "../inc")
 ######## Detection class ########
 add_executable(detection_tests
                detection_tests/detection_tests.cpp
-               mocks/kinect_mock.cpp
+               common/mocks/kinect_mock.cpp
                detection_tests/mocks/detection_observer_mock.cpp
                ../src/detection.cpp
                ../src/cyclic_task.cpp
@@ -61,7 +61,7 @@ add_executable(alarm_tests
                alarm_tests/fakes/kinect_factory_fake.cpp
                alarm_tests/fakes/alarm_module_factory_fake.cpp
                alarm_tests/mocks/alarm_module_mock.cpp
-               mocks/kinect_mock.cpp
+               common/mocks/kinect_mock.cpp
                ../src/alarm.cpp
                alarm_tests/alarm_tests.cpp)
 target_link_libraries(alarm_tests gtest gtest_main pthread gmock)

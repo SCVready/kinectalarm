@@ -1,7 +1,7 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file alarm_module_factory.cpp
+ * @file kinect_factory_fake.cpp
  *
  */
 
@@ -11,7 +11,7 @@
 #include <memory>
 
 #include "../../../inc/kinect_factory.hpp"
-#include "../../mocks/kinect_mock.hpp"
+#include "../../common/mocks/kinect_mock.hpp"
 
 /*******************************************************************
  * Class definition

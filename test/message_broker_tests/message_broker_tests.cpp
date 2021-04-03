@@ -142,8 +142,8 @@ TEST_F(MessageBrokerTest, GetEmptyVar)
 
 TEST_F(MessageBrokerTest, GetWithConvertError)
 {
-    Variable var{"testvar", DataType::String, "asd"};
-    Variable var2{"testvar", DataType::Integer, ""};
+    Variable var{"testvar", DataType::String, std::string("asd")};
+    Variable var2{"testvar", DataType::Integer, 21};
     EXPECT_EQ(0, message_broker.SetVariable(var));
     EXPECT_NE(0, message_broker.GetVariable(var2));
 }
@@ -172,11 +172,37 @@ TEST_F(MessageBrokerTest, SetGetVariable_Float)
 
 TEST_F(MessageBrokerTest, SetGetVariable_String)
 {
-    Variable var{"testvar", DataType::String, "hello"};
-    Variable var2{"testvar", DataType::String, ""};
+    Variable var{"testvar", DataType::String, std::string("hello")};
+    Variable var2{"testvar", DataType::String, std::string()};
 
     EXPECT_EQ(0, message_broker.SetVariable(var));
     EXPECT_EQ(0, message_broker.GetVariable(var2));
 
     EXPECT_EQ(std::get<std::string>(var.value),std::get<std::string>(var2.value));
+}
+
+TEST_F(MessageBrokerTest, SetGetVariable_Bool)
+{
+    Variable var{"testvar", DataType::Boolean, true};
+    Variable var2{"testvar", DataType::Boolean, false};
+
+    EXPECT_EQ(0, message_broker.SetVariable(var));
+    EXPECT_EQ(0, message_broker.GetVariable(var2));
+
+    EXPECT_EQ(std::get<bool>(var.value),std::get<bool>(var2.value));
+}
+
+TEST_F(MessageBrokerTest, SetGetVariableExpiration)
+{
+    Variable var{"testvar", DataType::Integer, 10};
+    Variable var2{"testvar", DataType::Integer, 0};
+
+    EXPECT_EQ(0, message_broker.SetVariableExpiration(var,1));
+    EXPECT_EQ(0, message_broker.GetVariable(var2));
+
+    EXPECT_EQ(std::get<int>(var.value), std::get<int>(var2.value));
+
+    std::this_thread::sleep_for (std::chrono::milliseconds(1100));
+
+    EXPECT_NE(0, message_broker.GetVariable(var2));
 }

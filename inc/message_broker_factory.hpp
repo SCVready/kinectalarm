@@ -21,7 +21,7 @@
 class MessageBrokerFactory
 {
 public:
-    static std::shared_ptr<IMessageBroker> Create();
+    static std::shared_ptr<IMessageBroker> Create(std::string path);
 };
 
 #endif /* MESSAGE_BROKER_FACTORY__H_ */

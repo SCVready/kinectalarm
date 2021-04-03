@@ -12,6 +12,7 @@
  * Includes
  *******************************************************************/
 #include <memory>
+#include <map>
 #include <sqlite3.h>
 
 #include "state_persistence_interface.hpp"
@@ -59,7 +60,7 @@ private:
     int StringToVariable(const std::string& string_value, Variable& variable);
 };
 
-class Database : public IStatePersistence
+class Database : public IDatabase
 {
     friend DataTable;
 public:

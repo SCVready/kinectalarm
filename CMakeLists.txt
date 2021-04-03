@@ -28,6 +28,7 @@ set(libs
     "dl"
     "hiredis"
     "event"
+    "event_pthreads"
     "ssl"
     "crypto"
     "sqlite3"

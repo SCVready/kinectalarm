@@ -11,7 +11,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "../mocks/kinect_mock.hpp"
+#include "../common/mocks/kinect_mock.hpp"
 #include "mocks/liveview_observer_mock.hpp"
 #include "../../inc/liveview.hpp"
 

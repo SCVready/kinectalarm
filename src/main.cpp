@@ -28,10 +28,12 @@
 
 #include "global_parameters.hpp"
 #include "alarm.hpp"
+#include "cyclic_task.hpp"
 #include "log.hpp"
 #include "config.hpp"
 #include "redis_db.hpp"
 #include "common.hpp"
+#include "message_broker_factory.hpp"
 
 /*******************************************************************
  * Defines
@@ -44,112 +46,45 @@
 volatile bool kinect_alarm_running = true;
 
 /*******************************************************************
- * Function declaration
+ * Class declaration
  *******************************************************************/
-int MessageProcess(class Alarm *alarm, char *command);
-void OnMessage(redisAsyncContext *c, void *reply, void *privdata);
-void* RefreshWatchdog(void *x_void_ptr);
+class MessageListener;
+
+class Main : public CyclicTask
+{
+friend MessageListener;
+public:
+    Main();
+    int Init();
+    int Term();
+private:
+    void ExecutionCycle() override;
+
+    std::shared_ptr<IMessageBroker> m_message_broker;
+    std::shared_ptr<IChannelMessageObserver> m_message_observer;
+    std::shared_ptr<Alarm> m_alarm;
+};
+
+class MessageListener : public IChannelMessageObserver
+{
+public:
+    MessageListener(Main& main);
+    void ChannelMessageListener(const std::string& message) override;
+private:
+    Main& m_main;
+};
 
 /*******************************************************************
  * Function definition
  *******************************************************************/
-void signalHandler(int signal)
+MessageListener::MessageListener(Main& _main) :
+    m_main(_main)
 {
-    if (signal == SIGINT
-        || signal == SIGTERM
-        || signal == SIGQUIT)
-    {
-        kinect_alarm_running = false;
-        async_redis_event_loopbreak();
-    }
 }
 
-int main(int argc, char** argv)
+void MessageListener::ChannelMessageListener(const std::string& message)
 {
-    /* Handle signals */
-    signal(SIGINT, signalHandler);
-    signal(SIGTERM, signalHandler);
-    signal(SIGQUIT, signalHandler);
-
-    /* Set up syslog */
-    setlogmask(LOG_UPTO(LOG_DEBUG));
-    openlog ("kinect_alarm", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
-
-#ifndef DEBUG
-    LOG(LOG_NOTICE, "RELEASE BUILD %s\n", KINECTALARM_VERSION);
-#else
-    LOG(LOG_NOTICE, "DEBUG BUILD %s\n", KINECTALARM_VERSION);
-#endif
-
-    /* Alarm Class creation */
-    class Alarm alarm;
-
-    /* Alarm initialization */
-    if(alarm.Init())
-    {
-        LOG(LOG_ERR, "Alarm initialization error\n");
-        goto closing_alarm;
-    }
-    else
-    {
-        LOG(LOG_NOTICE, "Alarm initialize successful\n");
-    }
-
-    /* Init Redis async context */
-    if(init_async_redis_db())
-        goto closing_alarm;
-
-    /* Subscribe to Redis channel */
-    async_redis_subscribe("kinectalarm",OnMessage,&alarm);
-
-    /* Set version on Redis */
-    redis_set_char("kinectalarm_version",KINECTALARM_VERSION);
-
-    /* Launch watchdog thread */
-    pthread_t watchdog_thread;
-    if(pthread_create(&watchdog_thread, NULL, RefreshWatchdog, NULL))
-    {
-        LOG(LOG_ERR, "Error launching watchdog_thread\n");
-        return 1;
-    }
-    redis_setex_int("kinectalarm_watchdog", 5, 0);
-
-    /* Listen to Redis publications */
-    async_redis_event_dispatch();
-
-    LOG(LOG_NOTICE, "Closing alarm\n");
-
-closing_alarm:
-    alarm.Term();
-    return 0;
-}
-
-void OnMessage(redisAsyncContext *c, void *reply, void *privdata)
-{
-    class Alarm *alarm = (class Alarm*) privdata;
-    redisReply *r = (redisReply*) reply;
-    if (reply == NULL) return;
-
-    if (r->type == REDIS_REPLY_ARRAY)
-    {
-        /* Check number of elements */
-        if(r->elements != 3)
-            return;
-
-        /* Check channel */
-        if(strncmp(r->element[0]->str,"message",strlen("message")))
-            return;
-        if(strncmp(r->element[1]->str,"kinectalarm",strlen("kinectalarm")))
-            return;
-
-        /* Process the message */
-        MessageProcess(alarm, r->element[2]->str);
-    }
-}
-
-int MessageProcess(class Alarm *alarm, char *command)
-{
-    std::string str(command);
+    std::string str(message);
 
     /* Remove non wanted characters */
     str.erase(std::remove_if(str.begin(), str.end(), allowed_characters), str.end());
@@ -175,16 +110,16 @@ int MessageProcess(class Alarm *alarm, char *command)
         if(words[0].compare("det") == 0)
         {
             if(!words[1].compare("start"))
-                alarm->StartDetection();
+                m_main.m_alarm->StartDetection();
             else if(!words[1].compare("stop"))
-                alarm->StopDetection();
+                m_main.m_alarm->StopDetection();
             else if(!words[1].compare("rst"))
-                alarm->ResetDetection();
+                m_main.m_alarm->ResetDetection();
             else if(!words[1].compare("del")){
                 if(words.size() >=3)
                 {
                     int value = std::stoi(words[2]);;
-                    alarm->DeleteDetection(value);
+                    m_main.m_alarm->DeleteDetection(value);
                 }
 
             }
@@ -192,9 +127,9 @@ int MessageProcess(class Alarm *alarm, char *command)
         else if(!words[0].compare("lvw"))
         {
             if(!words[1].compare("start"))
-                alarm->StartLiveview();
+                m_main.m_alarm->StartLiveview();
             else if(!words[1].compare("stop"))
-                alarm->StopLiveview();
+                m_main.m_alarm->StopLiveview();
         }
         else if(!words[0].compare("tilt"))
         {
@@ -205,7 +140,7 @@ int MessageProcess(class Alarm *alarm, char *command)
             catch (const std::invalid_argument& ia) {
                 tilt = 0;
             }
-            alarm->ChangeTilt(tilt);
+            m_main.m_alarm->ChangeTilt(tilt);
         }
         else if(!words[0].compare("brightness"))
         {
@@ -216,7 +151,7 @@ int MessageProcess(class Alarm *alarm, char *command)
             catch (const std::invalid_argument& ia) {
                 value = 0;
             }
-            alarm->ChangeBrightness(value);
+            m_main.m_alarm->ChangeBrightness(value);
         }
         else if(!words[0].compare("contrast"))
         {
@@ -227,7 +162,7 @@ int MessageProcess(class Alarm *alarm, char *command)
             catch (const std::invalid_argument& ia) {
                 value = 0;
             }
-            alarm->ChangeContrast(value);
+            m_main.m_alarm->ChangeContrast(value);
         }
         else if(!words[0].compare("threshold"))
         {
@@ -238,7 +173,7 @@ int MessageProcess(class Alarm *alarm, char *command)
             catch (const std::invalid_argument& ia) {
                 value = 0;
             }
-            alarm->ChangeThreshold(value);
+            m_main.m_alarm->ChangeThreshold(value);
         }
         else if(!words[0].compare("sensitivity"))
         {
@@ -249,18 +184,99 @@ int MessageProcess(class Alarm *alarm, char *command)
             catch (const std::invalid_argument& ia) {
                 value = 0;
             }
-            alarm->ChangeSensitivity(value);
+            m_main.m_alarm->ChangeSensitivity(value);
         }
     }
+}
+
+Main::Main() :
+    CyclicTask("Main", 1000)
+{
+}
+
+int Main::Init()
+{
+    /* MessageBroker class creation */
+    m_message_broker = MessageBrokerFactory::Create("/tmp/redis.sock");
+
+    /* MessageListener observer creation */
+    m_message_observer = std::make_shared<MessageListener>(*this);
+
+    /* StatePersistence class creation */
+
+    /* Alarm class creation */
+    m_alarm = std::make_shared<Alarm>(m_message_broker);
+
+    /* Alarm class initialization */
+    if(0 != m_alarm->Init())
+    {
+        LOG(LOG_ERR, "Alarm initialization error\n");
+    }
+
+    /* Subscribe to Redis channel */
+    m_message_broker->Subscribe("kinectalarm", m_message_observer);
+
+    /* Launch watchdog thread */
+    CyclicTask::Start();
+
     return 0;
 }
 
-void* RefreshWatchdog(void *x_void_ptr)
+int Main::Term()
 {
-    while(1)
+    /* Unsubscribe to Redis channel */
+    m_message_broker->Unsubscribe("kinectalarm", m_message_observer);
+
+    /* Term watchdog thread (CyclicTask::stop) */
+    CyclicTask::Stop();
+
+    /* Alarm class term */
+    m_alarm->Term();
+
+    return 0;
+}
+
+void Main::ExecutionCycle()
+{
+    m_message_broker->SetVariableExpiration({"kinectalarm_watchdog",  DataType::Integer, 1}, 2); //TODO add timeout to config
+}
+
+void signalHandler(int signal)
+{
+    if (signal == SIGINT
+        || signal == SIGTERM
+        || signal == SIGQUIT)
     {
-        redis_setex_int("kinectalarm_watchdog", 2, 0);
-        sleep(1);
+        kinect_alarm_running = false;
     }
-    return NULL;
+}
+
+int main(int argc, char** argv)
+{
+    /* Handle signals */
+    signal(SIGINT, signalHandler);
+    signal(SIGTERM, signalHandler);
+    signal(SIGQUIT, signalHandler);
+
+    /* Set up syslog */
+    setlogmask(LOG_UPTO(LOG_DEBUG));
+    openlog ("kinect_alarm", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+
+#ifndef DEBUG
+    LOG(LOG_NOTICE, "RELEASE BUILD %s\n", KINECTALARM_VERSION);
+#else
+    LOG(LOG_NOTICE, "DEBUG BUILD %s\n", KINECTALARM_VERSION);
+#endif
+
+    Main _main;
+    _main.Init();
+
+    while(kinect_alarm_running)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    _main.Term();
+
+    return 0;
 }

@@ -1,6 +1,6 @@
 #include <gmock/gmock.h>
 
-#include "../../inc/kinect_interface.hpp"
+#include "../../../inc/kinect_interface.hpp"
 
 using ::testing::_;
 using ::testing::SaveArg;

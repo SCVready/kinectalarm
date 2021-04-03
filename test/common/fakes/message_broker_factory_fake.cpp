@@ -1,7 +1,7 @@
 /**
  * @author Alejandro Solozabal
  *
- * @file message_broker_factory.cpp
+ * @file message_broker_factory_fake.cpp
  *
  */
 
@@ -10,14 +10,14 @@
  *******************************************************************/
 #include <memory>
 
-#include "message_broker_factory.hpp"
-#include "message_broker.hpp"
+#include "../../../inc/message_broker_factory.hpp"
 
 /*******************************************************************
  * Class definition
  *******************************************************************/
+extern std::shared_ptr<IMessageBroker> message_broker_mock;
 
 std::shared_ptr<IMessageBroker> MessageBrokerFactory::Create(std::string path)
 {
-    return std::make_shared<MessageBroker>(path);
+    return nullptr;
 }

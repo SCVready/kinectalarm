@@ -24,6 +24,7 @@
  *******************************************************************/
 class CyclicTask
 {
+/*TODO: make them protected?*/
 public:
     /**
      * @brief Constructor

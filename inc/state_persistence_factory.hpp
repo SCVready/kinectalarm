@@ -13,7 +13,7 @@
  *******************************************************************/
 #include <memory>
 
-#include "state_persistence_interface.hpp"
+#include "state_persistence.hpp"
 
 /*******************************************************************
  * Class declaration
@@ -21,7 +21,10 @@
 class StatePersistenceFactory
 {
 public:
-    static std::shared_ptr<IStatePersistence> Create();
+    static std::shared_ptr<IDatabase> CreateDatabase(std::string path);
+    static std::shared_ptr<IDataTable> CreateDatatable(std::weak_ptr<Database> data_base,
+                                                       const std::string& name,
+                                                       Entry list_variables);
 };
 
 #endif /* STATE_PERSISTANCE_FACTORY__H_ */

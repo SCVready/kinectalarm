@@ -24,11 +24,12 @@ enum class DataType
 {
     Integer,
     Float,
-    String
+    String,
+    Boolean
 };
 
 /* */
-using Value = std::variant<int32_t, float, std::string>;
+using Value = std::variant<int32_t, float, std::string, bool>;
 
 /* */
 struct Variable
@@ -89,6 +90,13 @@ public:
      * @return 0 if ok
      */
     virtual int SetVariable(const Variable& variable) = 0;
+
+    /**
+     * @brief SetVariableExpiration
+     * 
+     * @return 0 if ok
+     */
+    virtual int SetVariableExpiration(const Variable& variable, int livetime_seconds) = 0;
 
     /**
      * @brief Clear DB

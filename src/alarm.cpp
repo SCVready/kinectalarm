@@ -11,6 +11,7 @@
 #include "alarm.hpp"
 #include "kinect_factory.hpp"
 #include "alarm_module_factory.hpp"
+#include "message_broker_factory.hpp"
 
 /*******************************************************************
  * Defines
@@ -20,7 +21,8 @@
 /*******************************************************************
  * Class definition
  *******************************************************************/
-Alarm::Alarm()
+Alarm::Alarm(std::shared_ptr<IMessageBroker> message_broker) :
+    m_message_broker(message_broker)
 {
     /* Detection config */
     det_conf.is_active      = false;
@@ -94,14 +96,6 @@ int Alarm::Init()
         write_status(det_conf,lvw_conf);
     }
 
-    /* Redis db initialization */
-    if(init_redis_db())
-    {
-        LOG(LOG_ERR,"Error: couldn't initialize Redis db\n");
-        m_kinect->Term();
-        return -1;
-    }
-
     /* Initialize redis vars */
     if(InitVarsRedis())
     {
@@ -151,9 +145,6 @@ int Alarm::Term()
         m_kinect->Stop();
     m_kinect->Term();
 
-    /* Deinit Redis */
-    deinit_redis_db();
-
     /* Deinit SQLite */
     deinit_sqlite_db();
 
@@ -174,7 +165,7 @@ int Alarm::StartDetection()
         ChangeDetStatus(DET_ACTIVE,true);
 
         /* Update Redis DB */
-        redis_set_int((char *) "det_status", 1);
+        m_message_broker->SetVariable({"det_status",  DataType::Integer, 1});
 
         m_detection->Start();
 
@@ -182,7 +173,7 @@ int Alarm::StartDetection()
         UpdateLed();
 
         /* Publish event */
-        redis_publish("event_info","Detection started");
+        m_message_broker->Publish("event_info", "Detection started");
 
         LOG(LOG_INFO,"Detection thread running\n");
         return 0;
@@ -198,7 +189,7 @@ int Alarm::StopDetection()
         ChangeDetStatus(DET_ACTIVE,false);
 
         /* Update Redis DB */
-        redis_set_int((char *) "det_status", 0);
+        m_message_broker->SetVariable({"det_status",  DataType::Integer, 0});
 
         m_detection->Stop();
 
@@ -206,7 +197,7 @@ int Alarm::StopDetection()
         UpdateLed();
 
         /* Publish event */
-        redis_publish("event_info","Detection stopped");
+        m_message_broker->Publish("event_info", "Detection stopped");
 
         LOG(LOG_INFO,"Detection thread stopped\n");
 
@@ -233,7 +224,7 @@ int Alarm::StartLiveview()
         ChangeLvwStatus(LVW_ACTIVE,true);
 
         /* Update redis db */
-        redis_set_int((char *) "lvw_status", 1);
+        m_message_broker->SetVariable({"lvw_status",  DataType::Integer, 1});
 
         m_liveview->Start();
 
@@ -241,7 +232,7 @@ int Alarm::StartLiveview()
         UpdateLed();
 
         /* Publish event */
-        redis_publish("event_info","Liveview started");
+        m_message_broker->Publish("event_info","Liveview started");
     }
 
     return 0;
@@ -255,7 +246,7 @@ int Alarm::StopLiveview()
         ChangeLvwStatus(LVW_ACTIVE,false);
 
         /* Update Redis DB */
-        redis_set_int((char *) "lvw_status", 0);
+        m_message_broker->SetVariable({"lvw_status",  DataType::Integer, 0});
 
         m_liveview->Stop();
 
@@ -263,7 +254,7 @@ int Alarm::StopLiveview()
         UpdateLed();
 
         /* Publish event */
-        redis_publish("event_info","Liveview stopped");
+        m_message_broker->Publish("event_info","Liveview stopped");
 
         LOG(LOG_INFO,"Liveview thread stopped\n");
 
@@ -297,7 +288,7 @@ int Alarm::ResetDetection()
     LOG(LOG_INFO,"Deleted all detection entries\n");
 
     /* Publish events */
-    redis_publish("event_success","Deleted all detections");
+    m_message_broker->Publish("event_success","Deleted all detections");
 
     return 0;
 }
@@ -368,29 +359,33 @@ int Alarm::ChangeLvwStatus(enum enumLvw_conf conf_name, T value)
 
 int Alarm::InitVarsRedis()
 {
-    if(redis_set_int((char *) "det_status", det_conf.is_active))
-        return -1;
-    if(redis_set_int((char *) "lvw_status", lvw_conf.is_active))
-        return -1;
-    if(redis_set_int((char *) "det_numdet", det_conf.curr_det_num-1))
-        return -1;
-    if(redis_set_int((char *) "tilt", lvw_conf.tilt))
-        return -1;
-    if(redis_set_int((char *) "brightness", lvw_conf.brightness))
-        return -1;
-    if(redis_set_int((char *) "contrast", lvw_conf.contrast))
-        return -1;
-    if(redis_set_int((char *) "threshold", det_conf.threshold))
-        return -1;
-    if(redis_set_int((char *) "sensitivity", det_conf.tolerance))
-        return -1;
-    return 0;
+    int rel_val = 0;
+    std::array<Variable, 8> variables{{
+        {"det_status",  DataType::Integer, det_conf.is_active ? 1 : 0},
+        {"lvw_status",  DataType::Integer, lvw_conf.is_active ? 1 : 0},
+        {"det_numdet",  DataType::Integer, det_conf.curr_det_num-1},
+        {"tilt",        DataType::Integer, lvw_conf.tilt},
+        {"brightness",  DataType::Integer, lvw_conf.brightness},
+        {"contrast",    DataType::Integer, lvw_conf.contrast},
+        {"threshold",   DataType::Integer, det_conf.threshold},
+        {"sensitivity", DataType::Integer, det_conf.tolerance}
+    }};
+
+    for(const auto& variable : variables)
+    {
+        if(0 != m_message_broker->SetVariable(variable))
+        {
+            rel_val = -1;
+            break;
+        }
+    }
+    return rel_val;
 }
 
 int Alarm::ChangeTilt(double tilt)
 {
     m_kinect->ChangeTilt(tilt);
-    redis_set_int((char *) "tilt", (int) tilt);
+    m_message_broker->SetVariable({"tilt",  DataType::Integer, static_cast<int32_t>(tilt)});
     ChangeLvwStatus(TILT,tilt);
     LOG(LOG_INFO,"Changed Kinect's tilt to: %d\n",(int)tilt);
 
@@ -399,7 +394,7 @@ int Alarm::ChangeTilt(double tilt)
 
 int Alarm::ChangeBrightness(int32_t value)
 {
-    redis_set_int((char *) "brightness", value);
+    m_message_broker->SetVariable({"brightness",  DataType::Integer, static_cast<int32_t>(value)});
     ChangeLvwStatus(BRIGHTNESS,value);
     LOG(LOG_INFO,"Changed Kinect's brightness to: %d\n",value);
 
@@ -408,7 +403,7 @@ int Alarm::ChangeBrightness(int32_t value)
 
 int Alarm::ChangeContrast(int32_t value)
 {
-    redis_set_int((char *) "contrast", value);
+    m_message_broker->SetVariable({"contrast",  DataType::Integer, static_cast<int32_t>(value)});
     ChangeLvwStatus(CONTRAST,value);
     LOG(LOG_INFO,"Changed Kinect's contrast to: %d\n",value);
 
@@ -417,28 +412,28 @@ int Alarm::ChangeContrast(int32_t value)
 
 int Alarm::ChangeThreshold(int32_t value)
 {
-    redis_set_int((char *) "threshold", value);
+    m_message_broker->SetVariable({"threshold",  DataType::Integer, static_cast<int32_t>(value)});
     ChangeDetStatus(THRESHOLD,value);
     LOG(LOG_INFO,"Changed Kinect's threshold to: %d\n",value);
 
     /* Publish events */
     char message[255];
     sprintf(message, "Threshold changed to %d",value);
-    redis_publish("event_success",message);
+    m_message_broker->Publish("event_success",message);
 
     return 0;
 }
 
 int Alarm::ChangeSensitivity(int32_t value)
 {
-    redis_set_int((char *) "sensitivity", value);
+    m_message_broker->SetVariable({"sensitivity",  DataType::Integer, static_cast<int32_t>(value)});
     ChangeDetStatus(TOLERANCE,value);
     LOG(LOG_INFO,"Changed Kinect's sensitivity to: %d\n",value);
     
     /* Publish events */
     char message[255];
     sprintf(message, "Sensitivity changed to %d",value);
-    redis_publish("event_success",message);
+    m_message_broker->Publish("event_success",message);
 
     return 0;
 }
@@ -466,7 +461,7 @@ void AlarmLiveviewObserver::NewFrame(KinectVideoFrame& frame)
     const char *base64_jpeg_frame = base64encode(&m_alarm.m_c, liveview_jpeg.data(), liveview_jpeg.size());
 
     /* Publish in redis channel */
-    redis_publish("liveview", base64_jpeg_frame);;
+    m_alarm.m_message_broker->Publish("liveview", base64_jpeg_frame);;
 }
 
 void AlarmDetectionObserver::IntrusionStarted()
@@ -474,8 +469,8 @@ void AlarmDetectionObserver::IntrusionStarted()
     /* Publish events */
     char message[255];
     sprintf(message, "New Intrusion");
-    redis_publish("event_error",message);
-    redis_publish("email_send_det","");
+    m_alarm.m_message_broker->Publish("event_error",message);
+    m_alarm. m_message_broker->Publish("email_send_det","");
 
     /* Update kinect led */
     m_alarm.m_kinect->ChangeLedColor(LED_RED);
@@ -494,13 +489,13 @@ void AlarmDetectionObserver::IntrusionStopped(uint32_t frame_num)
     /* Publish event */
     char message[255];
     sprintf(message, "newdet %u %u %u", m_alarm.det_conf.curr_det_num, 1000, frame_num);
-    redis_publish("new_det",message);
+    m_alarm.m_message_broker->Publish("new_det",message);
 
     /* Update SQLite db */
     insert_entry_det_table_sqlite_db(m_alarm.det_conf.curr_det_num,1000, frame_num, filepath, filepath_vid);
 
     /* Update Redis db */
-    redis_set_int((char *) "det_numdet", m_alarm.det_conf.curr_det_num);
+    m_alarm.m_message_broker->SetVariable({"det_numdet",  DataType::Integer, static_cast<int32_t>(m_alarm.det_conf.curr_det_num)});
 
     /* Change Status */
     m_alarm.ChangeDetStatus(CURR_DET_NUM, m_alarm.det_conf.curr_det_num + 1);

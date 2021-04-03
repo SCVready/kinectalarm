@@ -64,14 +64,14 @@ public:
     virtual int DeleteTable() = 0;
 };
 
-class IStatePersistence
+class IDatabase
 {
 public:
     /**
      * @brief Destructor
      * 
      */
-    virtual ~IStatePersistence() {};
+    virtual ~IDatabase() {};
 
     virtual int RemoveDatabase() = 0;
 };

@@ -17,7 +17,7 @@
 /*******************************************************************
  * Static functions
  *******************************************************************/
-void OnMessage(redisAsyncContext *redis_context, void *replay, void *data)
+static void OnMessage(redisAsyncContext *redis_context, void *replay, void *data)
 {
     MessageBroker* message_broker = reinterpret_cast<MessageBroker*>(data);
     redisReply *reply = reinterpret_cast<redisReply*>(replay);
@@ -36,7 +36,7 @@ void OnMessage(redisAsyncContext *redis_context, void *replay, void *data)
         /* TODO: Explain the structure of replay: "message {channel} {message}"*/
 
         LOG(LOG_DEBUG, "Redis replay: ");
-        for (int i = 0; i < reply->elements; i++)
+        for (size_t i = 0; i < reply->elements; i++)
         {
             if(reply->element[i]->type == REDIS_REPLY_STRING)
             {
@@ -275,6 +275,7 @@ int MessageBroker::Unsubscribe(const std::string& channel, const std::shared_ptr
 
     return retval;
 }
+
 int MessageBroker::Publish(const std::string& channel, const std::string& message)
 {
     int retval = 0;
@@ -291,7 +292,7 @@ int MessageBroker::Publish(const std::string& channel, const std::string& messag
 
     return retval;
 }
-#include <iostream>
+
 int MessageBroker::GetVariable(Variable& variable)
 {
     int retval = 0;
@@ -308,14 +309,17 @@ int MessageBroker::GetVariable(Variable& variable)
             switch(variable.data_type)
             {
                 case DataType::Integer:
-                variable.value = std::stoi(std::string(reply->str), nullptr);
-                break;
+                    variable.value = std::stoi(std::string(reply->str), nullptr);
+                    break;
                 case DataType::Float:
-                variable.value = std::stof(std::string(reply->str), nullptr);
-                break;
+                    variable.value = std::stof(std::string(reply->str), nullptr);
+                    break;
                 case DataType::String:
-                variable.value = reply->str;
-                break;
+                    variable.value = std::string(reply->str);
+                    break;
+                case DataType::Boolean:
+                    variable.value = std::string(reply->str) == "true" ? true : false;
+                    break;
             }
         }
         catch(...)
@@ -333,26 +337,78 @@ int MessageBroker::SetVariable(const Variable& variable)
     int retval = 0;
 
     std::string value;
-    switch(variable.data_type)
+    try
     {
-        case DataType::Integer:
-           value = std::to_string(std::get<int>(variable.value));
-           break;
-        case DataType::Float:
-           value = std::to_string(std::get<float>(variable.value));
-           break;
-        case DataType::String:
-           value = std::get<std::string>(variable.value);
-           break;
-    }
+        switch(variable.data_type)
+        {
+            /*TODO unify conversion to from string to value and viceversa*/
+            case DataType::Integer:
+            value = std::to_string(std::get<int>(variable.value));
+            break;
+            case DataType::Float:
+            value = std::to_string(std::get<float>(variable.value));
+            break;
+            case DataType::String:
+            value = std::get<std::string>(variable.value);
+            break;
+            case DataType::Boolean:
+            value = std::get<bool>(variable.value) == true ? "true" : "false";
+            break;
+        }
 
-    redisReply *reply = (redisReply *) redisCommand(m_context,"SET %s %s", variable.name.c_str(), value.c_str());
-    if(reply->type == REDIS_REPLY_ERROR)
+        redisReply *reply = (redisReply *) redisCommand(m_context,"SET %s %s", variable.name.c_str(), value.c_str());
+        if(reply->type == REDIS_REPLY_ERROR)
+        {
+            retval = -1;
+        }
+
+        freeReplyObject(reply);
+    }
+    catch(...)
     {
+        LOG(LOG_INFO,"Exception raised\n");
         retval = -1;
     }
 
-    freeReplyObject(reply);
+    return retval;
+}
+
+int MessageBroker::SetVariableExpiration(const Variable& variable, int livetime_seconds)
+{
+    int retval = 0;
+
+    std::string value;
+    try
+    {
+        switch(variable.data_type)
+        {
+            case DataType::Integer:
+            value = std::to_string(std::get<int>(variable.value));
+            break;
+            case DataType::Float:
+            value = std::to_string(std::get<float>(variable.value));
+            break;
+            case DataType::String:
+            value = std::get<std::string>(variable.value);
+            break;
+            case DataType::Boolean:
+            value = std::get<bool>(variable.value) == true ? "true" : "false";
+            break;
+        }
+
+        redisReply *reply = (redisReply *) redisCommand(m_context,"SETEX %s %d %s", variable.name.c_str(), livetime_seconds, value.c_str());
+        if(reply->type == REDIS_REPLY_ERROR)
+        {
+            retval = -1;
+        }
+
+        freeReplyObject(reply);
+    }
+    catch(...)
+    {
+        LOG(LOG_INFO,"Exception raised\n");
+        retval = -1;
+    }
 
     return retval;
 }
