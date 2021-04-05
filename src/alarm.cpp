@@ -12,33 +12,21 @@
 #include "kinect_factory.hpp"
 #include "alarm_module_factory.hpp"
 #include "message_broker_factory.hpp"
+#include "state_persistence_factory.hpp"
 
 /*******************************************************************
  * Defines
  *******************************************************************/
 #define KINECT_GETFRAMES_TIMEOUT_MS 1000
+#define NEW_STATEPERSISTENCE
 
 /*******************************************************************
  * Class definition
  *******************************************************************/
-Alarm::Alarm(std::shared_ptr<IMessageBroker> message_broker) :
-    m_message_broker(message_broker)
+Alarm::Alarm(std::shared_ptr<IMessageBroker> message_broker, std::shared_ptr<IDatabase> data_base) :
+    m_message_broker(message_broker),
+    m_data_base(data_base)
 {
-    /* Detection config */
-    det_conf.is_active      = false;
-    det_conf.threshold      = DETECTION_THRESHOLD;
-    det_conf.tolerance      = DEPTH_CHANGE_TOLERANCE;
-    det_conf.det_num_shots  = NUM_DETECTIONS_FRAMES;
-    det_conf.frame_interval = FRAME_INTERVAL_US/1000000;
-    det_conf.curr_det_num   = 0;
-
-    /* LiveView config */
-    lvw_conf.is_active      = false;
-    lvw_conf.tilt           = 0;
-    lvw_conf.brightness     = 750;
-    lvw_conf.contrast       = 0;
-
-    /* New implementation */
     m_detection_config.threshold = 2000;
     m_detection_config.sensitivity = 10;
     m_detection_config.cooldown_ms = 2000;
@@ -64,36 +52,11 @@ int Alarm::Init()
 {
     init_base64encode(&m_c);
 
-    /* SQLite initialization */
-    if(init_sqlite_db())
+    if(InitStatePersistenceVars())
     {
-        LOG(LOG_ERR,"Error: couldn't initialize SQLite\n");
+        LOG(LOG_ERR,"Error: couldn't initialize StatePersistence vars\n");
         m_kinect->Term();
         return -1;
-    }
-
-    /* Creation of the detection table on SQLite */
-    if(create_det_table_sqlite_db())
-    {
-        LOG(LOG_ERR,"Error: creating detection table on SQLite\n");
-        m_kinect->Term();
-        return -1;
-    }
-
-    /* Creation of the status table on SQLite */
-    if(create_status_table_sqlite_db())
-    {
-        LOG(LOG_ERR,"Error: creating status table on SQLite\n");
-        m_kinect->Term();
-        return -1;
-    }
-
-    /* Parse status */
-    if(read_status(&det_conf,&lvw_conf))
-    {
-        /* Write new status entry on sqlite status table if there is an error
-         * parsing the current one */
-        write_status(det_conf,lvw_conf);
     }
 
     /* Initialize redis vars */
@@ -115,18 +78,18 @@ int Alarm::Init()
     /* Update kinect led */
     UpdateLed();
 
-    /* Create base directory to save detection images */
+    /* Create base directory to save detection images */ /*TODO move to Main*/
     create_dir((char *)DETECTION_PATH);
 
     /* Apply status */
-    if(det_conf.is_active)
+    if(m_alarm_config.detection_active)
         StartDetection();
 
-    if(lvw_conf.is_active)
+    if(m_alarm_config.liveview_active)
         StartLiveview();
 
     /* Adjust kinect's tilt */
-    if(m_kinect->ChangeTilt(lvw_conf.tilt))
+    if(m_kinect->ChangeTilt(m_alarm_config.tilt))
     {
         LOG(LOG_ERR,"Error: couldn't change Kinect's tilt\n");
         m_kinect->Term();
@@ -138,15 +101,12 @@ int Alarm::Init()
 
 int Alarm::Term()
 {
-    StopDetection();
-    StopLiveview();
+    m_detection->Stop();
+    m_liveview->Stop();
 
     if(m_kinect->IsRunning())
         m_kinect->Stop();
     m_kinect->Term();
-
-    /* Deinit SQLite */
-    deinit_sqlite_db();
 
     deinit_base64encode(&m_c);
 
@@ -161,8 +121,8 @@ int Alarm::StartDetection()
 
     if(!m_detection->IsRunning())
     {
-        /* Change status */
-        ChangeDetStatus(DET_ACTIVE,true);
+        m_alarm_config.detection_active = 1;
+        WriteStatus();
 
         /* Update Redis DB */
         m_message_broker->SetVariable({"det_status",  DataType::Integer, 1});
@@ -186,7 +146,8 @@ int Alarm::StopDetection()
     if(m_detection->IsRunning())
     {
         /* Change status */
-        ChangeDetStatus(DET_ACTIVE,false);
+        m_alarm_config.detection_active = 0;
+        WriteStatus();
 
         /* Update Redis DB */
         m_message_broker->SetVariable({"det_status",  DataType::Integer, 0});
@@ -221,7 +182,8 @@ int Alarm::StartLiveview()
     if(!m_liveview->IsRunning())
     {
         /* Change status */
-        ChangeLvwStatus(LVW_ACTIVE,true);
+        m_alarm_config.liveview_active = 1;
+        WriteStatus();
 
         /* Update redis db */
         m_message_broker->SetVariable({"lvw_status",  DataType::Integer, 1});
@@ -243,7 +205,8 @@ int Alarm::StopLiveview()
     if(m_liveview->IsRunning())
     {
         /* Change status */
-        ChangeLvwStatus(LVW_ACTIVE,false);
+        m_alarm_config.liveview_active = 0;
+        WriteStatus();
 
         /* Update Redis DB */
         m_message_broker->SetVariable({"lvw_status",  DataType::Integer, 0});
@@ -277,12 +240,12 @@ void Alarm::UpdateLed()
 
 int Alarm::GetNumDetections()
 {
-    return det_conf.curr_det_num;
+    return m_alarm_config.current_detection_number;
 }
 
 int Alarm::ResetDetection()
 {
-    delete_all_entries_det_table_sqlite_db();
+    m_detection_table->DeleteAllItems();
     delete_all_files_from_dir(DETECTION_PATH);
 
     LOG(LOG_INFO,"Deleted all detection entries\n");
@@ -298,61 +261,12 @@ int Alarm::DeleteDetection(int id)
     char command[50];
     sprintf(command, "rm -rf %s/%d_*",DETECTION_PATH,id);
     system(command);
-    delete_entry_det_table_sqlite_db(id);
+
+    Entry delete_entry = m_detection_table_definition;
+    delete_entry[0].value = id; /*ID*/
+    m_detection_table->DeleteItem(delete_entry);
 
     LOG(LOG_INFO,"Delete detection n°%d\n",id);
-
-    return 0;
-}
-
-template <typename T>
-int Alarm::ChangeDetStatus(enum enumDet_conf conf_name, T value)
-{
-    switch(conf_name)
-    {
-        case DET_ACTIVE:
-            det_conf.is_active = value;
-            break;
-        case THRESHOLD:
-            det_conf.threshold = value;
-            break;
-        case TOLERANCE:
-            det_conf.tolerance = value;
-            break;
-        case DET_NUM_SHOTS:
-            det_conf.det_num_shots = value;
-            break;
-        case FRAME_INTERVAL:
-            det_conf.frame_interval = value;
-            break;
-        case CURR_DET_NUM:
-            det_conf.curr_det_num = value;
-            break;
-    }
-    write_status(det_conf,lvw_conf);
-
-    return 0;
-}
-
-template <typename T>
-int Alarm::ChangeLvwStatus(enum enumLvw_conf conf_name, T value)
-{
-    switch(conf_name)
-    {
-        case LVW_ACTIVE:
-            lvw_conf.is_active = value;
-            break;
-        case TILT:
-            lvw_conf.tilt = value;
-            break;
-        case BRIGHTNESS:
-            lvw_conf.brightness = value;
-            break;
-        case CONTRAST:
-            lvw_conf.contrast = value;
-            break;
-    }
-    write_status(det_conf,lvw_conf);
 
     return 0;
 }
@@ -361,14 +275,14 @@ int Alarm::InitVarsRedis()
 {
     int rel_val = 0;
     std::array<Variable, 8> variables{{
-        {"det_status",  DataType::Integer, det_conf.is_active ? 1 : 0},
-        {"lvw_status",  DataType::Integer, lvw_conf.is_active ? 1 : 0},
-        {"det_numdet",  DataType::Integer, det_conf.curr_det_num-1},
-        {"tilt",        DataType::Integer, lvw_conf.tilt},
-        {"brightness",  DataType::Integer, lvw_conf.brightness},
-        {"contrast",    DataType::Integer, lvw_conf.contrast},
-        {"threshold",   DataType::Integer, det_conf.threshold},
-        {"sensitivity", DataType::Integer, det_conf.tolerance}
+        {"det_status",  DataType::Integer, m_alarm_config.detection_active},
+        {"lvw_status",  DataType::Integer, m_alarm_config.liveview_active},
+        {"det_numdet",  DataType::Integer, m_alarm_config.current_detection_number-1},
+        {"tilt",        DataType::Integer, m_alarm_config.tilt},
+        {"brightness",  DataType::Integer, m_alarm_config.brightness},
+        {"contrast",    DataType::Integer, m_alarm_config.contrast},
+        {"threshold",   DataType::Integer, m_detection_config.threshold},
+        {"sensitivity", DataType::Integer, m_detection_config.sensitivity}
     }};
 
     for(const auto& variable : variables)
@@ -382,12 +296,148 @@ int Alarm::InitVarsRedis()
     return rel_val;
 }
 
-int Alarm::ChangeTilt(double tilt)
+int Alarm::InitStatePersistenceVars()
 {
-    m_kinect->ChangeTilt(tilt);
-    m_message_broker->SetVariable({"tilt",  DataType::Integer, static_cast<int32_t>(tilt)});
-    ChangeLvwStatus(TILT,tilt);
-    LOG(LOG_INFO,"Changed Kinect's tilt to: %d\n",(int)tilt);
+    int ret_val = -1;
+
+    if(nullptr == (m_detection_table = StatePersistenceFactory::CreateDatatable(m_data_base, "DETECTIONS", m_detection_table_definition)))
+    {
+        LOG(LOG_ERR,"CreateDatatable DETECTIONS error\n");
+    }
+    else if (nullptr == (m_status_table = StatePersistenceFactory::CreateDatatable(m_data_base, "STATUS", m_status_table_definition)))
+    {
+        LOG(LOG_ERR,"CreateDatatable STATUS error\n");
+    }
+    else
+    {
+        if(0 != ReadStatus())
+        {
+            LOG(LOG_WARNING,"No status entry\n");
+            if(0 != CreateStatus())
+            {
+                ret_val = -1;
+            }
+            else
+            {
+                ret_val = 0;
+            }
+        }
+        else
+        {
+            LOG(LOG_INFO,"Status read\n");
+            ret_val = 0;
+        }
+    }
+
+    return ret_val;
+}
+
+int Alarm::ReadStatus()
+{
+    int ret_val = -1;
+    Entry status = m_status_table_definition;
+    status[0].value = 0; /*index*/
+
+    if(0 != m_status_table->GetItem(status))
+    {
+        LOG(LOG_WARNING,"Error reading status table\n");
+    }
+    else
+    {
+        m_alarm_config.tilt                              = std::get<int>(status[1].value);
+        m_alarm_config.brightness                        = std::get<int>(status[2].value);
+        m_alarm_config.contrast                          = std::get<int>(status[3].value);
+        m_alarm_config.detection_active                  = std::get<int>(status[4].value);
+        m_alarm_config.liveview_active                   = std::get<int>(status[5].value);
+        m_alarm_config.current_detection_number          = std::get<int>(status[6].value);
+        m_detection_config.threshold                     = std::get<int>(status[7].value);
+        m_detection_config.sensitivity                   = std::get<int>(status[8].value);
+        m_detection_config.cooldown_ms                   = std::get<int>(status[9].value);
+        m_detection_config.refresh_reference_interval_ms = std::get<int>(status[10].value);
+        m_detection_config.take_depth_frame_interval_ms  = std::get<int>(status[11].value);
+        m_detection_config.take_video_frame_interval_ms  = std::get<int>(status[12].value);
+        m_liveview_config.video_frame_interval_ms        = std::get<int>(status[13].value);
+
+        LOG(LOG_INFO,"Status read\n");
+        ret_val = 0;
+    }
+
+    return ret_val;
+}
+
+int Alarm::WriteStatus()
+{
+    int ret_val = -1;
+    Entry status = m_status_table_definition;
+    status[0].value = 0; /*index*/
+
+    status[1].value = static_cast<int32_t>(m_alarm_config.tilt); /*TILT*/
+    status[2].value = static_cast<int32_t>(m_alarm_config.brightness); /*BRIGHTNESS*/
+    status[3].value = static_cast<int32_t>(m_alarm_config.contrast); /*CONTRAST*/
+    status[4].value = static_cast<int32_t>(m_alarm_config.detection_active); /*DET_ACTIVE*/
+    status[5].value = static_cast<int32_t>(m_alarm_config.liveview_active); /*LVW_ACTIVE*/
+    status[6].value = static_cast<int32_t>(m_alarm_config.current_detection_number); /*CURRENT_DET_NUM*/
+    status[7].value = static_cast<int32_t>(m_detection_config.threshold); /*DET_THRESHOLD*/
+    status[8].value = static_cast<int32_t>(m_detection_config.sensitivity); /*DET_SENSITIVITY*/
+    status[9].value = static_cast<int32_t>(m_detection_config.cooldown_ms); /*DET_COOLDOWN_MS*/
+    status[10].value = static_cast<int32_t>(m_detection_config.refresh_reference_interval_ms); /*DET_REFRESH_REFERENCE_INTERVAL_MS*/
+    status[11].value = static_cast<int32_t>(m_detection_config.take_depth_frame_interval_ms); /*DET_TAKE_DEPTH_FRAME_INTERVAL_MS*/
+    status[12].value = static_cast<int32_t>(m_detection_config.take_video_frame_interval_ms); /*DET_TAKE_VIDEO_FRAME_INTERVAL_MS*/
+    status[13].value = static_cast<int32_t>(m_liveview_config.video_frame_interval_ms); /*LVW_VIDEO_FRAME_INTERVAL_MS*/
+
+    if(0 != m_status_table->SetItem(status))
+    {
+        LOG(LOG_WARNING,"Error writing status table\n");
+    }
+    else
+    {
+        LOG(LOG_INFO,"Status written\n");
+        ret_val = 0;
+    }
+
+    return ret_val;
+}
+
+int Alarm::CreateStatus()
+{
+    int ret_val = -1;
+    Entry status = m_status_table_definition;
+    status[0].value = 0; /*index*/
+
+    status[1].value = 0; /*TILT*/
+    status[2].value = 750; /*BRIGHTNESS*/
+    status[3].value = 0; /*CONTRAST*/
+    status[4].value = 0; /*DET_ACTIVE*/
+    status[5].value = 0; /*LVW_ACTIVE*/
+    status[6].value = 0; /*CURRENT_DET_NUM*/
+    status[7].value = static_cast<int32_t>(m_detection_config.threshold); /*DET_THRESHOLD*/
+    status[8].value = static_cast<int32_t>(m_detection_config.sensitivity); /*DET_SENSITIVITY*/
+    status[9].value = static_cast<int32_t>(m_detection_config.cooldown_ms); /*DET_COOLDOWN_MS*/
+    status[10].value = static_cast<int32_t>(m_detection_config.refresh_reference_interval_ms); /*DET_REFRESH_REFERENCE_INTERVAL_MS*/
+    status[11].value = static_cast<int32_t>(m_detection_config.take_depth_frame_interval_ms); /*DET_TAKE_DEPTH_FRAME_INTERVAL_MS*/
+    status[12].value = static_cast<int32_t>(m_detection_config.take_video_frame_interval_ms); /*DET_TAKE_VIDEO_FRAME_INTERVAL_MS*/
+    status[13].value = static_cast<int32_t>(m_liveview_config.video_frame_interval_ms); /*LVW_VIDEO_FRAME_INTERVAL_MS*/
+
+    if(0 != m_status_table->InsertItem(status))
+    {
+        LOG(LOG_WARNING,"Error creating status table\n");
+    }
+    else
+    {
+        LOG(LOG_INFO,"Status created\n");
+        ret_val = 0;
+    }
+
+    return ret_val;
+}
+
+int Alarm::ChangeTilt(double value)
+{
+    m_kinect->ChangeTilt(value);
+    m_message_broker->SetVariable({"tilt",  DataType::Integer, static_cast<int32_t>(value)});
+    m_alarm_config.tilt = value;
+    WriteStatus();
+    LOG(LOG_INFO,"Changed Kinect's tilt to: %d\n",(int)value);
 
     return 0;
 }
@@ -395,7 +445,8 @@ int Alarm::ChangeTilt(double tilt)
 int Alarm::ChangeBrightness(int32_t value)
 {
     m_message_broker->SetVariable({"brightness",  DataType::Integer, static_cast<int32_t>(value)});
-    ChangeLvwStatus(BRIGHTNESS,value);
+    m_alarm_config.brightness = value;
+    WriteStatus();
     LOG(LOG_INFO,"Changed Kinect's brightness to: %d\n",value);
 
     return 0;
@@ -404,7 +455,8 @@ int Alarm::ChangeBrightness(int32_t value)
 int Alarm::ChangeContrast(int32_t value)
 {
     m_message_broker->SetVariable({"contrast",  DataType::Integer, static_cast<int32_t>(value)});
-    ChangeLvwStatus(CONTRAST,value);
+    m_alarm_config.contrast = value;
+    WriteStatus();
     LOG(LOG_INFO,"Changed Kinect's contrast to: %d\n",value);
 
     return 0;
@@ -412,8 +464,10 @@ int Alarm::ChangeContrast(int32_t value)
 
 int Alarm::ChangeThreshold(int32_t value)
 {
+    m_detection_config.threshold = static_cast<uint16_t>(value);
+    WriteStatus();
+    m_detection->UpdateConfig(m_detection_config);
     m_message_broker->SetVariable({"threshold",  DataType::Integer, static_cast<int32_t>(value)});
-    ChangeDetStatus(THRESHOLD,value);
     LOG(LOG_INFO,"Changed Kinect's threshold to: %d\n",value);
 
     /* Publish events */
@@ -426,8 +480,10 @@ int Alarm::ChangeThreshold(int32_t value)
 
 int Alarm::ChangeSensitivity(int32_t value)
 {
+    m_detection_config.sensitivity = static_cast<uint16_t>(value);
+    WriteStatus();
+    m_detection->UpdateConfig(m_detection_config);
     m_message_broker->SetVariable({"sensitivity",  DataType::Integer, static_cast<int32_t>(value)});
-    ChangeDetStatus(TOLERANCE,value);
     LOG(LOG_INFO,"Changed Kinect's sensitivity to: %d\n",value);
     
     /* Publish events */
@@ -455,7 +511,7 @@ void AlarmLiveviewObserver::NewFrame(KinectVideoFrame& frame)
     static std::vector<uint8_t> liveview_jpeg;
 
     /* Convert to jpeg */
-    frame.SaveToJpegInMemory(liveview_jpeg, m_alarm.lvw_conf.brightness, m_alarm.lvw_conf.contrast);
+    frame.SaveToJpegInMemory(liveview_jpeg, m_alarm.m_alarm_config.brightness, m_alarm.m_alarm_config.contrast);
 
     /* Convert to base64 */
     const char *base64_jpeg_frame = base64encode(&m_alarm.m_c, liveview_jpeg.data(), liveview_jpeg.size());
@@ -480,30 +536,41 @@ void AlarmDetectionObserver::IntrusionStopped(uint32_t frame_num)
 {
     char filepath_vid[PATH_MAX];
     char filepath[PATH_MAX];
-    sprintf(filepath_vid,"%s/%u_%s",DETECTION_PATH, m_alarm.det_conf.curr_det_num, "capture_vid.mp4");
-    sprintf(filepath,"%s/%u_capture.zip", DETECTION_PATH, m_alarm.det_conf.curr_det_num);
+    sprintf(filepath_vid,"%s/%u_%s",DETECTION_PATH, m_alarm.m_alarm_config.current_detection_number, "capture_vid.mp4");
+    sprintf(filepath,"%s/%u_capture.zip", DETECTION_PATH, m_alarm.m_alarm_config.current_detection_number);
 
     /* Update kinect led */
     m_alarm.UpdateLed();
 
     /* Publish event */
     char message[255];
-    sprintf(message, "newdet %u %u %u", m_alarm.det_conf.curr_det_num, 1000, frame_num);
+    sprintf(message, "newdet %u %u %u", m_alarm.m_alarm_config.current_detection_number, 1000, frame_num);
     m_alarm.m_message_broker->Publish("new_det",message);
 
     /* Update SQLite db */
-    insert_entry_det_table_sqlite_db(m_alarm.det_conf.curr_det_num,1000, frame_num, filepath, filepath_vid);
+    Entry detection_entry = m_alarm.m_detection_table_definition;
+    detection_entry[0].value = static_cast<int>(m_alarm.m_alarm_config.current_detection_number);   /*ID*/
+    detection_entry[1].value = static_cast<int>(1000); /*DATE*/
+    detection_entry[2].value = static_cast<int>(frame_num);   /*DURATION*/
+    detection_entry[3].value = std::string(filepath);   /*FILENAME_IMG*/
+    detection_entry[4].value = std::string(filepath_vid);   /*FILENAME_VID*/
+
+    if(0 != m_alarm.m_detection_table->InsertItem(detection_entry))
+    {
+        LOG(LOG_WARNING,"Error creating status table\n");
+    }
 
     /* Update Redis db */
-    m_alarm.m_message_broker->SetVariable({"det_numdet",  DataType::Integer, static_cast<int32_t>(m_alarm.det_conf.curr_det_num)});
-
-    /* Change Status */
-    m_alarm.ChangeDetStatus(CURR_DET_NUM, m_alarm.det_conf.curr_det_num + 1);
+    m_alarm.m_message_broker->SetVariable({"det_numdet",  DataType::Integer, static_cast<int32_t>(m_alarm.m_alarm_config.current_detection_number)});
 
     /* Package detections */
     char command[PATH_MAX];
-    sprintf(command,"cd %s;zip -q %u_capture.zip %u*",DETECTION_PATH, m_alarm.det_conf.curr_det_num, m_alarm.det_conf.curr_det_num);
+    sprintf(command,"cd %s;zip -q %u_capture.zip %u*",DETECTION_PATH, m_alarm.m_alarm_config.current_detection_number, m_alarm.m_alarm_config.current_detection_number);
     system(command);
+
+    /* Change Status */
+    m_alarm.m_alarm_config.current_detection_number += 1;
+    m_alarm.WriteStatus();
 }
 
 void AlarmDetectionObserver::IntrusionFrame(std::shared_ptr<KinectVideoFrame> frame, uint32_t frame_num)
@@ -511,10 +578,11 @@ void AlarmDetectionObserver::IntrusionFrame(std::shared_ptr<KinectVideoFrame> fr
     /* Save the frame to JPEG */
     char filepath[PATH_MAX];
 
-    sprintf(filepath,"%s/%u_capture_%d.jpeg",DETECTION_PATH, m_alarm.det_conf.curr_det_num, frame_num);
+    sprintf(filepath,"%s/%u_capture_%d.jpeg",DETECTION_PATH, m_alarm.m_alarm_config.current_detection_number, frame_num);
 
-    if(frame->SaveToJpegInFile(filepath, m_alarm.lvw_conf.brightness, m_alarm.lvw_conf.contrast))
+    if(frame->SaveToJpegInFile(filepath, m_alarm.m_alarm_config.brightness, m_alarm.m_alarm_config.contrast))
     {
         LOG(LOG_ERR,"Error saving video frame\n");
     }
 }
+

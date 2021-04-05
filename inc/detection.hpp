@@ -24,7 +24,7 @@
 /*******************************************************************
  * Struct declaration
  *******************************************************************/
-struct DetectionConfig
+struct DetectionConfig : AlarmModuleConfig
 {
     uint16_t threshold;
     uint16_t sensitivity;
@@ -70,9 +70,7 @@ public:
 
     bool IsRunning() override;
 
-    void UpdateConfig(AlarmModuleConfig config) override;
-
-    void UpdateConfig(DetectionConfig detection_config);
+    void UpdateConfig(AlarmModuleConfig& config) override;
 
     void ExecutionCycle() override;
 

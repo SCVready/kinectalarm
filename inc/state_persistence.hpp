@@ -25,7 +25,7 @@ class Database;
 class DataTable : public IDataTable
 {
 public:
-    DataTable(std::weak_ptr<Database> data_base, const std::string& name, Entry list_variables);
+    DataTable(std::weak_ptr<IDatabase> data_base, const std::string& name, Entry list_variables);
     ~DataTable();
     int NumberItems(int& number_items);
     int InsertItem(const Entry& item);

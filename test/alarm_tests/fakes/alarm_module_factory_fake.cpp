@@ -16,19 +16,19 @@
 /*******************************************************************
  * Class definition
  *******************************************************************/
-extern std::shared_ptr<AlarmModuleMock> detection_mock;
-extern std::shared_ptr<AlarmModuleMock> liveview_mock;
+extern std::shared_ptr<AlarmModuleMock> g_detection_mock;
+extern std::shared_ptr<AlarmModuleMock> g_liveview_mock;
 
 std::shared_ptr<IAlarmModule> AlarmModuleFactory::CreateDetectionModule(std::shared_ptr<IKinect> kinect,
                                                                         std::shared_ptr<DetectionObserver> detection_observer,
                                                                         DetectionConfig detection_config)
 {
-    return detection_mock;
+    return g_detection_mock;
 }
 
 std::shared_ptr<IAlarmModule> AlarmModuleFactory::CreateLiveviewModule(std::shared_ptr<IKinect> kinect,
                                                                        std::shared_ptr<LiveviewObserver> liveview_observer,
                                                                        LiveviewConfig liveview_config)
 {
-    return liveview_mock;
+    return g_liveview_mock;
 }

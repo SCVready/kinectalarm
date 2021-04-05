@@ -16,9 +16,9 @@
 /*******************************************************************
  * Class definition
  *******************************************************************/
-extern std::shared_ptr<KinectMock> kinect_mock;
+extern std::shared_ptr<KinectMock> g_kinect_mock;
 
 std::shared_ptr<IKinect> KinectFactory::Create(uint32_t timeout_ms)
 {
-    return kinect_mock;
+    return g_kinect_mock;
 }

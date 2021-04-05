@@ -22,5 +22,5 @@ public:
     MOCK_METHOD(int, Start, ());
     MOCK_METHOD(int, Stop, ());
     MOCK_METHOD(bool, IsRunning, ());
-    MOCK_METHOD(void, UpdateConfig, (AlarmModuleConfig config));
+    MOCK_METHOD(void, UpdateConfig, (AlarmModuleConfig& config));
 };

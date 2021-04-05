@@ -11,6 +11,7 @@
 #include <memory>
 #include <algorithm>
 #include <event2/thread.h>
+#include <signal.h>
 
 #include "message_broker.hpp"
 
@@ -93,7 +94,8 @@ MessageBroker::MessageBroker(const std::string path)
 
     /* Init Async context*/
 
-    //signal(SIGPIPE, SIG_IGN); /* TODO: Check if needed */
+    /* TODO: Received SIGPIPE */
+    signal(SIGPIPE, SIG_IGN); 
 
     if(evthread_use_pthreads() != 0) /* This is needed to allow event_base_loopbreak() exit the loop from another thread */
     {
@@ -258,9 +260,9 @@ int MessageBroker::Unsubscribe(const std::string& channel, const std::shared_ptr
 
     if (m_observer_map.end() == m_observer_map.find(channel))
     {
-        redisReply *reply = nullptr;
+        std::lock_guard<std::mutex> lock(m_context_mutex);
 
-        reply = (redisReply *) redisCommand(m_context, "UNSUBSCRIBE %s", channel.c_str());
+        redisReply *reply = (redisReply *) redisCommand(m_context, "UNSUBSCRIBE %s", channel.c_str());
         if(reply != nullptr && reply->type == REDIS_REPLY_ERROR)
         {
             retval = -1;
@@ -280,9 +282,9 @@ int MessageBroker::Publish(const std::string& channel, const std::string& messag
 {
     int retval = 0;
 
-    redisReply *reply = nullptr;
+    std::lock_guard<std::mutex> lock(m_context_mutex);
 
-    reply = (redisReply *) redisCommand(m_context, "PUBLISH %s %s", channel.c_str(), message.c_str());
+    redisReply* reply = (redisReply *) redisCommand(m_context, "PUBLISH %s %s", channel.c_str(), message.c_str());
     if(reply != nullptr && reply->type == REDIS_REPLY_ERROR)
     {
         retval = -1;
@@ -296,6 +298,8 @@ int MessageBroker::Publish(const std::string& channel, const std::string& messag
 int MessageBroker::GetVariable(Variable& variable)
 {
     int retval = 0;
+
+    std::lock_guard<std::mutex> lock(m_context_mutex);
 
     redisReply *reply = (redisReply *) redisCommand(m_context,"GET %s",variable.name.c_str());
     if(reply->type != REDIS_REPLY_STRING)
@@ -355,6 +359,7 @@ int MessageBroker::SetVariable(const Variable& variable)
             value = std::get<bool>(variable.value) == true ? "true" : "false";
             break;
         }
+        std::lock_guard<std::mutex> lock(m_context_mutex);
 
         redisReply *reply = (redisReply *) redisCommand(m_context,"SET %s %s", variable.name.c_str(), value.c_str());
         if(reply->type == REDIS_REPLY_ERROR)
@@ -395,6 +400,7 @@ int MessageBroker::SetVariableExpiration(const Variable& variable, int livetime_
             value = std::get<bool>(variable.value) == true ? "true" : "false";
             break;
         }
+        std::lock_guard<std::mutex> lock(m_context_mutex);
 
         redisReply *reply = (redisReply *) redisCommand(m_context,"SETEX %s %d %s", variable.name.c_str(), livetime_seconds, value.c_str());
         if(reply->type == REDIS_REPLY_ERROR)
@@ -416,6 +422,8 @@ int MessageBroker::SetVariableExpiration(const Variable& variable, int livetime_
 int MessageBroker::Clear()
 {
     int retval = 0;
+
+    std::lock_guard<std::mutex> lock(m_context_mutex);
 
     redisReply *reply = (redisReply *) redisCommand(m_context,"flushall");
     if(reply->type != REDIS_REPLY_STRING)

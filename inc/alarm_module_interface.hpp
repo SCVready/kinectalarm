@@ -13,6 +13,7 @@
  *******************************************************************/
 struct AlarmModuleConfig
 {
+    virtual ~AlarmModuleConfig() = default;
 };
 
 /*******************************************************************
@@ -52,7 +53,7 @@ public:
      * @brief Update module's config
      * 
      */
-    virtual void UpdateConfig(AlarmModuleConfig config) = 0;
+    virtual void UpdateConfig(AlarmModuleConfig& config) = 0;
 
 };
 

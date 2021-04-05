@@ -12,35 +12,8 @@
  * Includes
  *******************************************************************/
 #include <string>
-#include <vector>
-#include <tuple>
-#include <variant>
 #include <memory>
-
-/*******************************************************************
- * Enumeration
- *******************************************************************/
-enum class DataType
-{
-    Integer,
-    Float,
-    String,
-    Boolean
-};
-
-/* */
-using Value = std::variant<int32_t, float, std::string, bool>;
-
-/* */
-struct Variable
-{
-    const std::string name;
-    const DataType data_type;
-    Value value;
-};
-
-/* */
-using Entry = std::vector<Variable>;
+#include "data_definition.hpp"
 
 /*******************************************************************
  * Class declaration

@@ -42,16 +42,11 @@ bool Liveview::IsRunning()
     return CyclicTask::IsRunning();
 }
 
-void Liveview::UpdateConfig(AlarmModuleConfig config)
+void Liveview::UpdateConfig(AlarmModuleConfig& config)
 {
-    ;
-}
+    m_liveview_config = dynamic_cast<LiveviewConfig&>(config);
 
-void Liveview::UpdateConfig(LiveviewConfig liveview_config)
-{
-    m_liveview_config = liveview_config;
-
-    CyclicTask::ChangeLoopInterval(liveview_config.video_frame_interval_ms);
+    CyclicTask::ChangeLoopInterval(m_liveview_config.video_frame_interval_ms);
 }
 
 void Liveview::ExecutionCycle()

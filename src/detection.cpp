@@ -80,18 +80,13 @@ bool Detection::IsRunning()
     return CyclicTask::IsRunning();
 }
 
-void Detection::UpdateConfig(AlarmModuleConfig config)
+void Detection::UpdateConfig(AlarmModuleConfig& config)
 {
-    ;
-}
+    m_detection_config = dynamic_cast<DetectionConfig&>(config);
 
-void Detection::UpdateConfig(DetectionConfig detection_config)
-{
-    m_detection_config = detection_config;
-
-    CyclicTask::ChangeLoopInterval(detection_config.take_depth_frame_interval_ms);
-    m_refresh_reference_frame->ChangeLoopInterval(detection_config.refresh_reference_interval_ms);
-    m_take_video_frames->ChangeLoopInterval(detection_config.take_video_frame_interval_ms);
+    CyclicTask::ChangeLoopInterval(m_detection_config.take_depth_frame_interval_ms);
+    m_refresh_reference_frame->ChangeLoopInterval(m_detection_config.refresh_reference_interval_ms);
+    m_take_video_frames->ChangeLoopInterval(m_detection_config.take_video_frame_interval_ms);
 }
 
 void Detection::ExecutionCycle()

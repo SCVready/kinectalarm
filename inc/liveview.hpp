@@ -23,7 +23,7 @@
 /*******************************************************************
  * Struct declaration
  *******************************************************************/
-struct LiveviewConfig
+struct LiveviewConfig : AlarmModuleConfig
 {
     uint32_t video_frame_interval_ms;
 };
@@ -58,9 +58,7 @@ public:
 
     bool IsRunning() override;
 
-    void UpdateConfig(AlarmModuleConfig config) override;
-
-    void UpdateConfig(LiveviewConfig liveview_config);
+    void UpdateConfig(AlarmModuleConfig& config) override;
 
     void ExecutionCycle() override;
 

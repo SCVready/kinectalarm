@@ -22,9 +22,9 @@ class StatePersistenceFactory
 {
 public:
     static std::shared_ptr<IDatabase> CreateDatabase(std::string path);
-    static std::shared_ptr<IDataTable> CreateDatatable(std::weak_ptr<Database> data_base,
+    static std::shared_ptr<IDataTable> CreateDatatable(std::weak_ptr<IDatabase> data_base,
                                                        const std::string& name,
-                                                       Entry list_variables);
+                                                       const Entry list_variables);
 };
 
 #endif /* STATE_PERSISTANCE_FACTORY__H_ */

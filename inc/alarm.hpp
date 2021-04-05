@@ -29,10 +29,9 @@
 
 #include "global_parameters.hpp"
 #include "message_broker.hpp"
+#include "state_persistence.hpp"
 #include "kinect.hpp"
 #include "log.hpp"
-#include "config.hpp"
-#include "sqlite_db.hpp"
 #include "video_stream.hpp"
 #include "video.hpp"
 #include "liveview.hpp"
@@ -41,40 +40,14 @@
 /*******************************************************************
  * Structures
  *******************************************************************/
-struct sDet_conf
+struct AlarmConfig
 {
-    volatile bool is_active;
-    uint16_t      threshold;
-    uint16_t      tolerance;
-    uint16_t      det_num_shots;
-    float         frame_interval;
-    uint16_t      curr_det_num;
-};
-
-enum enumDet_conf
-{
-    DET_ACTIVE,
-    THRESHOLD,
-    TOLERANCE,
-    DET_NUM_SHOTS,
-    FRAME_INTERVAL,
-    CURR_DET_NUM,
-};
-
-struct sLvw_conf
-{
-    bool    is_active;
-    int16_t tilt;
-    int32_t brightness;
-    int32_t contrast;
-};
-
-enum enumLvw_conf
-{
-    LVW_ACTIVE,
-    TILT,
-    BRIGHTNESS,
-    CONTRAST,
+    int tilt;
+    int brightness;
+    int contrast;
+    int detection_active;
+    int liveview_active;
+    int current_detection_number;
 };
 
 /*******************************************************************
@@ -111,7 +84,7 @@ public:
      * @brief Contructor
      * 
      */
-    Alarm(std::shared_ptr<IMessageBroker> message_broker);
+    Alarm(std::shared_ptr<IMessageBroker> message_broker, std::shared_ptr<IDatabase> data_base);
 
     /**
      * @brief Destructor
@@ -240,23 +213,57 @@ private:
     /* MessageBroker observer object */
     std::shared_ptr<IMessageBroker> m_message_broker_observer;
 
-    DetectionConfig m_detection_config;
+    /* Database object */
+    std::shared_ptr<IDatabase> m_data_base;
 
+
+    AlarmConfig m_alarm_config;
+    DetectionConfig m_detection_config;
     LiveviewConfig m_liveview_config;
 
-    /* State & config structs */
-    struct sDet_conf det_conf;
-    struct sLvw_conf lvw_conf;
+    std::shared_ptr<IDataTable> m_detection_table;
+    std::shared_ptr<IDataTable> m_status_table;
+
+    uint16_t threshold;
+    uint16_t sensitivity;
+    uint32_t cooldown_ms;
+    uint32_t refresh_reference_interval_ms;
+    uint32_t take_depth_frame_interval_ms;
+    uint32_t take_video_frame_interval_ms;
+
+    const Entry m_status_table_definition = {
+        {"ID",              DataType::Integer,},
+        {"TILT",            DataType::Integer,},
+        {"BRIGHTNESS",      DataType::Integer,},
+        {"CONTRAST",        DataType::Integer,},
+        {"DET_ACTIVE",      DataType::Integer,},
+        {"LVW_ACTIVE",      DataType::Integer,},
+        {"CURRENT_DET_NUM", DataType::Integer,},
+        {"DET_THRESHOLD",   DataType::Integer,},
+        {"DET_SENSITIVITY", DataType::Integer,},
+        {"DET_COOLDOWN_MS", DataType::Integer,},
+        {"DET_REFRESH_REFERENCE_INTERVAL_MS", DataType::Integer,},
+        {"DET_TAKE_DEPTH_FRAME_INTERVAL_MS",  DataType::Integer,},
+        {"DET_TAKE_VIDEO_FRAME_INTERVAL_MS",  DataType::Integer,},
+        {"LVW_VIDEO_FRAME_INTERVAL_MS",       DataType::Integer,}
+    };
+
+    const Entry m_detection_table_definition = {
+        {"ID",           DataType::Integer,},
+        {"DATE",         DataType::Integer,},
+        {"DURATION",     DataType::Integer,},
+        {"FILENAME_IMG", DataType::String,},
+        {"FILENAME_VID", DataType::String,}
+    };
 
     void UpdateLed();
 
+    int ReadStatus();
+    int WriteStatus();
+    int CreateStatus();
+
     int InitVarsRedis();
-
-    template <typename T>
-    int ChangeDetStatus(enum enumDet_conf, T value);
-
-    template <typename T>
-    int ChangeLvwStatus(enum enumLvw_conf, T value);
+    int InitStatePersistenceVars();
 };
 
 #endif /* ALARM_H_ */

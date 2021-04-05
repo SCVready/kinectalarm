@@ -54,14 +54,12 @@ target_include_directories(detection_tests PRIVATE "../inc")
 
 ######## Alarm class ########
 add_executable(alarm_tests
-               alarm_tests/fakes/redis_db_fake.cpp
-               alarm_tests/fakes/sqlite_db_fake.cpp
-               alarm_tests/fakes/config_fake.cpp
                alarm_tests/fakes/common_fake.cpp
                alarm_tests/fakes/kinect_factory_fake.cpp
                alarm_tests/fakes/alarm_module_factory_fake.cpp
                alarm_tests/mocks/alarm_module_mock.cpp
                common/mocks/kinect_mock.cpp
+               common/fakes/state_persistence_factory_fakes.cpp
                ../src/alarm.cpp
                alarm_tests/alarm_tests.cpp)
 target_link_libraries(alarm_tests gtest gtest_main pthread gmock)

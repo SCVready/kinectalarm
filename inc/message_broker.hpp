@@ -18,6 +18,7 @@
 #include <variant>
 #include <memory>
 #include <thread>
+#include <mutex>
 
 #include <hiredis/hiredis.h>
 #include <hiredis/async.h>
@@ -66,7 +67,7 @@ private:
     redisContext *m_context = nullptr;
     redisAsyncContext *m_async_context = nullptr;
     event_base *m_event_base = nullptr;
-    pthread_mutex_t m_context_mutex; /* TODO: investigate if it's really needed */
+    std::mutex m_context_mutex;
     std::unique_ptr<std::thread> m_proccess_async_events_thread;
     std::map<std::string, std::vector<std::shared_ptr<IChannelMessageObserver>>> m_observer_map;
 

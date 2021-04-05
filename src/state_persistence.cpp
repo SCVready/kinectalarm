@@ -18,7 +18,8 @@
 const std::map<DataType, std::string> DataTable::m_data_type_map{
     {DataType::Integer, "INTEGER"},
     {DataType::Float,   "CHAR(50)"},
-    {DataType::String,  "CHAR(50)"}
+    {DataType::String,  "CHAR(50)"},
+    {DataType::Boolean, "CHAR(50)"}
 };
 
 Database::Database(const std::string path) :
@@ -46,12 +47,13 @@ int Database::RemoveDatabase()
     return 0;
 }
 
-DataTable::DataTable(std::weak_ptr<Database> data_base, const std::string& name, Entry list_variables) :
+DataTable::DataTable(std::weak_ptr<IDatabase> data_base, const std::string& name, Entry list_variables) :
     m_name(name),
-    m_data_base(data_base),
     m_list_variables(list_variables)
 {
     std::string command;
+
+    m_data_base = std::weak_ptr<Database>(std::dynamic_pointer_cast<Database>(data_base.lock()));
 
     if(0 != FormCreateTableMessage(command))
     {
@@ -382,6 +384,11 @@ std::string DataTable::VariableToString(const Variable& variable)
                 string_value += std::get<std::string>(variable.value);
                 string_value += "'";
                 break;
+            case DataType::Boolean:
+                string_value = "'";
+                string_value += std::get<bool>(variable.value) == true ? "true" : "false";
+                string_value += "'";
+                break;
         }
     }
     catch(...)
@@ -407,6 +414,9 @@ int DataTable::StringToVariable(const std::string& string_value, Variable& varia
                 break;
             case DataType::String:
                 variable.value = string_value;
+                break;
+            case DataType::Boolean:
+                variable.value = string_value == "true" ? true : false;
                 break;
         }
     }
