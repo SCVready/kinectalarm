@@ -11,11 +11,12 @@
 #include <memory>
 
 #include "../../../inc/state_persistence_factory.hpp"
+#include "../mocks/state_persistence_factory_mock.hpp"
 
 /*******************************************************************
  * Class definition
  *******************************************************************/
-extern std::shared_ptr<IDataTable> g_data_table_mock;
+extern std::shared_ptr<StatePersistenceFactoryMock> g_state_persistence_factory_mock;
 
 std::shared_ptr<IDatabase> StatePersistenceFactory::CreateDatabase(std::string path)
 {
@@ -24,5 +25,5 @@ std::shared_ptr<IDatabase> StatePersistenceFactory::CreateDatabase(std::string p
 
 std::shared_ptr<IDataTable> StatePersistenceFactory::CreateDatatable(std::weak_ptr<IDatabase> data_base, const std::string& name, const Entry list_variables)
 {
-    return g_data_table_mock;
+    return g_state_persistence_factory_mock->CreateDatatable(data_base, name, list_variables);
 }

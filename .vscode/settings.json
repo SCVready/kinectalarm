@@ -61,7 +61,8 @@
         "condition_variable": "cpp",
         "iomanip": "cpp",
         "mutex": "cpp",
-        "future": "cpp"
+        "future": "cpp",
+        "variant": "cpp"
     },
     "kanban": {
         "openOnStartup": true

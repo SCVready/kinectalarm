@@ -15,27 +15,12 @@
 #include "state_persistence_factory.hpp"
 
 /*******************************************************************
- * Defines
- *******************************************************************/
-#define KINECT_GETFRAMES_TIMEOUT_MS 1000
-#define NEW_STATEPERSISTENCE
-
-/*******************************************************************
  * Class definition
  *******************************************************************/
 Alarm::Alarm(std::shared_ptr<IMessageBroker> message_broker, std::shared_ptr<IDatabase> data_base) :
     m_message_broker(message_broker),
     m_data_base(data_base)
 {
-    m_detection_config.threshold = 2000;
-    m_detection_config.sensitivity = 10;
-    m_detection_config.cooldown_ms = 2000;
-    m_detection_config.refresh_reference_interval_ms = 1000;
-    m_detection_config.take_depth_frame_interval_ms = 10;
-    m_detection_config.take_video_frame_interval_ms = 200;
-
-    m_liveview_config.video_frame_interval_ms = 100;
-
     m_detection_observer = std::make_shared<AlarmDetectionObserver>(*this);
     m_liveview_observer  = std::make_shared<AlarmLiveviewObserver>(*this);
 
@@ -50,151 +35,240 @@ Alarm::~Alarm()
 
 int Alarm::Init()
 {
-    init_base64encode(&m_c);
+    int ret_val = -1;
 
-    if(InitStatePersistenceVars())
+    if(0 != init_base64encode(&m_base64_encoder_context))
     {
-        LOG(LOG_ERR,"Error: couldn't initialize StatePersistence vars\n");
-        m_kinect->Term();
-        return -1;
+        LOG(LOG_ERR, "Error: couldn't initialize base64 encoder\n");
+    }
+    else if(0 != InitStatePersistenceVars())
+    {
+        LOG(LOG_ERR, "Error: couldn't initialize StatePersistence vars\n");
+    }
+    else if(0 != InitVarsRedis())
+    {
+        LOG(LOG_ERR, "Error: couldn't initialize variables in Redis db\n");
+    }
+    else if(0 != m_kinect->Init())
+    {
+        LOG(LOG_ERR, "Error: couldn't initialize Kinect\n");
+    }
+    else
+    {
+        /* Update kinect led */
+        UpdateLed();
+
+        /* Apply status */
+        if(m_alarm_config.detection_active && (0 != StartDetection()))
+        {
+            LOG(LOG_ERR, "Error: couldn't start Detection module\n");
+        }
+        else if(m_alarm_config.liveview_active && (0 != StartLiveview()))
+        {
+            LOG(LOG_ERR, "Error: couldn't start Liveview module\n");
+        }
+        else if(m_kinect->ChangeTilt(m_alarm_config.tilt))
+        {
+            LOG(LOG_ERR, "Error: couldn't change Kinect's tilt\n");
+        }
+        else
+        {
+            LOG(LOG_NOTICE, "Alarm initialized successfully\n");
+            ret_val = 0;
+        }
     }
 
-    /* Initialize redis vars */
-    if(InitVarsRedis())
-    {
-        LOG(LOG_ERR,"Error: couldn't initialize variables in Redis db\n");
-        m_kinect->Term();
-        return -1;
-    }
-
-    /* Kinect initialization */
-    if(m_kinect->Init())
-    {
-        LOG(LOG_ERR,"Error: couldn't initialize Kinect\n");
-        m_kinect->Term();
-        return -1;
-    }
-
-    /* Update kinect led */
-    UpdateLed();
-
-    /* Create base directory to save detection images */ /*TODO move to Main*/
-    create_dir((char *)DETECTION_PATH);
-
-    /* Apply status */
-    if(m_alarm_config.detection_active)
-        StartDetection();
-
-    if(m_alarm_config.liveview_active)
-        StartLiveview();
-
-    /* Adjust kinect's tilt */
-    if(m_kinect->ChangeTilt(m_alarm_config.tilt))
-    {
-        LOG(LOG_ERR,"Error: couldn't change Kinect's tilt\n");
-        m_kinect->Term();
-        return -1;
-    }
-
-    return 0;
+    return ret_val;
 }
 
 int Alarm::Term()
 {
-    m_detection->Stop();
-    m_liveview->Stop();
+    if(m_detection->IsRunning() && (0 != m_detection->Stop()))
+    {
+        LOG(LOG_ERR, "Error stoping Detection module\n");
+    }
 
-    if(m_kinect->IsRunning())
-        m_kinect->Stop();
-    m_kinect->Term();
+    if(m_liveview->IsRunning() && (0 != m_liveview->Stop()))
+    {
+        LOG(LOG_ERR, "Error stoping Liveview module\n");
+    }
 
-    deinit_base64encode(&m_c);
+    if(m_kinect->IsRunning() && (0 != m_kinect->Stop()))
+    {
+        LOG(LOG_ERR, "Error stoping Kinect\n");
+    }
+
+    if(0 != m_kinect->Term())
+    {
+        LOG(LOG_ERR, "Error terminating Kinect\n");
+    }
+
+    if(0 != deinit_base64encode(&m_base64_encoder_context))
+    {
+        LOG(LOG_ERR, "Error terminating base64 encoder\n");
+    }
 
     return 0;
 }
 
 int Alarm::StartDetection()
 {
-    /* Start kinect */
-    if(!m_kinect->IsRunning())
-        m_kinect->Start();
+    int ret_val = -1;
 
-    if(!m_detection->IsRunning())
+    if(!m_kinect->IsRunning() && (0 != m_kinect->Start()))
     {
-        m_alarm_config.detection_active = 1;
-        WriteStatus();
-
-        /* Update Redis DB */
-        m_message_broker->SetVariable({"det_status",  DataType::Integer, 1});
-
-        m_detection->Start();
-
-        /* Update led */
-        UpdateLed();
-
-        /* Publish event */
-        m_message_broker->Publish("event_info", "Detection started");
-
-        LOG(LOG_INFO,"Detection thread running\n");
-        return 0;
+        LOG(LOG_ERR, "Error starting Kinect\n");
     }
-    return 1;
+    else if(m_detection->IsRunning())
+    {
+        LOG(LOG_INFO, "Detection module already started\n");
+    }
+    else
+    {
+        if(0 != m_detection->Start())
+        {
+            LOG(LOG_ERR, "Detection module start returned an error\n");
+        }
+        else
+        {
+            /* Update Persistence DB */
+            m_alarm_config.detection_active = 1;
+            if(0 != WriteStatus())
+            {
+                LOG(LOG_WARNING, "Couldn't write Status in the persisten DB\n");
+            }
+
+            /* Update Cache DB */
+            if(0 != m_message_broker->SetVariable({"det_status",  DataType::Integer, 1}))
+            {
+                LOG(LOG_WARNING, "Couldn't write Status in the Cache DB\n");
+            }
+
+            /* Update led */
+            if(0 != UpdateLed())
+            {
+                LOG(LOG_WARNING, "Couldn't update Kinect's led\n");
+            }
+
+            /* Publish event */
+            if(0 != m_message_broker->Publish("event_info", "Detection started"))
+            {
+                LOG(LOG_WARNING, "Couldn't publish event\n");
+            }
+
+            LOG(LOG_NOTICE, "Detection module started\n");
+
+            ret_val = 0;
+        }
+    }
+
+    return ret_val;
 }
 
 int Alarm::StopDetection()
 {
+    int ret_val = -1;
+
     if(m_detection->IsRunning())
     {
-        /* Change status */
-        m_alarm_config.detection_active = 0;
-        WriteStatus();
+        if(0 != m_detection->Stop())
+        {
+            LOG(LOG_ERR, "Error stopping Detection module\n");
+        }
+        else
+        {
+            /* Update Persistence DB */
+            m_alarm_config.detection_active = 0;
+            if(0 != WriteStatus())
+            {
+                LOG(LOG_WARNING, "Couldn't write Status in the persisten DB\n");
+            }
 
-        /* Update Redis DB */
-        m_message_broker->SetVariable({"det_status",  DataType::Integer, 0});
+            /* Update Cache DB */
+            if(0 != m_message_broker->SetVariable({"det_status",  DataType::Integer, 0}))
+            {
+                LOG(LOG_WARNING, "Couldn't write Status in the Cache DB\n");
+            }
 
-        m_detection->Stop();
+            /* Update led */
+            if(0 != UpdateLed())
+            {
+                LOG(LOG_WARNING, "Couldn't update Kinect's led\n");
+            }
 
-        /* Update led */
-        UpdateLed();
+            /* Publish event */
+            if(0 != m_message_broker->Publish("event_info", "Detection stopped"))
+            {
+                LOG(LOG_WARNING, "Couldn't publish event\n");
+            }
 
-        /* Publish event */
-        m_message_broker->Publish("event_info", "Detection stopped");
+            LOG(LOG_NOTICE, "Detection module stopped\n");
 
-        LOG(LOG_INFO,"Detection thread stopped\n");
+            /* Stop Kinect if possible */
+            if(!m_detection->IsRunning() && !m_liveview->IsRunning())
+            {
+                if(0 != m_kinect->Stop())
+                {
+                    LOG(LOG_WARNING, "Error stopping Kinect\n");
+                }
+            }
 
-        /* Turn off Kinect */
-        if(!m_detection->IsRunning() && !m_liveview->IsRunning())
-            m_kinect->Stop();
-
-        return 0;
+            ret_val = 0;
+        }
     }
+    else
+    {
+        LOG(LOG_INFO, "Detection module already stopped\n");
+    }
+
     return 1;
 }
 
 int Alarm::StartLiveview()
 {
-    /* Start kinect */
-    if(!m_kinect->IsRunning())
-    {
-        m_kinect->Start();
-    }
+    int ret_val = -1;
 
+    if(!m_kinect->IsRunning() && (0 != m_kinect->Start()))
+    {
+        LOG(LOG_ERR, "Error starting Kinect\n");
+    }
     if(!m_liveview->IsRunning())
     {
-        /* Change status */
-        m_alarm_config.liveview_active = 1;
-        WriteStatus();
+        if(0 != m_liveview->Start())
+        {
+            LOG(LOG_ERR, "Liveview module start returned an error\n");
+        }
+        else
+        {
+            /* Update Persistence DB */
+            m_alarm_config.liveview_active = 1;
+            if(0 != WriteStatus())
+            {
+                LOG(LOG_WARNING, "Couldn't write Status in the persisten DB\n");
+            }
 
-        /* Update redis db */
-        m_message_broker->SetVariable({"lvw_status",  DataType::Integer, 1});
+            /* Update Cache DB */
+            if(0 != m_message_broker->SetVariable({"lvw_status",  DataType::Integer, 1}))
+            {
+                LOG(LOG_WARNING, "Couldn't write Status in the Cache DB\n");
+            }
 
-        m_liveview->Start();
+            /* Update led */
+            if(0 != UpdateLed())
+            {
+                LOG(LOG_WARNING, "Couldn't update Kinect's led\n");
+            }
 
-        /* Update led */
-        UpdateLed();
+            /* Publish event */
+            if(0 != m_message_broker->Publish("event_info","Liveview started"))
+            {
+                LOG(LOG_WARNING, "Couldn't publish event\n");
+            }
 
-        /* Publish event */
-        m_message_broker->Publish("event_info","Liveview started");
+            LOG(LOG_NOTICE, "Liveview module started\n");
+
+            ret_val = 0;
+        }
     }
 
     return 0;
@@ -202,40 +276,92 @@ int Alarm::StartLiveview()
 
 int Alarm::StopLiveview()
 {
+    int ret_val = -1;
+
     if(m_liveview->IsRunning())
     {
-        /* Change status */
-        m_alarm_config.liveview_active = 0;
-        WriteStatus();
+        if(0 != m_liveview->Stop())
+        {
+            LOG(LOG_ERR, "Error stopping Liveview module\n");
+        }
+        else
+        {
+            /* Update Persistence DB */
+            m_alarm_config.liveview_active = 0;
+            if(0 != WriteStatus())
+            {
+                LOG(LOG_WARNING, "Couldn't write Status in the persisten DB\n");
+            }
 
-        /* Update Redis DB */
-        m_message_broker->SetVariable({"lvw_status",  DataType::Integer, 0});
+            /* Update Cache DB */
+            if(0 != m_message_broker->SetVariable({"lvw_status",  DataType::Integer, 0}))
+            {
+                LOG(LOG_WARNING, "Couldn't write Status in the Cache DB\n");
+            }
 
-        m_liveview->Stop();
+            /* Update led */
+            if(0 != UpdateLed())
+            {
+                LOG(LOG_WARNING, "Couldn't update Kinect's led\n");
+            }
 
-        /* Update led */
-        UpdateLed();
+            /* Publish event */
+            if(0 != m_message_broker->Publish("event_info", "Liveview stopped"))
+            {
+                LOG(LOG_WARNING, "Couldn't publish event\n");
+            }
 
-        /* Publish event */
-        m_message_broker->Publish("event_info","Liveview stopped");
+            LOG(LOG_NOTICE, "Liveview module stopped\n");
 
-        LOG(LOG_INFO,"Liveview thread stopped\n");
+            /* Stop Kinect if possible */
+            if(!m_detection->IsRunning() && !m_liveview->IsRunning())
+            {
+                if(0 != m_kinect->Stop())
+                {
+                    LOG(LOG_WARNING, "Error stopping Kinect\n");
+                }
+            }
 
-        /* Turn off Kinect */
-        if(!m_detection->IsRunning() && !m_liveview->IsRunning())
-            m_kinect->Stop();
+            ret_val = 0;
+        }
     }
-    return 0;
+    else
+    {
+        LOG(LOG_INFO, "Detection module already stopped\n");
+    }
+
+    return 1;
 }
 
-void Alarm::UpdateLed()
+int Alarm::UpdateLed()
 {
+    int ret_val = -1;
+    freenect_led_options color = LED_OFF;
+
     if(m_detection->IsRunning())
-        m_kinect->ChangeLedColor(LED_YELLOW);
+    {
+        color = LED_YELLOW;
+    }
     else if(m_liveview->IsRunning())
-        m_kinect->ChangeLedColor(LED_GREEN);
+    {
+        color = LED_GREEN;
+    }
     else
-        m_kinect->ChangeLedColor(LED_OFF);
+    {
+        color = LED_OFF;
+    }
+
+    if(0 != m_kinect->ChangeLedColor(color))
+    {
+        LOG(LOG_WARNING,"Kinect ChangeLedColor returned an error\n");
+    }
+    else
+    {
+        LOG(LOG_INFO,"Kinect led changed\n");
+        ret_val = 0;
+    }
+
+    return ret_val;
 }
 
 int Alarm::GetNumDetections()
@@ -302,23 +428,25 @@ int Alarm::InitStatePersistenceVars()
 
     if(nullptr == (m_detection_table = StatePersistenceFactory::CreateDatatable(m_data_base, "DETECTIONS", m_detection_table_definition)))
     {
-        LOG(LOG_ERR,"CreateDatatable DETECTIONS error\n");
+        LOG(LOG_ERR,"Error creating Detection table \n");
     }
     else if (nullptr == (m_status_table = StatePersistenceFactory::CreateDatatable(m_data_base, "STATUS", m_status_table_definition)))
     {
-        LOG(LOG_ERR,"CreateDatatable STATUS error\n");
+        LOG(LOG_ERR,"Error creating Status table \n");
     }
     else
     {
         if(0 != ReadStatus())
         {
-            LOG(LOG_WARNING,"No status entry\n");
+            LOG(LOG_WARNING,"Status Table not present\n");
+
             if(0 != CreateStatus())
             {
-                ret_val = -1;
+                LOG(LOG_ERR,"Error creating a new Status table\n");
             }
             else
             {
+                LOG(LOG_INFO,"New Status table created with default values\n");
                 ret_val = 0;
             }
         }
@@ -358,7 +486,7 @@ int Alarm::ReadStatus()
         m_detection_config.take_video_frame_interval_ms  = std::get<int>(status[12].value);
         m_liveview_config.video_frame_interval_ms        = std::get<int>(status[13].value);
 
-        LOG(LOG_INFO,"Status read\n");
+        LOG(LOG_INFO,"Status table read\n");
         ret_val = 0;
     }
 
@@ -420,11 +548,10 @@ int Alarm::CreateStatus()
 
     if(0 != m_status_table->InsertItem(status))
     {
-        LOG(LOG_WARNING,"Error creating status table\n");
+        LOG(LOG_WARNING,"InsertItem returned error\n");
     }
     else
     {
-        LOG(LOG_INFO,"Status created\n");
         ret_val = 0;
     }
 
@@ -514,7 +641,7 @@ void AlarmLiveviewObserver::NewFrame(KinectVideoFrame& frame)
     frame.SaveToJpegInMemory(liveview_jpeg, m_alarm.m_alarm_config.brightness, m_alarm.m_alarm_config.contrast);
 
     /* Convert to base64 */
-    const char *base64_jpeg_frame = base64encode(&m_alarm.m_c, liveview_jpeg.data(), liveview_jpeg.size());
+    const char *base64_jpeg_frame = base64encode(&m_alarm.m_base64_encoder_context, liveview_jpeg.data(), liveview_jpeg.size());
 
     /* Publish in redis channel */
     m_alarm.m_message_broker->Publish("liveview", base64_jpeg_frame);;

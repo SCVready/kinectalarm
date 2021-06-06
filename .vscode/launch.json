@@ -33,7 +33,7 @@
                 "/home/scvready/workspace/github/kinectalarm/": "/home/root/kinectalarm/"
             },
             "ssh": {
-                "host": "192.168.0.18",
+                "host": "192.168.0.22",
                 "cwd": "/home/root/kinectalarm",
                 "user": "root",
                 "password": "",

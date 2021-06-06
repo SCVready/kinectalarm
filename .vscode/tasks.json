@@ -32,7 +32,7 @@
         "label": "sync",
         "dependsOn" : ["make"],
         "dependsOrder": "sequence",
-        "command" : "rsync -rlptzv --progress --delete --exclude=.git --exclude={'.vscode','test'} ${workspaceRoot} root@192.168.0.18:/home/root/",
+        "command" : "rsync -rlptzv --progress --delete --exclude=.git --exclude={'.vscode','test'} ${workspaceRoot} root@192.168.0.22:/home/root/",
       },
       {
         "type": "shell",

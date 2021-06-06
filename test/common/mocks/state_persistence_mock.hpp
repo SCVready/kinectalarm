@@ -1,3 +1,7 @@
+
+#ifndef STATE_PERSISTENCE_MOCK__H_
+#define STATE_PERSISTENCE_MOCK__H_
+
 #include <gmock/gmock.h>
 
 #include "../../../inc/state_persistence_interface.hpp"
@@ -6,8 +10,8 @@ class DatabaseMock : public IDatabase
 {
 public:
 
-    DatabaseMock() {};
-    ~DatabaseMock() {};
+    DatabaseMock();
+    ~DatabaseMock();
 
     MOCK_METHOD(int, RemoveDatabase, ());
 
@@ -17,8 +21,8 @@ class DataTableMock : public IDataTable
 {
 public:
 
-    DataTableMock() {};
-    ~DataTableMock() {};
+    DataTableMock();
+    ~DataTableMock();
 
     MOCK_METHOD(int, NumberItems, (int& number_items));
     MOCK_METHOD(int, InsertItem, (const Entry& item));
@@ -28,3 +32,5 @@ public:
     MOCK_METHOD(int, DeleteAllItems, ());
     MOCK_METHOD(int, DeleteTable, ());
 };
+
+#endif

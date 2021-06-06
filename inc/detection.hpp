@@ -32,6 +32,25 @@ struct DetectionConfig : AlarmModuleConfig
     uint32_t refresh_reference_interval_ms;
     uint32_t take_depth_frame_interval_ms;
     uint32_t take_video_frame_interval_ms;
+
+    DetectionConfig()
+    {
+    }
+
+    DetectionConfig(uint16_t _threshold,
+                    uint16_t _sensitivity,
+                    uint32_t _cooldown_ms,
+                    uint32_t _refresh_reference_interval_ms,
+                    uint32_t _take_depth_frame_interval_ms,
+                    uint32_t _take_video_frame_interval_ms) :
+                    threshold(_threshold),
+                    sensitivity(_sensitivity),
+                    cooldown_ms(_cooldown_ms),
+                    refresh_reference_interval_ms(_refresh_reference_interval_ms),
+                    take_depth_frame_interval_ms(_take_depth_frame_interval_ms),
+                    take_video_frame_interval_ms(_take_video_frame_interval_ms)
+    {
+    }
 };
 
 /*******************************************************************

@@ -26,6 +26,15 @@
 struct LiveviewConfig : AlarmModuleConfig
 {
     uint32_t video_frame_interval_ms;
+
+    LiveviewConfig()
+    {
+    }
+
+    LiveviewConfig(uint32_t _video_frame_interval_ms) : 
+        video_frame_interval_ms(_video_frame_interval_ms)
+    {
+    }
 };
 
 /*******************************************************************

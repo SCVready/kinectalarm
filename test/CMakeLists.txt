@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(UnitTesting)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 ######## Kinect class ########
 add_executable(kinect_tests
@@ -59,6 +59,9 @@ add_executable(alarm_tests
                alarm_tests/fakes/alarm_module_factory_fake.cpp
                alarm_tests/mocks/alarm_module_mock.cpp
                common/mocks/kinect_mock.cpp
+               common/mocks/message_broker_mock.cpp
+               common/mocks/state_persistence_mock.cpp
+               common/mocks/state_persistence_factory_mock.cpp
                common/fakes/state_persistence_factory_fakes.cpp
                ../src/alarm.cpp
                alarm_tests/alarm_tests.cpp)

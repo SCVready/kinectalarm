@@ -20,6 +20,7 @@
 /*******************************************************************
  * Defines
  *******************************************************************/
+#undef KINECT_GETFRAMES_TIMEOUT_MS
 #define KINECT_GETFRAMES_TIMEOUT_MS 10
 #define KINECT_FRAMES_UPDATE_CYCLE_MS 1
 

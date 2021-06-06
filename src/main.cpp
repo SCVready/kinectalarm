@@ -85,6 +85,10 @@ Main::Main() :
 int Main::Init()
 {
     int ret_val = 0;
+
+    /* Create base directory to save detection images */
+    create_dir((char *)DETECTION_PATH);
+
     /* MessageBroker class creation */
     m_message_broker = MessageBrokerFactory::Create("/tmp/redis.sock");
 

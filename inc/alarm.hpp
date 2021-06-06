@@ -190,7 +190,7 @@ public:
 
 private:
 
-    struct sBase64encode_context m_c;
+    struct sBase64encode_context m_base64_encoder_context;
 
     /* Kinect object */
     std::shared_ptr<IKinect> m_kinect;
@@ -216,10 +216,27 @@ private:
     /* Database object */
     std::shared_ptr<IDatabase> m_data_base;
 
+    AlarmConfig m_alarm_config{
+        .tilt = ALARM_TILT,
+        .brightness = ALARM_BRIGHTNESS,
+        .contrast = ALARM_CONTRAST,
+        .detection_active = 0,
+        .liveview_active = 0,
+        .current_detection_number = 0
+    };
 
-    AlarmConfig m_alarm_config;
-    DetectionConfig m_detection_config;
-    LiveviewConfig m_liveview_config;
+    DetectionConfig m_detection_config = {
+        .threshold = DETECTION_THRESHOLD,
+        .sensitivity = DETECTION_SENSITIVITY,
+        .cooldown_ms = DETECTION_COOLDOWN_MS,
+        .refresh_reference_interval_ms = DETECTION_REFRESH_REFERENCE_INTERVAL_MS,
+        .take_depth_frame_interval_ms = DETECTION_TAKE_DEPTH_FRAME_INTERVAL_MS,
+        .take_video_frame_interval_ms = DETECTION_TAKE_VIDEO_FRAME_INTERVAL_MS
+    };
+
+    LiveviewConfig m_liveview_config = {
+        .video_frame_interval_ms = LIVEVIEW_FRAME_INTERVAL_MS
+    };
 
     std::shared_ptr<IDataTable> m_detection_table;
     std::shared_ptr<IDataTable> m_status_table;
@@ -256,7 +273,7 @@ private:
         {"FILENAME_VID", DataType::String,}
     };
 
-    void UpdateLed();
+    int UpdateLed();
 
     int ReadStatus();
     int WriteStatus();

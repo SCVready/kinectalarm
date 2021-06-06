@@ -1,3 +1,7 @@
+
+#ifndef KINECT_MOCK__H_
+#define KINECT_MOCK__H_
+
 #include <gmock/gmock.h>
 
 #include "../../../inc/kinect_interface.hpp"
@@ -28,3 +32,5 @@ public:
     MOCK_METHOD(int, ChangeTilt, (double tilt_angle));
     MOCK_METHOD(int, ChangeLedColor, (freenect_led_options color));
 };
+
+#endif
