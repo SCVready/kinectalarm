@@ -25,6 +25,7 @@ CyclicTask::CyclicTask(std::string task_name, uint32_t loop_period_ms) :
 
 CyclicTask::~CyclicTask()
 {
+    Stop();
 }
 
 int CyclicTask::Start()
@@ -45,11 +46,11 @@ int CyclicTask::Start()
             retval = -1;
         }
 
-        LOG(LOG_INFO,"Starting %s thread\n", m_task_name.c_str());
+        LOG(LOG_INFO,"Starting %s task\n", m_task_name.c_str());
     }
     else
     {
-        LOG(LOG_INFO,"%s thread is already started\n", m_task_name.c_str());
+        LOG(LOG_INFO,"%s task is already started\n", m_task_name.c_str());
     }
 
     return retval;
@@ -67,11 +68,11 @@ int CyclicTask::Stop()
 
         m_thread->join();
 
-        LOG(LOG_INFO,"Stoping %s thread\n",m_task_name.c_str());
+        LOG(LOG_INFO,"Stoping %s task\n",m_task_name.c_str());
     }
     else
     {
-        LOG(LOG_INFO,"%s thread is already stoped\n",m_task_name.c_str());
+        LOG(LOG_INFO,"%s task is already stopped\n",m_task_name.c_str());
     }
 
     return retval;

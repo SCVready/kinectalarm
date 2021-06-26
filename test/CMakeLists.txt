@@ -89,3 +89,12 @@ target_link_libraries(state_persistence_tests gtest gtest_main pthread gmock sql
 target_compile_definitions(state_persistence_tests PRIVATE __STDC_CONSTANT_MACROS)
 target_compile_definitions(state_persistence_tests PRIVATE "$<$<CONFIG:DEBUG>:DEBUG>")
 target_include_directories(state_persistence_tests PRIVATE "../inc")
+
+######## CyclicTask class ########
+add_executable(cyclic_task_tests
+               ../src/cyclic_task.cpp
+               cyclic_task_tests/cyclic_task_tests.cpp)
+target_link_libraries(cyclic_task_tests gtest gtest_main gmock pthread)
+target_compile_definitions(cyclic_task_tests PRIVATE __STDC_CONSTANT_MACROS)
+target_compile_definitions(cyclic_task_tests PRIVATE "$<$<CONFIG:DEBUG>:DEBUG>")
+target_include_directories(cyclic_task_tests PRIVATE "../inc")
