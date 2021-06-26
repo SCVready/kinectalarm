@@ -33,8 +33,8 @@ using Value = std::variant<int32_t, float, std::string, bool>;
 /* */
 struct Variable
 {
-    const std::string name;
-    const DataType data_type;
+    std::string name;
+    DataType data_type;
     Value value;
 };
 

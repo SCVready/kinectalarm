@@ -36,9 +36,4 @@ int delete_all_files_from_dir(const char *path);
 bool both_are_spaces(char lhs, char rhs);
 bool allowed_characters(char c);
 
-int init_base64encode(struct sBase64encode_context *c);
-int deinit_base64encode(struct sBase64encode_context *c);
-const char* base64encode(struct sBase64encode_context *c, const void *data, int length);
-const char* base64decode (const void *b64_decode_this, int decode_this_many_bytes);
-
 #endif /* COMMON_H_ */

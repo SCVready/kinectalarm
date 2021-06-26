@@ -62,7 +62,9 @@
         "iomanip": "cpp",
         "mutex": "cpp",
         "future": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "codecvt": "cpp",
+        "filesystem": "cpp"
     },
     "kanban": {
         "openOnStartup": true

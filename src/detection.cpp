@@ -183,5 +183,5 @@ void TakeVideoFrames::ExecutionCycle()
     m_kinect->GetVideoFrame(*m_frame);
     LOG(LOG_DEBUG,"TakeVideoFrames cycle: frame taken\n");
 
-    m_detection.m_detection_observer->IntrusionFrame(m_frame, m_frame_counter++);
+    m_detection.m_detection_observer->IntrusionFrame(*m_frame, m_frame_counter++);
 }

@@ -8,6 +8,8 @@
 /*******************************************************************
  * Includes
  *******************************************************************/
+#include <filesystem>
+
 #include "alarm.hpp"
 #include "kinect_factory.hpp"
 #include "alarm_module_factory.hpp"
@@ -37,11 +39,7 @@ int Alarm::Init()
 {
     int ret_val = -1;
 
-    if(0 != init_base64encode(&m_base64_encoder_context))
-    {
-        LOG(LOG_ERR, "Error: couldn't initialize base64 encoder\n");
-    }
-    else if(0 != InitStatePersistenceVars())
+    if(0 != InitStatePersistenceVars())
     {
         LOG(LOG_ERR, "Error: couldn't initialize StatePersistence vars\n");
     }
@@ -103,11 +101,6 @@ int Alarm::Term()
         LOG(LOG_ERR, "Error terminating Kinect\n");
     }
 
-    if(0 != deinit_base64encode(&m_base64_encoder_context))
-    {
-        LOG(LOG_ERR, "Error terminating base64 encoder\n");
-    }
-
     return 0;
 }
 
@@ -135,7 +128,7 @@ int Alarm::StartDetection()
             m_alarm_config.detection_active = 1;
             if(0 != WriteStatus())
             {
-                LOG(LOG_WARNING, "Couldn't write Status in the persisten DB\n");
+                LOG(LOG_WARNING, "Couldn't write Status in the Persisten DB\n");
             }
 
             /* Update Cache DB */
@@ -181,7 +174,7 @@ int Alarm::StopDetection()
             m_alarm_config.detection_active = 0;
             if(0 != WriteStatus())
             {
-                LOG(LOG_WARNING, "Couldn't write Status in the persisten DB\n");
+                LOG(LOG_WARNING, "Couldn't write Status in the Persisten DB\n");
             }
 
             /* Update Cache DB */
@@ -221,7 +214,7 @@ int Alarm::StopDetection()
         LOG(LOG_INFO, "Detection module already stopped\n");
     }
 
-    return 1;
+    return ret_val;
 }
 
 int Alarm::StartLiveview()
@@ -244,7 +237,7 @@ int Alarm::StartLiveview()
             m_alarm_config.liveview_active = 1;
             if(0 != WriteStatus())
             {
-                LOG(LOG_WARNING, "Couldn't write Status in the persisten DB\n");
+                LOG(LOG_WARNING, "Couldn't write Status in the Persisten DB\n");
             }
 
             /* Update Cache DB */
@@ -290,7 +283,7 @@ int Alarm::StopLiveview()
             m_alarm_config.liveview_active = 0;
             if(0 != WriteStatus())
             {
-                LOG(LOG_WARNING, "Couldn't write Status in the persisten DB\n");
+                LOG(LOG_WARNING, "Couldn't write Status in the Persisten DB\n");
             }
 
             /* Update Cache DB */
@@ -330,7 +323,7 @@ int Alarm::StopLiveview()
         LOG(LOG_INFO, "Detection module already stopped\n");
     }
 
-    return 1;
+    return ret_val;
 }
 
 int Alarm::UpdateLed()
@@ -371,26 +364,56 @@ int Alarm::GetNumDetections()
 
 int Alarm::ResetDetection()
 {
+    /* Update Persistence DB */
     m_detection_table->DeleteAllItems();
+#if 0 /* TODO */
+    /* Delete all files from Detection path */
+    for(const auto& entry : std::filesystem::directory_iterator(DETECTION_PATH))
+    {
+        std::filesystem::remove_all(entry.path());
+    }
+#else
     delete_all_files_from_dir(DETECTION_PATH);
+#endif
+    /* Publish event */
+    if(0 != m_message_broker->Publish("event_success", "Deleted all instrusions"))
+    {
+        LOG(LOG_WARNING, "Couldn't publish event\n");
+    }
 
     LOG(LOG_INFO,"Deleted all detection entries\n");
-
-    /* Publish events */
-    m_message_broker->Publish("event_success","Deleted all detections");
 
     return 0;
 }
 
 int Alarm::DeleteDetection(int id)
 {
-    char command[50];
-    sprintf(command, "rm -rf %s/%d_*",DETECTION_PATH,id);
-    system(command);
+#if 0 /* TODO */
+    /* Delete all files from Detection id, "{id}*" */
+    for(auto& entry: std::filesystem::directory_iterator(DETECTION_PATH))
+    {
+        std::string filename = entry.path().filename().string();
 
+        if(0 == filename.find(std::to_string(id)))
+        {
+            std::filesystem::remove(entry);
+        }
+    }
+#else
+    std::string command = "rm -rf " + std::string(DETECTION_PATH) + "/" + std::to_string(id) + "_*";
+    system(command.c_str());
+#endif
+
+    /* Update Persistence DB */
     Entry delete_entry = m_detection_table_definition;
-    delete_entry[0].value = id; /*ID*/
+    delete_entry[0].value = id; /* ID */
     m_detection_table->DeleteItem(delete_entry);
+
+    /* Publish event */
+    if(0 != m_message_broker->Publish("event_success", "Deleted intrusion"))
+    {
+        LOG(LOG_WARNING, "Couldn't publish event\n");
+    }
 
     LOG(LOG_INFO,"Delete detection n°%d\n",id);
 
@@ -560,20 +583,51 @@ int Alarm::CreateStatus()
 
 int Alarm::ChangeTilt(double value)
 {
-    m_kinect->ChangeTilt(value);
-    m_message_broker->SetVariable({"tilt",  DataType::Integer, static_cast<int32_t>(value)});
-    m_alarm_config.tilt = value;
-    WriteStatus();
-    LOG(LOG_INFO,"Changed Kinect's tilt to: %d\n",(int)value);
+    int ret_val = 0;
 
-    return 0;
+    if(0 != m_kinect->ChangeTilt(value))
+    {
+        LOG(LOG_ERR, "Kinect returned Error on trying to change the tilt\n");
+        ret_val = -1;
+    }
+    else
+    {
+        m_alarm_config.tilt = value;
+
+        /* Update Cache DB */
+        if(0 != m_message_broker->SetVariable({"tilt",  DataType::Integer, static_cast<int32_t>(value)}))
+        {
+            LOG(LOG_WARNING, "Couldn't write Status in the Cache DB\n");
+        }
+
+        /* Update Persistence DB */
+        if(0 != WriteStatus())
+        {
+            LOG(LOG_WARNING, "Couldn't write Status in the Persisten DB\n");
+        }
+
+        LOG(LOG_INFO,"Changed Kinect's tilt to: %.2f\n", value);
+    }
+
+    return ret_val;
 }
 
 int Alarm::ChangeBrightness(int32_t value)
 {
-    m_message_broker->SetVariable({"brightness",  DataType::Integer, static_cast<int32_t>(value)});
     m_alarm_config.brightness = value;
-    WriteStatus();
+
+    /* Update Cache DB */
+    if(0 != m_message_broker->SetVariable({"brightness",  DataType::Integer, static_cast<int32_t>(value)}))
+    {
+        LOG(LOG_WARNING, "Couldn't write Status in the Cache DB\n");
+    }
+
+    /* Update Persistence DB */
+    if(0 != WriteStatus())
+    {
+        LOG(LOG_WARNING, "Couldn't write Status in the Persisten DB\n");
+    }
+
     LOG(LOG_INFO,"Changed Kinect's brightness to: %d\n",value);
 
     return 0;
@@ -581,26 +635,50 @@ int Alarm::ChangeBrightness(int32_t value)
 
 int Alarm::ChangeContrast(int32_t value)
 {
-    m_message_broker->SetVariable({"contrast",  DataType::Integer, static_cast<int32_t>(value)});
     m_alarm_config.contrast = value;
-    WriteStatus();
+
+    /* Update Cache DB */
+    if(0 != m_message_broker->SetVariable({"contrast",  DataType::Integer, static_cast<int32_t>(value)}))
+    {
+        LOG(LOG_WARNING, "Couldn't write Status in the Cache DB\n");
+    }
+
+    /* Update Persistence DB */
+    if(0 != WriteStatus())
+    {
+        LOG(LOG_WARNING, "Couldn't write Status in the Persisten DB\n");
+    }
+
     LOG(LOG_INFO,"Changed Kinect's contrast to: %d\n",value);
 
     return 0;
+
 }
 
 int Alarm::ChangeThreshold(int32_t value)
 {
     m_detection_config.threshold = static_cast<uint16_t>(value);
-    WriteStatus();
     m_detection->UpdateConfig(m_detection_config);
-    m_message_broker->SetVariable({"threshold",  DataType::Integer, static_cast<int32_t>(value)});
-    LOG(LOG_INFO,"Changed Kinect's threshold to: %d\n",value);
 
-    /* Publish events */
-    char message[255];
-    sprintf(message, "Threshold changed to %d",value);
-    m_message_broker->Publish("event_success",message);
+    /* Update Cache DB */
+    if(0 != m_message_broker->SetVariable({"threshold",  DataType::Integer, static_cast<int32_t>(value)}))
+    {
+        LOG(LOG_WARNING, "Couldn't write Status in the Cache DB\n");
+    }
+
+    /* Update Persistence DB */
+    if(0 != WriteStatus())
+    {
+        LOG(LOG_WARNING, "Couldn't write Status in the Persisten DB\n");
+    }
+
+    /* Publish event */
+    if(0 != m_message_broker->Publish("event_success", std::string("Threshold changed to ") + std::to_string(value)))
+    {
+        LOG(LOG_WARNING, "Couldn't publish event\n");
+    }
+
+    LOG(LOG_INFO,"Changed Kinect's threshold to: %d\n",value);
 
     return 0;
 }
@@ -608,15 +686,27 @@ int Alarm::ChangeThreshold(int32_t value)
 int Alarm::ChangeSensitivity(int32_t value)
 {
     m_detection_config.sensitivity = static_cast<uint16_t>(value);
-    WriteStatus();
     m_detection->UpdateConfig(m_detection_config);
-    m_message_broker->SetVariable({"sensitivity",  DataType::Integer, static_cast<int32_t>(value)});
+
+    /* Update Cache DB */
+    if(0 != m_message_broker->SetVariable({"sensitivity",  DataType::Integer, static_cast<int32_t>(value)}))
+    {
+        LOG(LOG_WARNING, "Couldn't write Status in the Cache DB\n");
+    }
+
+    /* Update Persistence DB */
+    if(0 != WriteStatus())
+    {
+        LOG(LOG_WARNING, "Couldn't write Status in the Persisten DB\n");
+    }
+
+    /* Publish event */
+    if(0 != m_message_broker->Publish("event_success", std::string("Sensitivity changed to ") + std::to_string(value)))
+    {
+        LOG(LOG_WARNING, "Couldn't publish event\n");
+    }
+
     LOG(LOG_INFO,"Changed Kinect's sensitivity to: %d\n",value);
-    
-    /* Publish events */
-    char message[255];
-    sprintf(message, "Sensitivity changed to %d",value);
-    m_message_broker->Publish("event_success",message);
 
     return 0;
 }
@@ -624,13 +714,11 @@ int Alarm::ChangeSensitivity(int32_t value)
 AlarmDetectionObserver::AlarmDetectionObserver(Alarm& alarm) :
     m_alarm(alarm)
 {
-    ;
 }
 
 AlarmLiveviewObserver::AlarmLiveviewObserver(Alarm& alarm) :
     m_alarm(alarm)
 {
-    ;
 }
 
 void AlarmLiveviewObserver::NewFrame(KinectVideoFrame& frame)
@@ -638,49 +726,64 @@ void AlarmLiveviewObserver::NewFrame(KinectVideoFrame& frame)
     static std::vector<uint8_t> liveview_jpeg;
 
     /* Convert to jpeg */
-    frame.SaveToJpegInMemory(liveview_jpeg, m_alarm.m_alarm_config.brightness, m_alarm.m_alarm_config.contrast);
+    if(0 != frame.SaveToJpegInMemory(liveview_jpeg, m_alarm.m_alarm_config.brightness, m_alarm.m_alarm_config.contrast))
+    {
+        LOG(LOG_ERR, "Couldn't convert frame to Jpeg\n");
+    }
+    else
+    {
+        /* Convert to base64 */
+        std::string base64_jpeg_frame = m_alarm.m_base64_encoder.Encode(std::string(liveview_jpeg.begin(), liveview_jpeg.end()));
 
-    /* Convert to base64 */
-    const char *base64_jpeg_frame = base64encode(&m_alarm.m_base64_encoder_context, liveview_jpeg.data(), liveview_jpeg.size());
-
-    /* Publish in redis channel */
-    m_alarm.m_message_broker->Publish("liveview", base64_jpeg_frame);;
+        /* Publish event */
+        if(0 != m_alarm.m_message_broker->Publish("liveview", base64_jpeg_frame))
+        {
+            LOG(LOG_WARNING, "Couldn't publish event\n");
+        }
+    }
 }
 
 void AlarmDetectionObserver::IntrusionStarted()
 {
     /* Publish events */
-    char message[255];
-    sprintf(message, "New Intrusion");
-    m_alarm.m_message_broker->Publish("event_error",message);
-    m_alarm. m_message_broker->Publish("email_send_det","");
+    if(0 != m_alarm.m_message_broker->Publish("email_send_det", ""))
+    {
+        LOG(LOG_WARNING, "Couldn't publish event\n");
+    }
+
+    if(0 != m_alarm.m_message_broker->Publish("event_error", "New Intrusion"))
+    {
+        LOG(LOG_WARNING, "Couldn't publish event\n");
+    }
 
     /* Update kinect led */
-    m_alarm.m_kinect->ChangeLedColor(LED_RED);
+    if(0 != m_alarm.m_kinect->ChangeLedColor(LED_RED))
+    {
+        LOG(LOG_ERR, "Error couldn't change Kinect's Led color\n");
+    }
 }
 
 void AlarmDetectionObserver::IntrusionStopped(uint32_t frame_num)
 {
-    char filepath_vid[PATH_MAX];
-    char filepath[PATH_MAX];
-    sprintf(filepath_vid,"%s/%u_%s",DETECTION_PATH, m_alarm.m_alarm_config.current_detection_number, "capture_vid.mp4");
-    sprintf(filepath,"%s/%u_capture.zip", DETECTION_PATH, m_alarm.m_alarm_config.current_detection_number);
-
     /* Update kinect led */
     m_alarm.UpdateLed();
 
     /* Publish event */
-    char message[255];
-    sprintf(message, "newdet %u %u %u", m_alarm.m_alarm_config.current_detection_number, 1000, frame_num);
-    m_alarm.m_message_broker->Publish("new_det",message);
+    std::string message = std::string("newdet ") + std::to_string(m_alarm.m_alarm_config.current_detection_number) + " " +
+                          std::to_string(1000) + " " + std::to_string(frame_num);
+
+    if(0 != m_alarm.m_message_broker->Publish("new_det", message))
+    {
+        LOG(LOG_WARNING, "Couldn't publish event\n");
+    }
 
     /* Update SQLite db */
     Entry detection_entry = m_alarm.m_detection_table_definition;
-    detection_entry[0].value = static_cast<int>(m_alarm.m_alarm_config.current_detection_number);   /*ID*/
+    detection_entry[0].value = static_cast<int>(m_alarm.m_alarm_config.current_detection_number); /*ID*/
     detection_entry[1].value = static_cast<int>(1000); /*DATE*/
-    detection_entry[2].value = static_cast<int>(frame_num);   /*DURATION*/
-    detection_entry[3].value = std::string(filepath);   /*FILENAME_IMG*/
-    detection_entry[4].value = std::string(filepath_vid);   /*FILENAME_VID*/
+    detection_entry[2].value = static_cast<int>(frame_num); /*DURATION*/
+    detection_entry[3].value = std::string(DETECTION_PATH) + "/" + std::to_string(m_alarm.m_alarm_config.current_detection_number) + "_capture.zip"; /*FILENAME_IMG*/
+    detection_entry[4].value = std::string(DETECTION_PATH) + "/" + std::to_string(m_alarm.m_alarm_config.current_detection_number) + "_capture_vid.mp4"; /*FILENAME_VID*/
 
     if(0 != m_alarm.m_detection_table->InsertItem(detection_entry))
     {
@@ -688,9 +791,13 @@ void AlarmDetectionObserver::IntrusionStopped(uint32_t frame_num)
     }
 
     /* Update Redis db */
-    m_alarm.m_message_broker->SetVariable({"det_numdet",  DataType::Integer, static_cast<int32_t>(m_alarm.m_alarm_config.current_detection_number)});
+    if(0 != m_alarm.m_message_broker->SetVariable({"det_numdet",  DataType::Integer, static_cast<int32_t>(m_alarm.m_alarm_config.current_detection_number)}))
+    {
+        LOG(LOG_WARNING, "Couldn't write Status in the Cache DB\n");
+    }
 
     /* Package detections */
+    /* TODO dont use commenad, use a lib? */
     char command[PATH_MAX];
     sprintf(command,"cd %s;zip -q %u_capture.zip %u*",DETECTION_PATH, m_alarm.m_alarm_config.current_detection_number, m_alarm.m_alarm_config.current_detection_number);
     system(command);
@@ -700,16 +807,15 @@ void AlarmDetectionObserver::IntrusionStopped(uint32_t frame_num)
     m_alarm.WriteStatus();
 }
 
-void AlarmDetectionObserver::IntrusionFrame(std::shared_ptr<KinectVideoFrame> frame, uint32_t frame_num)
+void AlarmDetectionObserver::IntrusionFrame(KinectVideoFrame& frame, uint32_t frame_num)
 {
     /* Save the frame to JPEG */
-    char filepath[PATH_MAX];
+    std::string filepath = std::string(DETECTION_PATH) + "/" + std::to_string(m_alarm.m_alarm_config.current_detection_number) + 
+                           "_capture_" + std::to_string(frame_num) + ".jpeg";
 
-    sprintf(filepath,"%s/%u_capture_%d.jpeg",DETECTION_PATH, m_alarm.m_alarm_config.current_detection_number, frame_num);
-
-    if(frame->SaveToJpegInFile(filepath, m_alarm.m_alarm_config.brightness, m_alarm.m_alarm_config.contrast))
+    if(frame.SaveToJpegInFile(filepath, m_alarm.m_alarm_config.brightness, m_alarm.m_alarm_config.contrast))
     {
-        LOG(LOG_ERR,"Error saving video frame\n");
+        LOG(LOG_ERR,"Error saving intrusion Jpeg frame to file\n");
     }
 }
 

@@ -54,18 +54,19 @@ target_include_directories(detection_tests PRIVATE "../inc")
 
 ######## Alarm class ########
 add_executable(alarm_tests
-               alarm_tests/fakes/common_fake.cpp
                alarm_tests/fakes/kinect_factory_fake.cpp
                alarm_tests/fakes/alarm_module_factory_fake.cpp
                alarm_tests/mocks/alarm_module_mock.cpp
+               common/fakes/common_fake.cpp
                common/mocks/kinect_mock.cpp
                common/mocks/message_broker_mock.cpp
                common/mocks/state_persistence_mock.cpp
                common/mocks/state_persistence_factory_mock.cpp
                common/fakes/state_persistence_factory_fakes.cpp
                ../src/alarm.cpp
+               ../src/kinect_frame.cpp
                alarm_tests/alarm_tests.cpp)
-target_link_libraries(alarm_tests gtest gtest_main pthread gmock)
+target_link_libraries(alarm_tests gtest gtest_main pthread gmock freeimage crypto)
 target_compile_definitions(alarm_tests PRIVATE __STDC_CONSTANT_MACROS)
 target_compile_definitions(alarm_tests PRIVATE "$<$<CONFIG:DEBUG>:DEBUG>")
 target_include_directories(alarm_tests PRIVATE "../inc")

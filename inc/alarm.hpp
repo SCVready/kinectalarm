@@ -36,6 +36,7 @@
 #include "video.hpp"
 #include "liveview.hpp"
 #include "detection.hpp"
+#include "base64_encoder.hpp"
 
 /*******************************************************************
  * Structures
@@ -61,7 +62,7 @@ public:
     AlarmDetectionObserver(Alarm& alarm);
     void IntrusionStarted() override;
     void IntrusionStopped(uint32_t frame_num) override;
-    void IntrusionFrame(std::shared_ptr<KinectVideoFrame> frame, uint32_t frame_num) override;
+    void IntrusionFrame(KinectVideoFrame& frame, uint32_t frame_num) override;
 private:
     Alarm& m_alarm;
 };
@@ -215,6 +216,9 @@ private:
 
     /* Database object */
     std::shared_ptr<IDatabase> m_data_base;
+
+    /* Base64 encoder object */
+    Base64Encoder m_base64_encoder;
 
     AlarmConfig m_alarm_config{
         .tilt = ALARM_TILT,
