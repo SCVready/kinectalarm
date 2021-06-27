@@ -327,7 +327,7 @@ TEST_F(AlarmTest, InitDetectionIsActive)
     EXPECT_CALL(*g_kinect_mock, ChangeLedColor(_)).
         WillOnce(Return(0));
 
-    EXPECT_CALL(*m_message_broker_mock, Publish("event_info", "Detection started")).
+    EXPECT_CALL(*m_message_broker_mock, Publish(REDIS_EVENT_INFO_CHANNEL, "Detection started")).
         WillOnce(Return(0));
 
     EXPECT_CALL(*g_kinect_mock, ChangeTilt(_)).
@@ -389,7 +389,7 @@ TEST_F(AlarmTest, InitLiveviewIsActive)
     EXPECT_CALL(*g_kinect_mock, ChangeLedColor(_)).
         WillOnce(Return(0));
 
-    EXPECT_CALL(*m_message_broker_mock, Publish("event_info", "Liveview started")).
+    EXPECT_CALL(*m_message_broker_mock, Publish(REDIS_EVENT_INFO_CHANNEL, "Liveview started")).
         WillOnce(Return(0));
 
     EXPECT_CALL(*g_kinect_mock, ChangeTilt(_)).
@@ -422,7 +422,7 @@ TEST_F(AlarmTest, StartDetection)
     EXPECT_CALL(*g_kinect_mock, ChangeLedColor(_)).
         WillOnce(Return(0));
 
-    EXPECT_CALL(*m_message_broker_mock, Publish("event_info", "Detection started")).
+    EXPECT_CALL(*m_message_broker_mock, Publish(REDIS_EVENT_INFO_CHANNEL, "Detection started")).
         WillOnce(Return(0));
 
     EXPECT_EQ(0, m_alarm->StartDetection());
@@ -450,7 +450,7 @@ TEST_F(AlarmTest, StopDetection)
     EXPECT_CALL(*g_kinect_mock, ChangeLedColor(_)).
         WillOnce(Return(0));
 
-    EXPECT_CALL(*m_message_broker_mock, Publish("event_info", "Detection stopped")).
+    EXPECT_CALL(*m_message_broker_mock, Publish(REDIS_EVENT_INFO_CHANNEL, "Detection stopped")).
         WillOnce(Return(0));
 
     EXPECT_CALL(*g_detection_mock, IsRunning).
@@ -489,7 +489,7 @@ TEST_F(AlarmTest, StartLiveview)
     EXPECT_CALL(*g_kinect_mock, ChangeLedColor(_)).
         WillOnce(Return(0));
 
-    EXPECT_CALL(*m_message_broker_mock, Publish("event_info", "Liveview started")).
+    EXPECT_CALL(*m_message_broker_mock, Publish(REDIS_EVENT_INFO_CHANNEL, "Liveview started")).
         WillOnce(Return(0));
 
     EXPECT_EQ(0, m_alarm->StartLiveview());
@@ -517,7 +517,7 @@ TEST_F(AlarmTest, StopLiveview)
     EXPECT_CALL(*g_kinect_mock, ChangeLedColor(_)).
         WillOnce(Return(0));
 
-    EXPECT_CALL(*m_message_broker_mock, Publish("event_info", "Liveview stopped")).
+    EXPECT_CALL(*m_message_broker_mock, Publish(REDIS_EVENT_INFO_CHANNEL, "Liveview stopped")).
         WillOnce(Return(0));
 
     EXPECT_CALL(*g_detection_mock, IsRunning).
@@ -601,7 +601,7 @@ TEST_F(AlarmTest, ChangeThreshold)
         WillOnce(Return(0));
     EXPECT_CALL(*g_status_datatable_mock, SetItem(_)).
         WillOnce(Return(0));
-    EXPECT_CALL(*m_message_broker_mock, Publish("event_success", _)).
+    EXPECT_CALL(*m_message_broker_mock, Publish(REDIS_EVENT_SUCCESS_CHANNEL, _)).
         WillOnce(Return(0));
 
     EXPECT_EQ(0, m_alarm->ChangeThreshold(value));
@@ -618,7 +618,7 @@ TEST_F(AlarmTest, ChangeSensitivity)
         WillOnce(Return(0));
     EXPECT_CALL(*g_status_datatable_mock, SetItem(_)).
         WillOnce(Return(0));
-    EXPECT_CALL(*m_message_broker_mock, Publish("event_success", _)).
+    EXPECT_CALL(*m_message_broker_mock, Publish(REDIS_EVENT_SUCCESS_CHANNEL, _)).
         WillOnce(Return(0));
 
     EXPECT_EQ(0, m_alarm->ChangeSensitivity(value));
@@ -643,7 +643,7 @@ TEST_F(AlarmTest, IntrusionStarted)
 
     EXPECT_CALL(*m_message_broker_mock, Publish("email_send_det", _)).
         WillOnce(Return(0));
-    EXPECT_CALL(*m_message_broker_mock, Publish("event_error", _)).
+    EXPECT_CALL(*m_message_broker_mock, Publish(REDIS_EVENT_ERROR_CHANNEL, _)).
         WillOnce(Return(0));
     EXPECT_CALL(*g_kinect_mock, ChangeLedColor(LED_RED)).
         WillOnce(Return(0));

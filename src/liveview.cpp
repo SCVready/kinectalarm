@@ -52,7 +52,7 @@ void Liveview::UpdateConfig(AlarmModuleConfig& config)
 void Liveview::ExecutionCycle()
 {
     m_kinect->GetVideoFrame(*m_frame);
-    LOG(LOG_INFO,"Liveview cycle: frame taken\n");
+    LOG(LOG_DEBUG,"Liveview cycle: frame taken\n");
 
     m_liveview_observer->NewFrame(*m_frame);
 }

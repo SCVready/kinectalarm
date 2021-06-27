@@ -126,6 +126,8 @@ MessageBroker::MessageBroker(const std::string path)
 
 MessageBroker::~MessageBroker()
 {
+    /*TODO: Unsubscribe from all the channels?*/
+
     if(m_proccess_async_events_thread != nullptr)
     {
         //event_base_loopexit(m_event_base, nullptr);

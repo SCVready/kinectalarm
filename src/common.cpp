@@ -8,37 +8,28 @@
 /*******************************************************************
  * Includes
  *******************************************************************/
-#include "common.hpp"
+#include <cerrno>
 
-/*******************************************************************
- * Defines
- *******************************************************************/
-#define BILLION 1000000000
+#include "common.hpp"
 
 /*******************************************************************
  * Function definition
  *******************************************************************/
-int create_dir(char* path)
+int CreateDirectory(const char* path)
 {
-    if(mkdir(path, 0770) == -1)
-        return -1;
-    else
-        return 0;
-}
+    int ret_val = 0;
 
-bool check_dir_exist(char *path)
-{
-    DIR* dir;
-    if((dir = opendir(path)))
+    if(-1 == mkdir(path, 0770))
     {
-        closedir(dir);
-        return true;
+        if(errno != EEXIST)
+        {
+            ret_val = -1;
+        }
     }
-    else
-        return false;
+    return ret_val;
 }
 
-int delete_all_files_from_dir(const char *path)
+int DeleteAllFilesFromDirectory(const char *path)
 {
     char command[50];
     sprintf(command, "rm -rf %s/*",path);
@@ -46,12 +37,12 @@ int delete_all_files_from_dir(const char *path)
     return 0;
 }
 
-bool both_are_spaces(char lhs, char rhs)
+bool BothAreSpaces(char lhs, char rhs)
 {
     return (lhs == rhs) && (lhs == ' ');
 }
 
-bool allowed_characters(char c)
+bool AllowedCharacters(char c)
 {
     if(c >= '0' && c <= '9')
         return false;
@@ -64,5 +55,3 @@ bool allowed_characters(char c)
 
     return true;
 }
-
-#endif

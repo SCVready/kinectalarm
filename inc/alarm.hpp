@@ -11,22 +11,6 @@
 /*******************************************************************
  * Includes
  *******************************************************************/
-#include <stdlib.h>
-#include <stdio.h>
-#include <signal.h>
-#include <string.h>
-#include <unistd.h>
-#include <limits.h>
-#include <pthread.h>
-#include <syslog.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <errno.h>
-#include <time.h>
-#include <memory>
-
 #include "global_parameters.hpp"
 #include "message_broker.hpp"
 #include "state_persistence.hpp"
@@ -190,9 +174,6 @@ public:
     int ChangeSensitivity(int32_t value);
 
 private:
-
-    struct sBase64encode_context m_base64_encoder_context;
-
     /* Kinect object */
     std::shared_ptr<IKinect> m_kinect;
 

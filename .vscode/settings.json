@@ -64,7 +64,8 @@
         "future": "cpp",
         "variant": "cpp",
         "codecvt": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "cerrno": "cpp"
     },
     "kanban": {
         "openOnStartup": true

@@ -11,9 +11,6 @@
 /*******************************************************************
  * Includes
  *******************************************************************/
-#include <memory>
-#include <chrono>
-
 #include "common.hpp"
 #include "global_parameters.hpp"
 #include "log.hpp"

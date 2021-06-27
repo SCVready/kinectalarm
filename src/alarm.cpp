@@ -81,27 +81,33 @@ int Alarm::Init()
 
 int Alarm::Term()
 {
+    int ret_val = 0;
+
     if(m_detection->IsRunning() && (0 != m_detection->Stop()))
     {
         LOG(LOG_ERR, "Error stoping Detection module\n");
+        ret_val = -1;
     }
 
     if(m_liveview->IsRunning() && (0 != m_liveview->Stop()))
     {
         LOG(LOG_ERR, "Error stoping Liveview module\n");
+        ret_val = -1;
     }
 
     if(m_kinect->IsRunning() && (0 != m_kinect->Stop()))
     {
         LOG(LOG_ERR, "Error stoping Kinect\n");
+        ret_val = -1;
     }
 
     if(0 != m_kinect->Term())
     {
         LOG(LOG_ERR, "Error terminating Kinect\n");
+        ret_val = -1;
     }
 
-    return 0;
+    return ret_val;
 }
 
 int Alarm::StartDetection()
@@ -144,7 +150,7 @@ int Alarm::StartDetection()
             }
 
             /* Publish event */
-            if(0 != m_message_broker->Publish("event_info", "Detection started"))
+            if(0 != m_message_broker->Publish(REDIS_EVENT_INFO_CHANNEL, "Detection started"))
             {
                 LOG(LOG_WARNING, "Couldn't publish event\n");
             }
@@ -190,7 +196,7 @@ int Alarm::StopDetection()
             }
 
             /* Publish event */
-            if(0 != m_message_broker->Publish("event_info", "Detection stopped"))
+            if(0 != m_message_broker->Publish(REDIS_EVENT_INFO_CHANNEL, "Detection stopped"))
             {
                 LOG(LOG_WARNING, "Couldn't publish event\n");
             }
@@ -253,7 +259,7 @@ int Alarm::StartLiveview()
             }
 
             /* Publish event */
-            if(0 != m_message_broker->Publish("event_info","Liveview started"))
+            if(0 != m_message_broker->Publish(REDIS_EVENT_INFO_CHANNEL,"Liveview started"))
             {
                 LOG(LOG_WARNING, "Couldn't publish event\n");
             }
@@ -264,7 +270,7 @@ int Alarm::StartLiveview()
         }
     }
 
-    return 0;
+    return ret_val;
 }
 
 int Alarm::StopLiveview()
@@ -299,7 +305,7 @@ int Alarm::StopLiveview()
             }
 
             /* Publish event */
-            if(0 != m_message_broker->Publish("event_info", "Liveview stopped"))
+            if(0 != m_message_broker->Publish(REDIS_EVENT_INFO_CHANNEL, "Liveview stopped"))
             {
                 LOG(LOG_WARNING, "Couldn't publish event\n");
             }
@@ -373,10 +379,10 @@ int Alarm::ResetDetection()
         std::filesystem::remove_all(entry.path());
     }
 #else
-    delete_all_files_from_dir(DETECTION_PATH);
+    DeleteAllFilesFromDirectory(DETECTION_PATH);
 #endif
     /* Publish event */
-    if(0 != m_message_broker->Publish("event_success", "Deleted all instrusions"))
+    if(0 != m_message_broker->Publish(REDIS_EVENT_SUCCESS_CHANNEL, "Deleted all instrusions"))
     {
         LOG(LOG_WARNING, "Couldn't publish event\n");
     }
@@ -410,7 +416,7 @@ int Alarm::DeleteDetection(int id)
     m_detection_table->DeleteItem(delete_entry);
 
     /* Publish event */
-    if(0 != m_message_broker->Publish("event_success", "Deleted intrusion"))
+    if(0 != m_message_broker->Publish(REDIS_EVENT_SUCCESS_CHANNEL, "Deleted intrusion"))
     {
         LOG(LOG_WARNING, "Couldn't publish event\n");
     }
@@ -673,7 +679,7 @@ int Alarm::ChangeThreshold(int32_t value)
     }
 
     /* Publish event */
-    if(0 != m_message_broker->Publish("event_success", std::string("Threshold changed to ") + std::to_string(value)))
+    if(0 != m_message_broker->Publish(REDIS_EVENT_SUCCESS_CHANNEL, std::string("Threshold changed to ") + std::to_string(value)))
     {
         LOG(LOG_WARNING, "Couldn't publish event\n");
     }
@@ -701,7 +707,7 @@ int Alarm::ChangeSensitivity(int32_t value)
     }
 
     /* Publish event */
-    if(0 != m_message_broker->Publish("event_success", std::string("Sensitivity changed to ") + std::to_string(value)))
+    if(0 != m_message_broker->Publish(REDIS_EVENT_SUCCESS_CHANNEL, std::string("Sensitivity changed to ") + std::to_string(value)))
     {
         LOG(LOG_WARNING, "Couldn't publish event\n");
     }
@@ -736,7 +742,7 @@ void AlarmLiveviewObserver::NewFrame(KinectVideoFrame& frame)
         std::string base64_jpeg_frame = m_alarm.m_base64_encoder.Encode(std::string(liveview_jpeg.begin(), liveview_jpeg.end()));
 
         /* Publish event */
-        if(0 != m_alarm.m_message_broker->Publish("liveview", base64_jpeg_frame))
+        if(0 != m_alarm.m_message_broker->Publish(REDIS_LIVEFRAMES_CHANNEL, base64_jpeg_frame))
         {
             LOG(LOG_WARNING, "Couldn't publish event\n");
         }
@@ -746,12 +752,12 @@ void AlarmLiveviewObserver::NewFrame(KinectVideoFrame& frame)
 void AlarmDetectionObserver::IntrusionStarted()
 {
     /* Publish events */
-    if(0 != m_alarm.m_message_broker->Publish("email_send_det", ""))
+    if(0 != m_alarm.m_message_broker->Publish(REDIS_DET_EMAIL_SEND_CHANNEL, ""))
     {
         LOG(LOG_WARNING, "Couldn't publish event\n");
     }
 
-    if(0 != m_alarm.m_message_broker->Publish("event_error", "New Intrusion"))
+    if(0 != m_alarm.m_message_broker->Publish(REDIS_EVENT_ERROR_CHANNEL, "New Intrusion"))
     {
         LOG(LOG_WARNING, "Couldn't publish event\n");
     }
@@ -772,7 +778,7 @@ void AlarmDetectionObserver::IntrusionStopped(uint32_t frame_num)
     std::string message = std::string("newdet ") + std::to_string(m_alarm.m_alarm_config.current_detection_number) + " " +
                           std::to_string(1000) + " " + std::to_string(frame_num);
 
-    if(0 != m_alarm.m_message_broker->Publish("new_det", message))
+    if(0 != m_alarm.m_message_broker->Publish(REDIS_DET_INTRUSION_CHANNEL, message))
     {
         LOG(LOG_WARNING, "Couldn't publish event\n");
     }

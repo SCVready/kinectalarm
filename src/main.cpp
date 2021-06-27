@@ -8,21 +8,11 @@
 /*******************************************************************
  * Includes
  *******************************************************************/
-#include <stdlib.h>
-#include <stdio.h>
 #include <signal.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
 #include <syslog.h>
-#include <pthread.h>
-#include <iostream>
 #include <algorithm>
 #include <vector>
 #include <string>
-#include <cctype>
 #include <sstream>
 #include <iterator>
 
@@ -35,14 +25,47 @@
 #include "state_persistence_factory.hpp"
 
 /*******************************************************************
- * Defines
- *******************************************************************/
-#define KINECTALARM_VERSION "0.11"
-
-/*******************************************************************
  * Global variables
  *******************************************************************/
-volatile bool kinect_alarm_running = true;
+volatile bool kinectalarm_running = true;
+
+enum class Target
+{
+    Detection,
+    Liveview,
+    Tilt,
+    Brightness,
+    Contrast,
+    Threshold,
+    Sensitivity
+};
+
+enum class Action
+{
+    Start,
+    Stop,
+    Reset,
+    Delete
+};
+
+const std::map<std::string, Target> parameter_map
+{
+    {"det",         Target::Detection},
+    {"lvw",         Target::Liveview},
+    {"tilt",        Target::Tilt},
+    {"brightness",  Target::Brightness},
+    {"contrast",    Target::Contrast},
+    {"threshold",   Target::Threshold},
+    {"sensitivity", Target::Sensitivity},
+};
+
+const std::map<std::string, Action> action_map
+{
+    {"start", Action::Start},
+    {"stop",  Action::Stop},
+    {"rst",   Action::Reset},
+    {"del",   Action::Delete},
+};
 
 /*******************************************************************
  * Class declaration
@@ -72,110 +95,160 @@ public:
     void ChannelMessageListener(const std::string& message) override;
 private:
     Main& m_main;
+    void ParseCommandWords(const std::string& message, std::vector<std::string>& command_words);
 };
 
 /*******************************************************************
  * Function definition
  *******************************************************************/
 Main::Main() :
-    CyclicTask("Main", 1000)
+    CyclicTask("Watchdog", WATCHDOG_REFRESH_MS)
 {
-}
-
-int Main::Init()
-{
-    int ret_val = 0;
-
     /* Create base directory to save detection images */
-    create_dir((char *)DETECTION_PATH);
-
-    /* MessageBroker class creation */
-    m_message_broker = MessageBrokerFactory::Create("/tmp/redis.sock");
+    if(0 != CreateDirectory(DETECTION_PATH))
+    {
+        LOG(LOG_ERR, "Error creating Detection directory: %s\n", DETECTION_PATH);
+        throw std::exception();
+    }
+    /* Create Redis DB object */
+    else if(nullptr == (m_message_broker = MessageBrokerFactory::Create(REDIS_DB_PATH)))
+    {
+        LOG(LOG_ERR, "Error creating MessageBroker object on path: %s\n", REDIS_DB_PATH);
+        throw std::exception();
+    }
+    /* Create SQLite DB object */
+    else if(nullptr == (m_data_base = StatePersistenceFactory::CreateDatabase(SQLITE_DB_PATH)))
+    {
+        LOG(LOG_ERR, "Error creating StatePersistence object on path: %s\n", SQLITE_DB_PATH);
+        throw std::exception();
+    }
 
     /* MessageListener observer creation */
     m_message_observer = std::make_shared<MessageListener>(*this);
 
-    /* StatePersistence class creation */
-    m_data_base = StatePersistenceFactory::CreateDatabase("/etc/kinectalarm/detections.db");
-
     /* Alarm class creation */
     m_alarm = std::make_shared<Alarm>(m_message_broker, m_data_base);
+}
+
+int Main::Init()
+{
+    int ret_val = -1;
 
     /* Set version on Redis */
-    m_message_broker->SetVariable({"kinectalarm_version",  DataType::String, std::string(KINECTALARM_VERSION)});
-
+    if(0 != (m_message_broker->SetVariable({"kinectalarm_version",  DataType::String, std::string(KINECTALARM_VERSION)})))
+    {
+        LOG(LOG_ERR, "Error setting kinectalarm version on Redis\n");
+    }
     /* Alarm class initialization */
-    if(0 != m_alarm->Init())
+    else if(0 != m_alarm->Init())
     {
         LOG(LOG_ERR, "Alarm initialization error\n");
-        ret_val = -1;
     }
-
-    /* Subscribe to Redis channel */
-    m_message_broker->Subscribe("kinectalarm", m_message_observer);
-
-    /* Launch watchdog thread */
-    CyclicTask::Start();
+    /* Subscribe to the Redis channel where the commands will be published */
+    else if(0 != m_message_broker->Subscribe(REDIS_COMMAND_CHANNEL, m_message_observer))
+    {
+        LOG(LOG_ERR, "Error trying to subscribe to command Redis channel: %s\n", REDIS_COMMAND_CHANNEL);
+    }
+    /* Launch watchdog task */
+    else if(0 != CyclicTask::Start())
+    {
+        LOG(LOG_ERR, "Error launching the watchdog task\n");
+    }
+    else
+    {
+        LOG(LOG_INFO, "Main initialization success\n");
+        ret_val = 0;
+    }
 
     return ret_val;
 }
 
 int Main::Term()
 {
-    /* Unsubscribe to Redis channel */
-    m_message_broker->Unsubscribe("kinectalarm", m_message_observer);
+    int ret_val = 0;
 
-    /* Term watchdog thread (CyclicTask::stop) */
-    CyclicTask::Stop();
+    /* Unsubscribe to Redis channel */
+    if(m_message_broker != nullptr)
+    {
+        if(0 != m_message_broker->Unsubscribe(REDIS_COMMAND_CHANNEL, m_message_observer))
+        {
+            LOG(LOG_ERR, "Error trying to unsubscribe from command Redis channel: %s\n", REDIS_COMMAND_CHANNEL);
+            ret_val = -1;
+        }
+    }
 
     /* Alarm class term */
-    m_alarm->Term();
+    if(m_alarm != nullptr)
+    {
+        if(0 != m_alarm->Term())
+        {
+            LOG(LOG_ERR, "Alarm termination error\n");
+            ret_val = -1;
+        }
+    }
 
-    return 0;
+    /* Launch watchdog task */
+    if(0 != CyclicTask::Stop())
+    {
+        LOG(LOG_ERR, "Error stopping the watchdog task\n");
+        ret_val = -1;
+    }
+
+
+    return ret_val;
 }
 
 void Main::ExecutionCycle()
 {
-    m_message_broker->SetVariableExpiration({"kinectalarm_watchdog",  DataType::Integer, 1}, 2); //TODO add timeout to config
+    m_message_broker->SetVariableExpiration({"kinectalarm_watchdog",  DataType::Integer, 1}, WATCHDOG_TIMEOUT_S);
 }
 
 void signalHandler(int signal)
 {
-    if (signal == SIGINT
-        || signal == SIGTERM
-        || signal == SIGQUIT)
+    if(signal == SIGINT  ||
+       signal == SIGTERM ||
+       signal == SIGQUIT)
     {
-        kinect_alarm_running = false;
+        kinectalarm_running = false;
     }
 }
 
 int main(int argc, char** argv)
 {
     /* Handle signals */
-    signal(SIGINT, signalHandler);
+    signal(SIGINT,  signalHandler);
     signal(SIGTERM, signalHandler);
     signal(SIGQUIT, signalHandler);
 
-    /* Set up syslog */
-    setlogmask(LOG_UPTO(LOG_DEBUG));
-    openlog ("kinect_alarm", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
-
 #ifndef DEBUG
     LOG(LOG_NOTICE, "RELEASE BUILD %s\n", KINECTALARM_VERSION);
+    setlogmask(LOG_UPTO(LOG_INFO));
 #else
     LOG(LOG_NOTICE, "DEBUG BUILD %s\n", KINECTALARM_VERSION);
+    setlogmask(LOG_UPTO(LOG_DEBUG));
 #endif
 
-    Main _main;
-    if(0 == _main.Init())
-    {
-        while(kinect_alarm_running)
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-    }
+    /* Set up syslog */
+    openlog("kinectalarm", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-    _main.Term();
+    try
+    {
+        Main _main;
+
+        if(0 == _main.Init())
+        {
+            while(kinectalarm_running)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+        }
+
+        _main.Term();
+    }
+    catch(const std::exception& e)
+    {
+        LOG(LOG_ERR,"Exception :%s\n", e.what());
+    }
 
     return 0;
 }
@@ -185,109 +258,111 @@ MessageListener::MessageListener(Main& _main) :
 {
 }
 
-void MessageListener::ChannelMessageListener(const std::string& message)
+void MessageListener::ParseCommandWords(const std::string& message, std::vector<std::string>& command_words)
 {
-    std::string str(message);
+    std::string command(message);
 
     /* Remove non wanted characters */
-    str.erase(std::remove_if(str.begin(), str.end(), allowed_characters), str.end());
+    command.erase(std::remove_if(command.begin(), command.end(), AllowedCharacters), command.end());
 
     /* Remove consecutive spaces */
-    std::string::iterator new_end = std::unique(str.begin(), str.end(), both_are_spaces);
-    str.erase(new_end, str.end());
+    std::string::iterator new_end = std::unique(command.begin(), command.end(), BothAreSpaces);
+    command.erase(new_end, command.end());
 
     /* Lower cases */
-    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    std::transform(command.begin(), command.end(), command.begin(), ::tolower);
 
     /* Remove leading and trailing spaces */
-    if(str.front() == ' ')
-        str.erase(0,1);
-    if(str.back() == ' ')
-        str.erase(str.length()-1,1);
-
-    std::istringstream iss(str);
-    std::vector<std::string> words((std::istream_iterator<std::string>(iss)), std::istream_iterator<std::string>());
-
-    if(words.size() >=2)
+    if(command.front() == ' ')
     {
-        if(words[0].compare("det") == 0)
-        {
-            if(!words[1].compare("start"))
-                m_main.m_alarm->StartDetection();
-            else if(!words[1].compare("stop"))
-                m_main.m_alarm->StopDetection();
-            else if(!words[1].compare("rst"))
-                m_main.m_alarm->ResetDetection();
-            else if(!words[1].compare("del")){
-                if(words.size() >=3)
-                {
-                    int value = std::stoi(words[2]);;
-                    m_main.m_alarm->DeleteDetection(value);
-                }
+        command.erase(0,1);
+    }
+    if(command.back() == ' ')
+    {
+        command.erase(command.length()-1,1);
+    }
 
-            }
-        }
-        else if(!words[0].compare("lvw"))
+    std::istringstream input_string_stream(command);
+    std::vector<std::string> words((std::istream_iterator<std::string>(input_string_stream)), std::istream_iterator<std::string>());
+    command_words = words;
+}
+
+void MessageListener::ChannelMessageListener(const std::string& message)
+{
+
+    std::vector<std::string> command_words;
+    Target parameter = Target::Detection;
+    Action action = Action::Start;
+    int value = 0;
+
+    ParseCommandWords(message, command_words);
+
+    try
+    {
+        parameter = parameter_map.at(command_words.at(0));
+        switch(parameter)
         {
-            if(!words[1].compare("start"))
-                m_main.m_alarm->StartLiveview();
-            else if(!words[1].compare("stop"))
-                m_main.m_alarm->StopLiveview();
+            case Target::Detection:
+                action = action_map.at(command_words.at(1));
+                switch(action)
+                {
+                    case Action::Start:
+                        m_main.m_alarm->StartDetection();
+                        break;
+                    case Action::Stop:
+                        m_main.m_alarm->StopDetection();
+                        break;
+                    case Action::Reset:
+                        m_main.m_alarm->ResetDetection();
+                        break;
+                    case Action::Delete:
+                        value = std::stoi(command_words.at(2));;
+                        m_main.m_alarm->DeleteDetection(value);
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case Target::Liveview:
+                action = action_map.at(command_words.at(1));
+                switch(action)
+                {
+                    case Action::Start:
+                        m_main.m_alarm->StartLiveview();
+                        break;
+                    case Action::Stop:
+                        m_main.m_alarm->StopLiveview();
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case Target::Tilt:
+                value = std::stoi(command_words.at(1));
+                m_main.m_alarm->ChangeTilt(value);
+                break;
+            case Target::Brightness:
+                value = std::stoi(command_words.at(1));
+                m_main.m_alarm->ChangeBrightness(value);
+                break;
+            case Target::Contrast:
+                value = std::stoi(command_words.at(1));
+                m_main.m_alarm->ChangeContrast(value);
+                break;
+            case Target::Threshold:
+                value = std::stoi(command_words.at(1));
+                m_main.m_alarm->ChangeThreshold(value);
+                break;
+            case Target::Sensitivity:
+                value = std::stoi(command_words.at(1));
+                m_main.m_alarm->ChangeSensitivity(value);
+                break;
+            default:
+                break;
         }
-        else if(!words[0].compare("tilt"))
-        {
-            int tilt;
-            try {
-                tilt = std::stoi(words[1]);
-            }
-            catch (const std::invalid_argument& ia) {
-                tilt = 0;
-            }
-            m_main.m_alarm->ChangeTilt(tilt);
-        }
-        else if(!words[0].compare("brightness"))
-        {
-            int value;
-            try {
-                value = std::stoi(words[1]);
-            }
-            catch (const std::invalid_argument& ia) {
-                value = 0;
-            }
-            m_main.m_alarm->ChangeBrightness(value);
-        }
-        else if(!words[0].compare("contrast"))
-        {
-            int value;
-            try {
-                value = std::stoi(words[1]);
-            }
-            catch (const std::invalid_argument& ia) {
-                value = 0;
-            }
-            m_main.m_alarm->ChangeContrast(value);
-        }
-        else if(!words[0].compare("threshold"))
-        {
-            int value;
-            try {
-                value = std::stoi(words[1]);
-            }
-            catch (const std::invalid_argument& ia) {
-                value = 0;
-            }
-            m_main.m_alarm->ChangeThreshold(value);
-        }
-        else if(!words[0].compare("sensitivity"))
-        {
-            int value;
-            try {
-                value = std::stoi(words[1]);
-            }
-            catch (const std::invalid_argument& ia) {
-                value = 0;
-            }
-            m_main.m_alarm->ChangeSensitivity(value);
-        }
+    }
+    catch(const std::exception& e)
+    {
+        LOG(LOG_ERR,"Exception parsing command :%s\n", e.what());
     }
 }
