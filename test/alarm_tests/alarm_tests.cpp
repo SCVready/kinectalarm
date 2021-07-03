@@ -678,7 +678,7 @@ TEST_F(AlarmTest, IntrusionStopped)
 
 TEST_F(AlarmTest, IntrusionFrame)
 {
-    KinectVideoFrame frame(1080, 1080);
+    std::shared_ptr<KinectVideoFrame> frame = std::make_shared<KinectVideoFrame>(1080, 1080);
     AlarmInit();
     AlarmDetectionObserver detection_observer(*m_alarm);
 

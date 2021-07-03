@@ -67,7 +67,4 @@
         "filesystem": "cpp",
         "cerrno": "cpp"
     },
-    "kanban": {
-        "openOnStartup": true
-    }
 }

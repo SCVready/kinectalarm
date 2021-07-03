@@ -61,7 +61,7 @@ class DetectionObserver
 public:
     virtual void IntrusionStarted() = 0;
     virtual void IntrusionStopped(uint32_t frame_num) = 0;
-    virtual void IntrusionFrame(KinectVideoFrame& frame, uint32_t frame_num) = 0;
+    virtual void IntrusionFrame(std::shared_ptr<KinectVideoFrame> frame, uint32_t frame_num) = 0;
 };
 
 class Detection : public IAlarmModule, public CyclicTask

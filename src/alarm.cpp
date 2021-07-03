@@ -19,6 +19,54 @@
 /*******************************************************************
  * Class definition
  *******************************************************************/
+class SaveToJpegTask : public Task
+{
+    private:
+        std::shared_ptr<KinectVideoFrame> m_frame;
+        std::string m_filepath;
+        int m_brightness;
+        int m_constrast;
+
+    public:
+        SaveToJpegTask(std::shared_ptr<KinectVideoFrame> frame, std::string filepath, int brightness, int constrast)
+         : Task("SaveToJpeg"), m_frame(frame), m_filepath(filepath), m_brightness(brightness), m_constrast(constrast)
+        {
+        }
+
+        void operator() () override
+        {
+            if(m_frame->SaveToJpegInFile(m_filepath, m_brightness, m_constrast))
+            {
+                LOG(LOG_ERR,"Error saving intrusion Jpeg frame to file\n");
+            }
+        }
+};
+
+class CreateDetectionTarbalTask : public Task
+{
+    private:
+        std::vector<std::shared_ptr<Task>> m_tasks;
+        std::string m_path;
+        int m_current_detection_num;
+
+    public:
+        CreateDetectionTarbalTask(std::vector<std::shared_ptr<Task>> tasks, std::string path, int current_detection_num)
+            : Task("CreateDetectionTarbal"), m_tasks(tasks), m_path(path), m_current_detection_num(current_detection_num)
+        {
+        }
+
+        void operator() () override
+        {
+            for(auto& task : m_tasks)
+            {
+                task->Join();
+            }
+            char command[PATH_MAX];
+            sprintf(command,"cd %s;zip -q %u_capture.zip %u*", m_path.c_str(), m_current_detection_num, m_current_detection_num);
+            system(command);
+        }
+};
+
 Alarm::Alarm(std::shared_ptr<IMessageBroker> message_broker, std::shared_ptr<IDatabase> data_base) :
     m_message_broker(message_broker),
     m_data_base(data_base)
@@ -767,6 +815,8 @@ void AlarmDetectionObserver::IntrusionStarted()
     {
         LOG(LOG_ERR, "Error couldn't change Kinect's Led color\n");
     }
+
+    m_alarm.m_jpeg_tasks.clear();
 }
 
 void AlarmDetectionObserver::IntrusionStopped(uint32_t frame_num)
@@ -803,25 +853,22 @@ void AlarmDetectionObserver::IntrusionStopped(uint32_t frame_num)
     }
 
     /* Package detections */
-    /* TODO dont use commenad, use a lib? */
-    char command[PATH_MAX];
-    sprintf(command,"cd %s;zip -q %u_capture.zip %u*",DETECTION_PATH, m_alarm.m_alarm_config.current_detection_number, m_alarm.m_alarm_config.current_detection_number);
-    system(command);
+    std::shared_ptr<Task> package_task = std::make_shared<CreateDetectionTarbalTask>(m_alarm.m_jpeg_tasks, DETECTION_PATH, m_alarm.m_alarm_config.current_detection_number);
+    m_alarm.m_threadPool.QueueTask(package_task);
 
     /* Change Status */
     m_alarm.m_alarm_config.current_detection_number += 1;
     m_alarm.WriteStatus();
 }
 
-void AlarmDetectionObserver::IntrusionFrame(KinectVideoFrame& frame, uint32_t frame_num)
+void AlarmDetectionObserver::IntrusionFrame(std::shared_ptr<KinectVideoFrame> frame, uint32_t frame_num)
 {
     /* Save the frame to JPEG */
     std::string filepath = std::string(DETECTION_PATH) + "/" + std::to_string(m_alarm.m_alarm_config.current_detection_number) + 
                            "_capture_" + std::to_string(frame_num) + ".jpeg";
 
-    if(frame.SaveToJpegInFile(filepath, m_alarm.m_alarm_config.brightness, m_alarm.m_alarm_config.contrast))
-    {
-        LOG(LOG_ERR,"Error saving intrusion Jpeg frame to file\n");
-    }
+    std::shared_ptr<Task> jpeg_task = std::make_shared<SaveToJpegTask>(frame, filepath, m_alarm.m_alarm_config.brightness, m_alarm.m_alarm_config.contrast);
+    m_alarm.m_threadPool.QueueTask(jpeg_task);
+    m_alarm.m_jpeg_tasks.push_back(jpeg_task);
 }
 

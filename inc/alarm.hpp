@@ -21,6 +21,7 @@
 #include "liveview.hpp"
 #include "detection.hpp"
 #include "base64_encoder.hpp"
+#include "threadpool.hpp"
 
 /*******************************************************************
  * Structures
@@ -46,7 +47,7 @@ public:
     AlarmDetectionObserver(Alarm& alarm);
     void IntrusionStarted() override;
     void IntrusionStopped(uint32_t frame_num) override;
-    void IntrusionFrame(KinectVideoFrame& frame, uint32_t frame_num) override;
+    void IntrusionFrame(std::shared_ptr<KinectVideoFrame> frame, uint32_t frame_num) override;
 private:
     Alarm& m_alarm;
 };
@@ -200,6 +201,12 @@ private:
 
     /* Base64 encoder object */
     Base64Encoder m_base64_encoder;
+
+    /* Threadpool object */
+    ThreadPool<4> m_threadPool;
+
+    /* Vector SavetoJpeg tasks*/
+    std::vector<std::shared_ptr<Task>> m_jpeg_tasks;
 
     AlarmConfig m_alarm_config{
         .tilt = ALARM_TILT,
