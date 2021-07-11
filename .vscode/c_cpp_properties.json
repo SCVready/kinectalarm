@@ -2,15 +2,15 @@
     "configurations": [
         {
             "name": "Linux",
-            "intelliSenseMode": "gcc-x64",
+            "intelliSenseMode": "gcc-x86",
             "includePath": [
-                "/opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/usr/include",
-                "/opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/usr/include/c++/8.2.0",
-                "/opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/usr/include/c++/8.2.0/tr1",
-                "/opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/usr/include/c++/8.2.0/x86_64-poky-linux",
+                "/opt/sdk/presenceos_native/sysroots/core2-32-poky-linux/usr/include",
+                "/opt/sdk/presenceos_native/sysroots/core2-32-poky-linux/usr/include/c++/8.2.0",
+                "/opt/sdk/presenceos_native/sysroots/core2-32-poky-linux/usr/include/c++/8.2.0/tr1",
+                "/opt/sdk/presenceos_native/sysroots/core2-32-poky-linux/usr/include/c++/8.2.0/i686-poky-linux",
                 "${workspaceRoot}/inc"
             ],
-            "compilerPath": "/opt/sdk/presenceos_native/sysroots/x86_64-pokysdk-linux/usr/bin/x86_64-poky-linux/x86_64-poky-linux-g++",
+            "compilerPath": "/opt/sdk/presenceos_native/sysroots/x86_64-pokysdk-linux/usr/bin/i686-poky-linux/i686-poky-linux-g++",
             "cStandard": "c11",
             "cppStandard": "c++17"
         }

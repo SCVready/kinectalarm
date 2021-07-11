@@ -1,2 +1,4 @@
 build/
+build_native/
 test/build/
+test/build_native/

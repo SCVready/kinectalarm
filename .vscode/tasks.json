@@ -13,7 +13,7 @@
         "type": "shell",
         "label": "make run native",
         "dependsOn" : [],
-        "command" : "source /opt/sdk/presenceos_native/environment-setup-core2-64-poky-linux; mkdir -p build; cd build; cmake -GNinja -DCMAKE_BUILD_TYPE=Debug ..; ninja; /opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/lib/ld-linux-x86-64.so.2 --library-path \"/opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/lib/:/opt/sdk/presenceos_native/sysroots/core2-64-poky-linux/usr/lib/\" ./kinectalarm",
+        "command" : "source /opt/sdk/presenceos_native/environment-setup-core2-32-poky-linux; mkdir -p build_native; cd build_native; cmake -GNinja -DCMAKE_BUILD_TYPE=Debug ..; ninja; /opt/sdk/presenceos_native/sysroots/core2-32-poky-linux/lib/ld-linux.so.2 --library-path \"/opt/sdk/presenceos_native/sysroots/core2-32-poky-linux/lib/:/opt/sdk/presenceos_native/sysroots/core2-32-poky-linux/usr/lib/\" ./kinectalarm",
       },
       {
         "type": "shell",
@@ -25,7 +25,7 @@
         "type": "shell",
         "label": "make test native",
         "dependsOn" : [],
-        "command" : "cd test; source /opt/sdk/presenceos_native/native-environment-setup-core2-64-poky-linux; mkdir -p build; cd build; cmake -GNinja -DCMAKE_BUILD_TYPE=Debug ..; time ninja;",
+        "command" : "cd test; source /opt/sdk/presenceos_native/environment-setup-core2-32-poky-linux; mkdir -p build_native; cd build_native; cmake -GNinja -DCMAKE_BUILD_TYPE=Debug ..; time ninja;",
       },
       {
         "type": "shell",

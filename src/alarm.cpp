@@ -9,6 +9,7 @@
  * Includes
  *******************************************************************/
 #include <filesystem>
+#include <time.h>
 
 #include "alarm.hpp"
 #include "kinect_factory.hpp"
@@ -821,12 +822,14 @@ void AlarmDetectionObserver::IntrusionStarted()
 
 void AlarmDetectionObserver::IntrusionStopped(uint32_t frame_num)
 {
+    time_t intrusion_date = time(NULL);
+
     /* Update kinect led */
     m_alarm.UpdateLed();
 
     /* Publish event */
     std::string message = std::string("newdet ") + std::to_string(m_alarm.m_alarm_config.current_detection_number) + " " +
-                          std::to_string(1000) + " " + std::to_string(frame_num);
+                          std::to_string(intrusion_date) + " " + std::to_string(frame_num);
 
     if(0 != m_alarm.m_message_broker->Publish(REDIS_DET_INTRUSION_CHANNEL, message))
     {
@@ -836,7 +839,7 @@ void AlarmDetectionObserver::IntrusionStopped(uint32_t frame_num)
     /* Update SQLite db */
     Entry detection_entry = m_alarm.m_detection_table_definition;
     detection_entry[0].value = static_cast<int>(m_alarm.m_alarm_config.current_detection_number); /*ID*/
-    detection_entry[1].value = static_cast<int>(1000); /*DATE*/
+    detection_entry[1].value = static_cast<int>(intrusion_date); /*DATE*/
     detection_entry[2].value = static_cast<int>(frame_num); /*DURATION*/
     detection_entry[3].value = std::string(DETECTION_PATH) + "/" + std::to_string(m_alarm.m_alarm_config.current_detection_number) + "_capture.zip"; /*FILENAME_IMG*/
     detection_entry[4].value = std::string(DETECTION_PATH) + "/" + std::to_string(m_alarm.m_alarm_config.current_detection_number) + "_capture_vid.mp4"; /*FILENAME_VID*/

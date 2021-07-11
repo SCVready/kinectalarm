@@ -1,7 +1,7 @@
 {
     "testMate.cpp.test.advancedExecutables": [
         {
-            "pattern": "test/build/*",
+            "pattern": "test/build_native/*",
             "cwd": "${absDirpath}",
         }
     ],
