@@ -610,12 +610,12 @@ int Alarm::CreateStatus()
     Entry status = m_status_table_definition;
     status[0].value = 0; /*index*/
 
-    status[1].value = 0; /*TILT*/
-    status[2].value = 750; /*BRIGHTNESS*/
-    status[3].value = 0; /*CONTRAST*/
-    status[4].value = 0; /*DET_ACTIVE*/
-    status[5].value = 0; /*LVW_ACTIVE*/
-    status[6].value = 0; /*CURRENT_DET_NUM*/
+    status[1].value = static_cast<int32_t>(m_alarm_config.tilt); /*TILT*/
+    status[2].value = static_cast<int32_t>(m_alarm_config.brightness); /*BRIGHTNESS*/
+    status[3].value = static_cast<int32_t>(m_alarm_config.contrast); /*CONTRAST*/
+    status[4].value = static_cast<int32_t>(m_alarm_config.detection_active); /*DET_ACTIVE*/
+    status[5].value = static_cast<int32_t>(m_alarm_config.liveview_active); /*LVW_ACTIVE*/
+    status[6].value = static_cast<int32_t>(m_alarm_config.current_detection_number); /*CURRENT_DET_NUM*/
     status[7].value = static_cast<int32_t>(m_detection_config.threshold); /*DET_THRESHOLD*/
     status[8].value = static_cast<int32_t>(m_detection_config.sensitivity); /*DET_SENSITIVITY*/
     status[9].value = static_cast<int32_t>(m_detection_config.cooldown_ms); /*DET_COOLDOWN_MS*/
