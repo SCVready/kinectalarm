@@ -38,7 +38,7 @@ Setting:
 * https://github.com/SCVready/emailsender : small python program to send email
 
 ## Steps to build PresenceOS
-You can also download the latest release from
+You can also download the 1.0 release from: https://github.com/SCVready/meta-presence/releases/download/release_v1.0/presenceos_1.0.rpi-sdimg
 
 Steps:
 
