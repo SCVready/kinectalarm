@@ -11,7 +11,7 @@
 /*******************************************************************
  * Defines
  *******************************************************************/
-#define KINECTALARM_VERSION "0.11"
+#define KINECTALARM_VERSION "1.0"
 
 #define DETECTION_PATH "/var/detections"
 #define REDIS_DB_PATH  "/tmp/redis.sock"
