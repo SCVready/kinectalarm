@@ -57,7 +57,7 @@ Steps:
 
         mkdir presenceos
         cd presenceos
-        repo init -u https://github.com/SCVready/presenceos-repo -b refs/tags/v0.1
+        repo init -u https://github.com/SCVready/presenceos-repo -b refs/tags/v1.0
         repo sync
 
 3. Download Yocto requirements: https://www.yoctoproject.org/docs/2.6/mega-manual/mega-manual.html#required-packages-for-the-build-host<br/>For Ubuntu for example:
