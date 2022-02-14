@@ -18,7 +18,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Download native SDK
-      run: wget https://github.com/SCVready/meta-presence/releases/download/release_v1.0/presenceos_1.0_native_sdk.tar -q --show-progress
+      run: wget https://github.com/SCVready/meta-presence/releases/download/release_v1.0/presenceos_1.0_native_sdk.tar
 
     - name: Extract native SDK
       run: tar -xvf presenceos_1.0_native_sdk.tar 
@@ -28,7 +28,7 @@ jobs:
 
     - name: Build Tests
       working-directory: ${{github.workspace}}
-      run: source native_sdk/environment-setup-core2-32-poky-linux;cd test;cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}};cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      run: source native_sdk/environment-setup-core2-32-poky-linux;cd test;mkdir -p build;cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}};cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
     - name: Test
       working-directory: ${{github.workspace}}/test/build
