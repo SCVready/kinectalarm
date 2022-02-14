@@ -1,4 +1,4 @@
-name: CMake
+name: UnitTest
 
 on:
   push:
@@ -7,21 +7,32 @@ on:
     branches: [ master ]
 
 env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
 
 jobs:
   build:
-    # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
-    # You can convert this to a matrix build if you need cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/download-artifact@v2
-      with:
-        name: https://github.com/SCVready/meta-presence/releases/download/release_v1.0/presenceos_1.0_native_sdk.tar
 
-    - name: Display structure of downloaded files
-      run: ls
+    - name: Download native SDK
+      run: wget https://github.com/SCVready/meta-presence/releases/download/release_v1.0/presenceos_1.0_native_sdk.tar -q --show-progress
+
+    - name: Extract native SDK
+      run: tar -xvf presenceos_1.0_native_sdk.tar 
+
+    - name: Install native SDK
+      run: ./poky-glibc-x86_64-presenceos-core2-32-toolchain-2.6.4.sh -y -d ./native_sdk
+
+    - name: Build Tests
+      working-directory: ${{github.workspace}}
+      run: source native_sdk/environment-setup-core2-32-poky-linux;cd test;cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}};cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Test
+      working-directory: ${{github.workspace}}/test/build
+      run: 
+      ../../native_sdk/sysroots/core2-32-poky-linux/lib/ld-linux.so.2 --library-path "../../native_sdk/sysroots/core2-32-poky-linux/lib/:../../native_sdk/sysroots/core2-32-poky-linux/usr/lib/" ./detection_tests
+
+
+
