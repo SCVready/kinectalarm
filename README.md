@@ -1,3 +1,5 @@
+[![UnitTest](https://github.com/SCVready/kinectalarm/actions/workflows/UnitTest.yml/badge.svg)](https://github.com/SCVready/kinectalarm/actions/workflows/UnitTest.yml)
+
 # PresenceOS
 KinectAlarm is the main element of the PresenceOS project. This readme explain what the whole project is, not only KinectAlarm.
 
