@@ -15,6 +15,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: supercharge/redis-github-action@1.4.0
 
     - name: Download native SDK
       run: wget https://github.com/SCVready/meta-presence/releases/download/release_v1.0/presenceos_1.0_native_sdk.tar -q
@@ -23,7 +24,10 @@ jobs:
       run: tar -xvf presenceos_1.0_native_sdk.tar
 
     - name: Install native SDK
-      run: ./poky-glibc-x86_64-presenceos-core2-32-toolchain-2.6.4.sh -y -d ./native_sdk
+      run: |
+        ./poky-glibc-x86_64-presenceos-core2-32-toolchain-2.6.4.sh -y -d ./native_sdk
+        sed -i '/^export \([CC CXX CPP]\)/ s/--sysroot=$SDKTARGETSYSROOT/-Wl,-rpath=$SDKTARGETSYSROOT\/lib:$SDKTARGETSYSROOT\/usr\/lib,-dynamic-linker $SDKTARGETSYSROOT\/lib\/ld-linux.so.2/g' native_sdk/environment-setup-core2-32-poky-linux
+
 
     - name: Build and run Tests
       working-directory: ${{github.workspace}}
