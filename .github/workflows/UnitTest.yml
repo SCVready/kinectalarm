@@ -10,24 +10,46 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  build:
-    runs-on: self-hosted
+  # Build and run UnitTests in the host machine
+  host-native-build-run:
+    runs-on: [self-hosted, linux, x64]
 
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - name: Download native SDK
-      run: wget https://github.com/SCVready/meta-presence/releases/download/release_v1.0/presenceos_1.0_native_sdk.tar -q
+      # TODO: Use a GitHub API or a GitHub Action to retrieve the latest release
+      - name: Download native SDK
+        run: wget https://github.com/SCVready/meta-presence/releases/download/release_v1.0/presenceos_1.0_native_sdk.tar -q
 
-    - name: Extract native SDK
-      run: tar -xvf presenceos_1.0_native_sdk.tar
+      - name: Extract native SDK
+        run: tar -xvf presenceos_1.0_native_sdk.tar
 
-    - name: Install native SDK
-      run: |
-        ./poky-glibc-x86_64-presenceos-core2-32-toolchain-2.6.4.sh -y -d ./native_sdk
-        sed -i '/^export \([CC CXX CPP]\)/ s/--sysroot=$SDKTARGETSYSROOT/-Wl,-rpath=$SDKTARGETSYSROOT\/lib:$SDKTARGETSYSROOT\/usr\/lib,-dynamic-linker $SDKTARGETSYSROOT\/lib\/ld-linux.so.2/g' native_sdk/environment-setup-core2-32-poky-linux
+      - name: Install native SDK
+        run: |
+          ./poky-glibc-x86_64-presenceos-core2-32-toolchain-2.6.4.sh -y -d ./native_sdk
+          sed -i '/^export \([CC CXX CPP]\)/ s/--sysroot=$SDKTARGETSYSROOT/-Wl,-rpath=$SDKTARGETSYSROOT\/lib:$SDKTARGETSYSROOT\/usr\/lib,-dynamic-linker $SDKTARGETSYSROOT\/lib\/ld-linux.so.2/g' native_sdk/environment-setup-core2-32-poky-linux
 
+      - name: Build and run tests
+        working-directory: ${{github.workspace}}
+        run: ./test/build_ut.sh -b build_native -s native_sdk -r
 
-    - name: Build and run Tests
-      working-directory: ${{github.workspace}}
-      run: ./test/build_ut.sh -b build_native -s native_sdk -r
+  # Cross build UnitTests in the host machine for the target machine
+  host-cross-build:
+    runs-on: [self-hosted, linux, x64]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # TODO: Use a GitHub API or a GitHub Action to retrieve the latest release
+      - name: Download cross SDK
+        run: wget https://github.com/SCVready/meta-presence/releases/download/release_v1.0/presenceos_1.0_sdk.tar -q
+
+      - name: Extract cross SDK
+        run: tar -xvf presenceos_1.0_sdk.tar
+
+      - name: Install cross SDK
+        run: ./poky-glibc-x86_64-presenceos-cortexa7t2hf-neon-vfpv4-toolchain-2.6.4.sh -y -d ./sdk
+
+      - name: Build tests
+        working-directory: ${{github.workspace}}
+        run: ./test/build_ut.sh -b build -s sdk
