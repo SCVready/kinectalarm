@@ -72,6 +72,8 @@ make -j$(nproc);
 # Execute tests
 ################################################################################
 
-for TEST in ${TEST_FILES[@]}; do
-    $ABS_BUILD_FOLDER/$TEST --gtest_repeat=20 --gtest_shuffle --gtest_break_on_failure
-done
+if [ "$RUN_TESTS" == true ]; then
+    for TEST in ${TEST_FILES[@]}; do
+        $ABS_BUILD_FOLDER/$TEST --gtest_repeat=20 --gtest_shuffle --gtest_break_on_failure
+    done
+fi
