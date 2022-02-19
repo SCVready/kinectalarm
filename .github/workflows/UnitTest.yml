@@ -19,7 +19,7 @@ jobs:
 
       # TODO: Use a GitHub API or a GitHub Action to retrieve the latest release
       - name: Download native SDK
-        run: wget https://github.com/SCVready/meta-presence/releases/download/release_v1.0/presenceos_1.0_native_sdk.tar -q
+        run: wget https://github.com/SCVready/presenceos-repo/releases/download/v1.0/presenceos_1.0_native_sdk.tar -q
 
       - name: Extract native SDK
         run: tar -xvf presenceos_1.0_native_sdk.tar
@@ -42,7 +42,7 @@ jobs:
 
       # TODO: Use a GitHub API or a GitHub Action to retrieve the latest release
       - name: Download cross SDK
-        run: wget https://github.com/SCVready/meta-presence/releases/download/release_v1.0/presenceos_1.0_sdk.tar -q
+        run: wget https://github.com/SCVready/presenceos-repo/releases/download/v1.0/presenceos_1.0_sdk.tar -q
 
       - name: Extract cross SDK
         run: tar -xvf presenceos_1.0_sdk.tar
