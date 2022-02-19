@@ -15,7 +15,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - uses: supercharge/redis-github-action@1.4.0
 
     - name: Download native SDK
       run: wget https://github.com/SCVready/meta-presence/releases/download/release_v1.0/presenceos_1.0_native_sdk.tar -q
