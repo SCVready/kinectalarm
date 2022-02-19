@@ -29,7 +29,8 @@ using ::testing::SetArgReferee;
 using ::testing::Ref;
 using ::testing::DoAll;
 using ::testing::Invoke;
-using testing::InSequence;
+using ::testing::InSequence;
+using ::testing::Mock;
 
 std::shared_ptr<IDataTable> g_data_table_mock;
 std::shared_ptr<KinectMock> g_kinect_mock;
@@ -63,7 +64,7 @@ protected:
     };
 
 public:
-    AlarmTest()
+    void SetUp() override 
     {
         g_kinect_mock                    = std::make_shared<StrictMock<KinectMock>>();
         g_detection_mock                 = std::make_shared<StrictMock<AlarmModuleMock>>();
@@ -78,7 +79,7 @@ public:
         m_alarm = std::make_shared<Alarm>(m_message_broker_mock, m_data_base_mock);
     }
 
-    ~AlarmTest()
+    void TearDown() override
     {
         g_kinect_mock.reset();
         g_detection_mock.reset();
@@ -87,6 +88,12 @@ public:
         g_state_persistence_factory_mock.reset();
         g_detection_datatable_mock.reset();
         g_status_datatable_mock.reset();
+    }
+
+    void ClearExpectationsOnMocks()
+    {
+        EXPECT_TRUE(Mock::VerifyAndClearExpectations(g_detection_datatable_mock.get()));
+        EXPECT_TRUE(Mock::VerifyAndClearExpectations(g_status_datatable_mock.get()));
     }
 
     void AlarmInit()
@@ -120,11 +127,8 @@ public:
             WillOnce(Return(0));
 
         EXPECT_EQ(0, m_alarm->Init());
-    }
 
-    void ExpectDetectionStartCalls()
-    {
-
+        ClearExpectationsOnMocks();
     }
 
     void SetDetectionActiveOnStatusTable(Entry& entry)
@@ -253,6 +257,7 @@ TEST_F(AlarmTest, InitFailedReadingStatusTable)
         WillOnce(Return(0));
 
     EXPECT_EQ(0, alarm.Init());
+    ClearExpectationsOnMocks();
 }
 
 TEST_F(AlarmTest, InitFailedKinectInit)
@@ -274,6 +279,7 @@ TEST_F(AlarmTest, InitFailedKinectInit)
         WillOnce(Return(-1));
 
     EXPECT_NE(0, alarm.Init());
+    ClearExpectationsOnMocks();
 }
 
 TEST_F(AlarmTest, InitDetectionIsActive)
@@ -334,6 +340,7 @@ TEST_F(AlarmTest, InitDetectionIsActive)
         WillOnce(Return(0));
 
     EXPECT_EQ(0, alarm.Init());
+    ClearExpectationsOnMocks();
 }
 
 TEST_F(AlarmTest, InitLiveviewIsActive)
@@ -396,6 +403,7 @@ TEST_F(AlarmTest, InitLiveviewIsActive)
         WillOnce(Return(0));
 
     EXPECT_EQ(0, alarm.Init());
+    ClearExpectationsOnMocks();
 }
 
 TEST_F(AlarmTest, StartDetection)
@@ -426,6 +434,7 @@ TEST_F(AlarmTest, StartDetection)
         WillOnce(Return(0));
 
     EXPECT_EQ(0, m_alarm->StartDetection());
+    ClearExpectationsOnMocks();
 }
 
 TEST_F(AlarmTest, StopDetection)
@@ -461,6 +470,7 @@ TEST_F(AlarmTest, StopDetection)
         WillOnce(Return(0));
 
     EXPECT_EQ(0, m_alarm->StopDetection());
+    ClearExpectationsOnMocks();
 }
 
 TEST_F(AlarmTest, StartLiveview)
@@ -493,6 +503,7 @@ TEST_F(AlarmTest, StartLiveview)
         WillOnce(Return(0));
 
     EXPECT_EQ(0, m_alarm->StartLiveview());
+    ClearExpectationsOnMocks();
 }
 
 TEST_F(AlarmTest, StopLiveview)
@@ -528,6 +539,7 @@ TEST_F(AlarmTest, StopLiveview)
         WillOnce(Return(0));
 
     EXPECT_EQ(0, m_alarm->StopLiveview());
+    ClearExpectationsOnMocks();
 }
 
 
@@ -541,6 +553,7 @@ TEST_F(AlarmTest, GetNumDetections)
     EXPECT_EQ(1, m_alarm->GetNumDetections());
     FakeIntrusion();
     EXPECT_EQ(2, m_alarm->GetNumDetections());
+    ClearExpectationsOnMocks();
 }
 
 /*TESTs for ResetDetection */
@@ -560,6 +573,7 @@ TEST_F(AlarmTest, ChangeTilt)
         WillOnce(Return(0));
 
     EXPECT_EQ(0, m_alarm->ChangeTilt(tilt_value));
+    ClearExpectationsOnMocks();
 }
 
 TEST_F(AlarmTest, ChangeBrightness)
@@ -574,6 +588,7 @@ TEST_F(AlarmTest, ChangeBrightness)
         WillOnce(Return(0));
 
     EXPECT_EQ(0, m_alarm->ChangeBrightness(value));
+    ClearExpectationsOnMocks();
 }
 
 TEST_F(AlarmTest, ChangeContrast)
@@ -588,6 +603,7 @@ TEST_F(AlarmTest, ChangeContrast)
         WillOnce(Return(0));
 
     EXPECT_EQ(0, m_alarm->ChangeContrast(value));
+    ClearExpectationsOnMocks();
 }
 
 TEST_F(AlarmTest, ChangeThreshold)
@@ -605,6 +621,7 @@ TEST_F(AlarmTest, ChangeThreshold)
         WillOnce(Return(0));
 
     EXPECT_EQ(0, m_alarm->ChangeThreshold(value));
+    ClearExpectationsOnMocks();
 }
 
 TEST_F(AlarmTest, ChangeSensitivity)
@@ -622,6 +639,7 @@ TEST_F(AlarmTest, ChangeSensitivity)
         WillOnce(Return(0));
 
     EXPECT_EQ(0, m_alarm->ChangeSensitivity(value));
+    ClearExpectationsOnMocks();
 }
 
 TEST_F(AlarmTest, NewFrame)
@@ -649,6 +667,7 @@ TEST_F(AlarmTest, IntrusionStarted)
         WillOnce(Return(0));
 
     detection_observer.IntrusionStarted();
+    ClearExpectationsOnMocks();
 }
 
 TEST_F(AlarmTest, IntrusionStopped)
@@ -674,6 +693,7 @@ TEST_F(AlarmTest, IntrusionStopped)
         WillOnce(Return(0));
 
     detection_observer.IntrusionStopped(1);
+    ClearExpectationsOnMocks();
 }
 
 TEST_F(AlarmTest, IntrusionFrame)
@@ -683,4 +703,5 @@ TEST_F(AlarmTest, IntrusionFrame)
     AlarmDetectionObserver detection_observer(*m_alarm);
 
     detection_observer.IntrusionFrame(frame, 1);
+    ClearExpectationsOnMocks();
 }

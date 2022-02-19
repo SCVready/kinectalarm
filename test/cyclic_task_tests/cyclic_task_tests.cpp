@@ -18,6 +18,8 @@
  * Test class definition
  *******************************************************************/
 using ::testing::StrictMock;
+using ::testing::AtMost;
+using ::testing::Between;
 
 class TaskMock
 {
@@ -50,20 +52,11 @@ TEST(CyclicTaskTest, Contructor)
     );
 }
 
-TEST(CyclicTaskTest, Start)
+TEST(CyclicTaskTest, StartStop)
 {
     CyclicTaskDumb task("test", 100);
 
-    EXPECT_CALL(task.task_mock, Task).Times(0);
-
-    EXPECT_EQ(0, task.Start());
-}
-
-TEST(CyclicTaskTest, Stop)
-{
-    CyclicTaskDumb task("test", 100);
-
-    EXPECT_CALL(task.task_mock, Task).Times(0);
+    EXPECT_CALL(task.task_mock, Task).Times(AtMost(1));
 
     EXPECT_EQ(0, task.Start());
     EXPECT_EQ(0, task.Stop());
@@ -72,6 +65,8 @@ TEST(CyclicTaskTest, Stop)
 TEST(CyclicTaskTest, IsRunning)
 {
     CyclicTaskDumb task("test", 100);
+
+    EXPECT_CALL(task.task_mock, Task).Times(AtMost(1));
 
     EXPECT_EQ(false, task.IsRunning());
     EXPECT_EQ(0, task.Start());
@@ -84,21 +79,22 @@ TEST(CyclicTaskTest, TaskExecution)
 {
     CyclicTaskDumb task("test", 10);
 
+    EXPECT_CALL(task.task_mock, Task).Times(AtMost(1));
+
     EXPECT_EQ(0, task.Start());
 
-    EXPECT_CALL(task.task_mock, Task).Times(1);
-    std::this_thread::sleep_for (std::chrono::milliseconds(5));
-    EXPECT_CALL(task.task_mock, Task).Times(10);
-    std::this_thread::sleep_for (std::chrono::milliseconds(100));
+    EXPECT_CALL(task.task_mock, Task).Times(Between(10,11));
+    std::this_thread::sleep_for (std::chrono::milliseconds(105));
 
     EXPECT_EQ(0, task.Stop());
 }
 
-TEST(CyclicTaskTest, CheckStoppingTime)
+TEST(CyclicTaskTest, CheckStoppingTimeLess1ms)
 {
+    int64_t max_stoping_time = 1;
     CyclicTaskDumb task("test", 100);
 
-    EXPECT_CALL(task.task_mock, Task).Times(1);
+    EXPECT_CALL(task.task_mock, Task).Times(AtMost(1));
 
     EXPECT_EQ(0, task.Start());
     std::this_thread::sleep_for (std::chrono::milliseconds(50));
@@ -106,5 +102,5 @@ TEST(CyclicTaskTest, CheckStoppingTime)
     EXPECT_EQ(0, task.Stop());
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-    EXPECT_TRUE(1 > std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count());
+    EXPECT_TRUE(max_stoping_time > std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count());
 }

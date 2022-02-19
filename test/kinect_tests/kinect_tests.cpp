@@ -61,6 +61,7 @@ public:
 
     void StartUpdatingKinectsLastDepthFrame(KinectDepthFrame& frame)
     {
+        kinect_update_frame = true;
         auto func = [this, &frame]
         {
             while(kinect_update_frame)

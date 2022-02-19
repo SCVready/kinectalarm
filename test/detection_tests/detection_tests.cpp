@@ -29,7 +29,7 @@ using ::testing::AtLeast;
 class DetectionTest : public ::testing::Test
 {
 public:
-    DetectionTest()
+    void SetUp() override
     {
         detection_config.threshold = 2000;
         detection_config.sensitivity = 10;
@@ -42,8 +42,10 @@ public:
         detection_observer_mock = std::make_shared<StrictMock<DetectionObserverMock>>();
     }
 
-    ~DetectionTest()
+    void TearDown() override 
     {
+        kinect_mock.reset();
+        detection_observer_mock.reset();
     }
 
     void FillFrameWithValue(KinectFrame& frame, uint16_t value, uint32_t timestamp)
