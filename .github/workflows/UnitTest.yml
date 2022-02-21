@@ -12,7 +12,8 @@ env:
 jobs:
   # Build and run UnitTests in the host machine
   host-native-build-run:
-    runs-on: [self-hosted, linux, x64]
+    #runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
