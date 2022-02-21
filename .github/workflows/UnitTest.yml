@@ -19,7 +19,8 @@ jobs:
       - uses: actions/checkout@v2
 
       # Redis is nedded to run the Message Broker's UnitTests
-      - uses: shogo82148/actions-setup-redis@v1
+      - id: setup-redis
+        uses: shogo82148/actions-setup-redis@v1
 
       # TODO: Use a GitHub API or a GitHub Action to retrieve the latest release
       - name: Download native SDK
@@ -35,7 +36,7 @@ jobs:
 
       - name: Build and run tests
         working-directory: ${{github.workspace}}
-        run: ./test/build_ut.sh -b build_native -s native_sdk -r -u ${{ steps.setup.outputs.redis-unix-socket }}
+        run: ./test/build_ut.sh -b build_native -s native_sdk -r -u ${{ steps.setup-redis.outputs.redis-unix-socket }}
 
   # Cross build UnitTests in the host machine for the target machine
   host-cross-build:
