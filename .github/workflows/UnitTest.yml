@@ -36,7 +36,8 @@ jobs:
 
   # Cross build UnitTests in the host machine for the target machine
   host-cross-build:
-    runs-on: [self-hosted, linux, x64]
+    #runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
