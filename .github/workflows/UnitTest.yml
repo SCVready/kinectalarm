@@ -18,6 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      # Redis is nedded to run the Message Broker's UnitTests
+      - uses: shogo82148/actions-setup-redis@v1
+
       # TODO: Use a GitHub API or a GitHub Action to retrieve the latest release
       - name: Download native SDK
         run: wget https://github.com/SCVready/presenceos-repo/releases/download/v1.0/presenceos_1.0_native_sdk.tar -q
@@ -32,7 +35,7 @@ jobs:
 
       - name: Build and run tests
         working-directory: ${{github.workspace}}
-        run: ./test/build_ut.sh -b build_native -s native_sdk -r
+        run: ./test/build_ut.sh -b build_native -s native_sdk -r -u ${{ steps.setup.outputs.redis-unix-socket }}
 
   # Cross build UnitTests in the host machine for the target machine
   host-cross-build:

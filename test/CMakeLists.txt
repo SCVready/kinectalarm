@@ -79,6 +79,9 @@ add_executable(message_broker_tests
 target_link_libraries(message_broker_tests gtest gtest_main pthread gmock hiredis event event_pthreads)
 target_compile_definitions(message_broker_tests PRIVATE __STDC_CONSTANT_MACROS)
 target_compile_definitions(message_broker_tests PRIVATE "$<$<CONFIG:DEBUG>:DEBUG>")
+if (DEFINED  REDIS_UNIX_SOCKET)
+    target_compile_definitions(message_broker_tests PRIVATE REDIS_UNIX_SOCKET=${REDIS_UNIX_SOCKET})
+endif()
 target_include_directories(message_broker_tests PRIVATE "../inc")
 
 ######## StatePersistence class ########

@@ -17,6 +17,13 @@
 #include "mocks/message_broker_observer_mock.hpp"
 
 /*******************************************************************
+ * Defines
+ *******************************************************************/
+#ifndef REDIS_UNIX_SOCKET
+    #define REDIS_UNIX_SOCKET "/var/run/redis/redis-server.sock"
+#endif
+
+/*******************************************************************
  * Test class definition
  *******************************************************************/
 using ::testing::_;
@@ -29,7 +36,7 @@ using ::testing::Ref;
 class MessageBrokerTest : public ::testing::Test
 {
 public:
-    MessageBroker message_broker{"/var/run/redis/redis-server.sock"};
+    MessageBroker message_broker{REDIS_UNIX_SOCKET};
     std::shared_ptr<ChannelMessageObserverMock> channel_observer_mock, channel_observer_mock_2;
 
     MessageBrokerTest()
@@ -52,7 +59,7 @@ protected:
 TEST_F(MessageBrokerTest, Contructor)
 {
     ASSERT_NO_THROW(
-        MessageBroker message_broker("/var/run/redis/redis-server.sock");
+        MessageBroker message_broker(REDIS_UNIX_SOCKET);
     );
 }
 

@@ -18,13 +18,14 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 DEFAULT_BUILD_FOLDER="build"
 ABS_BUILD_FOLDER="$SCRIPT_DIR/$DEFAULT_BUILD_FOLDER"
 RUN_TESTS=false
+REDIS_UNIX_SOCKET=""
 
 ################################################################################
 # Option menu
 ################################################################################
-usage() { echo "Usage: $0 [-b <build folder>] [-s <sdk folder>] [-r run tests] [-C clean]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-b <build folder>] [-s <sdk folder>] [-r (run tests)] [-u <redis unix socket>] [-C (clean)]" 1>&2; exit 1; }
 
-while getopts ":b:s:rC" o; do
+while getopts ":b:s:ru:C" o; do
     case "${o}" in
         b)
             FOLDER=${OPTARG}
@@ -39,6 +40,9 @@ while getopts ":b:s:rC" o; do
             ;;
         r)
             RUN_TESTS=true
+            ;;
+        u)
+            REDIS_UNIX_SOCKET=${OPTARG}
             ;;
         C)
             rm -rf $ABS_BUILD_FOLDER
@@ -61,7 +65,12 @@ mkdir -p ${ABS_BUILD_FOLDER};cd ${ABS_BUILD_FOLDER};
 ################################################################################
 # Cmake
 ################################################################################
-cmake ${SCRIPT_DIR};
+if [ -n "${REDIS_UNIX_SOCKET}" ]; then
+    COMPILATION_DEFINITIONS+=-DREDIS_UNIX_SOCKET=\"${REDIS_UNIX_SOCKET}\"
+else
+    COMPILATION_DEFINITIONS+=-UREDIS_UNIX_SOCKET
+fi
+cmake ${SCRIPT_DIR} ${COMPILATION_DEFINITIONS};
 
 ################################################################################
 # Make
